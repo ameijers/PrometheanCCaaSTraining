@@ -43,6 +43,16 @@
           "learn": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/create-workstreams"
         }
       ]
+    },
+    {
+      "group": "Support experience",
+      "items": [
+        {
+          "label": "Productivity",
+          "page": "productivity",
+          "learn": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/configure-outbound-inbound-profiles"
+        }
+      ]
     }
   ],
   "pages": {
@@ -316,7 +326,13 @@
           "192360002": "Busy - DND",
           "192360003": "Away",
           "192360004": "Offline"
-        }
+        },
+        "matching": "Default skill matching algorithm",
+        "matchingNone": "None",
+        "matchingOptions": [
+          "Exact Match",
+          "Closest Match"
+        ]
       },
       "aiAgent": {
         "title": "AI agent",
@@ -448,9 +464,15 @@
           "description": "Set how much work representatives can take at the same time.",
           "action": "Manage",
           "page": "capacity-profiles"
+        },
+        {
+          "title": "Skills hub",
+          "description": "Create skills and give them to representatives, with how well they know each one.",
+          "action": "Manage",
+          "page": "skills"
         }
       ],
-      "source": "Learn, Create and manage capacity profiles (ms.date 2026-02-03): User management in Customer support, then Manage for Capacity profile. Only that card is in the training."
+      "source": "Learn, Create and manage capacity profiles (ms.date 2026-02-03) and Set up skills and assign representatives (ms.date 2026-05-08): User management in Customer support, then Manage for Capacity profile or Skills hub."
     },
     "capacity-profiles": {
       "title": "Capacity profiles",
@@ -523,6 +545,101 @@
         "save": "Save"
       },
       "defaultTeam": "This is the business unit's default team: its members are the business unit's users, and can't be changed here."
+    },
+    "skills": {
+      "title": "Skills",
+      "concept": "skill",
+      "create": "Create",
+      "columns": [
+        "Skill name",
+        "Skill type",
+        "Users"
+      ],
+      "createDialog": {
+        "title": "Create Skill",
+        "type": "Skill type",
+        "typeValue": "Skill",
+        "typeHint": "Skill types are an option set in the classic settings; the training has one.",
+        "name": "Skill name",
+        "create": "Create"
+      },
+      "edit": {
+        "title": "Edit Skill",
+        "users": "Users",
+        "add": "Add",
+        "addSelected": "Add selected users",
+        "update": "Update proficiency",
+        "remove": "Remove",
+        "proficiency": "Proficiency",
+        "added": "New users get the lowest proficiency. Tick them and select Update proficiency to change it."
+      },
+      "source": "Learn, Set up skills and assign representatives (ms.date 2026-05-08): Skills hub, Manage in the Skills area, Create, Skill type, Skill name, Add, Add selected users, Update proficiency. Simplified: changes are saved straight away."
+    },
+    "classification": {
+      "title": "Work classification",
+      "concept": "skill-attachment",
+      "createRule": "Create Rule",
+      "delete": "Delete",
+      "columns": [
+        "Order",
+        "Rule name",
+        "Conditions",
+        "Skills"
+      ],
+      "panel": {
+        "title": "Create work classification rule",
+        "ruleName": "Rule name",
+        "conditions": "Conditions",
+        "output": "Output",
+        "skill": "Skill",
+        "proficiency": "Proficiency",
+        "operator": "Equals",
+        "create": "Create"
+      },
+      "simplified": "Simplified: in the training a workstream has one work classification ruleset of logical rules, and each rule checks one field and attaches one skill. The first rule that matches attaches its skill.",
+      "source": "Learn, Configure work classification rulesets (ms.date 2026-05-08): Routing rules, Work classification (optional), Create Ruleset, then Create Rule with a name, Conditions and Output."
+    },
+    "productivity": {
+      "title": "Productivity",
+      "concept": "outbound-profile",
+      "cards": [
+        {
+          "title": "Outbound and inbound profiles",
+          "description": "Set up how representatives call customers: the number they call from, the caller ID and the queue.",
+          "action": "Manage",
+          "page": "outbound-profiles"
+        }
+      ]
+    },
+    "outbound-profiles": {
+      "title": "Outbound and inbound profiles",
+      "concept": "outbound-profile",
+      "newButton": "New profile",
+      "columns": [
+        "Profile name",
+        "Profile type",
+        "Phone number",
+        "Queue"
+      ],
+      "create": {
+        "title": "Create new profile",
+        "settings": "Profile settings",
+        "name": "Profile name",
+        "type": "Profile type",
+        "outbound": "Outbound",
+        "inbound": "Inbound",
+        "phone": "Phone number",
+        "sharedNumbers": "Shared numbers",
+        "info": "Outbound info",
+        "queue": "Queue",
+        "capacity": "Capacity",
+        "callerId": "Caller ID number",
+        "profileNumber": "(Profile Number)",
+        "save": "Save and close",
+        "noNumbers": "No number here can make calls. Add a number with Make calls in Channels › Phone numbers first."
+      },
+      "simplified": "Simplified: one panel instead of the wizard's pages; Outbound behaviors (music, transfers, transcription and recording) keep their defaults, and inbound profiles aren't in the training.",
+      "source": "Learn, Configure outbound and inbound profiles (ms.date 2026-07-30)."
     }
   },
   "ppac": {

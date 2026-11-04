@@ -5,7 +5,11 @@ import { ASSIGNMENT_METHODS, AssignmentMethod, QUEUE_TYPES, QueueType } from "@t
 import { appendRules, emptyDefinition, ruleXml } from "@toolbox/route-to-queue-builder/src/rules";
 import { QUEUE_IDENTIFICATION, QUEUE_OUTPUT_CONTRACT_NAME } from "@toolbox/route-to-queue-builder/src/schema";
 import { DEFAULT_CAPACITY_PROFILE, NAV as VOICE_NAV } from "@toolbox/voice-workstream-builder/src/voiceSchema";
-import { capacityLinkPayload, workstreamPayload } from "@toolbox/voice-workstream-builder/src/payload";
+import { capacityLinkPayload, channelPayload, workstreamPayload } from "@toolbox/voice-workstream-builder/src/payload";
+import { assignmentPayload } from "@toolbox/skill-assignment/src/plan";
+import { SKILL_TYPE } from "@toolbox/skill-assignment/src/model";
+import { DIRECTIONS } from "@toolbox/voice-workstream-builder/src/voiceSchema";
+import { MATCHING, Matching } from "../calls/skills";
 import { teamPayload } from "@toolbox/team-builder/src/plan";
 import { PARENT_NAV as UNIT_PARENT_NAV } from "@toolbox/business-unit-builder/src/dataSource";
 import { OPERATING_HOURS_NAV } from "@toolbox/queue-builder/src/queueSchema";
@@ -191,7 +195,10 @@ export function purchaseNumber({ api, store }: Admin, number: string, plans: { r
 }
 
 // The voice channel a number is on, if any.
-export const channelOfNumber = (store: Store, phoneId: string) => store.table("msdyn_ocvoicechannelsetting").find((c) => c._msdyn_phonenumberid_value === phoneId);
+// The inbound line a number is on. An outbound profile's channel uses the number too, but only for calls
+// out ("a number already used by an inbound channel is normal for an outbound profile", profile-builder/src/plan.ts).
+export const isOutbound = (store: Store, workstreamId?: string) => !!workstreamId && store.find("msdyn_liveworkstream", workstreamId)?.msdyn_direction === DIRECTIONS.Outbound;
+export const channelOfNumber = (store: Store, phoneId: string) => store.table("msdyn_ocvoicechannelsetting").find((c) => c._msdyn_phonenumberid_value === phoneId && !isOutbound(store, c._msdyn_liveworkstreamid_value));
 
 // "Setup workstream": the number goes on a voice channel of that workstream. "You can associate a phone
 // number with only one voice workstream" (Learn). Simplified: the training adds a voice channel with the
@@ -390,4 +397,111 @@ export function addTeamMembers({ api, store }: Admin, teamId: string, userIds: s
   if (team.isdefault) throw new Error("This is a business unit's default team: its members are the users of that business unit.");
   const already = new Set(store.table("teammembership").filter((m) => m.teamid === team.teamid).map((m) => m.systemuserid));
   for (const id of new Set(userIds)) if (!already.has(id)) api.associate("team", team.teamid, "teammembership_association", `/systemusers(${id})`);
+}
+
+// ---- Skills (level 4): the Skills hub, a workstream's skill matching, skill attachment rules ----
+//
+// Learn, Set up skills and assign representatives (ms.date 2026-05-08): "In the site map, select User
+// management under Customer Support. Select Manage for Skills hub." "On the Skills page, select Create. On the
+// Create Skill dialog, select a skill type in the Skill type list, and then enter a name for it in Skill name.
+// To add the skill to users, in the Users section, select Add ... Select Add selected users. To add proficiency,
+// select the users ... select Update proficiency, and select a value." A user's skill is a bookable resource
+// characteristic, written the way Skill Assignment writes it (skill-assignment/src/plan.ts assignmentPayload).
+
+export function createSkill({ api, store }: Admin, name: string): string {
+  if (!name.trim()) throw new Error("Enter a skill name.");
+  // "The name must be unique" (Learn).
+  if (store.table("characteristic").some((c) => String(c.name).toLowerCase() === name.trim().toLowerCase())) throw new Error("A skill with this name already exists.");
+  return api.create("characteristic", { name: name.trim(), characteristictype: SKILL_TYPE });
+}
+
+// Adds the skill to each user, or changes their proficiency when they have it already.
+export function setUserSkills({ api, store }: Admin, skillId: string, userIds: string[], ratingId: string): void {
+  if (!store.find("characteristic", skillId)) throw new Error("The skill no longer exists.");
+  if (!store.find("ratingvalue", ratingId)) throw new Error("Select a proficiency.");
+  for (const userId of new Set(userIds)) {
+    const user = store.find("systemuser", userId);
+    const resource = store.table("bookableresource").find((r) => r._userid_value === userId);
+    if (!resource) throw new Error(`${user?.fullname ?? "This user"} isn't set up as a bookable resource, so skills can't be added.`);
+    const link = store.table("bookableresourcecharacteristic").find((l) => l._resource_value === resource.bookableresourceid && l._characteristic_value === skillId);
+    if (link) api.update("bookableresourcecharacteristic", link.bookableresourcecharacteristicid, { "RatingValue@odata.bind": `/ratingvalues(${ratingId})` });
+    else api.create("bookableresourcecharacteristic", assignmentPayload(resource.bookableresourceid, skillId, ratingId));
+  }
+}
+
+export function removeUserSkill({ api, store }: Admin, skillId: string, userId: string): void {
+  const resource = store.table("bookableresource").find((r) => r._userid_value === userId);
+  const link = resource && store.table("bookableresourcecharacteristic").find((l) => l._resource_value === resource.bookableresourceid && l._characteristic_value === skillId);
+  if (link) api.remove("bookableresourcecharacteristic", link.bookableresourcecharacteristicid);
+}
+
+// Learn, Understand how skill match algorithm works: "In the work distribution settings of the workstream, set
+// the value for Default skill matching algorithm as Exact Match" (or Closest Match).
+export function setMatchingLogic({ api }: Admin, workstreamId: string, matching: Matching | undefined): void {
+  api.update("msdyn_liveworkstream", workstreamId, { msdyn_matchinglogic: matching ? MATCHING[matching] : null });
+}
+
+// Learn, Configure work classification rulesets: in a workstream's Routing rules, "Work classification
+// (optional)", Create Ruleset, then Create Rule with a name, Conditions and the skills in the Output. Kept in
+// the training table training_skillrule (src/simulator/schema.ts).
+export interface SkillRuleFields { name: string; variable: string; value: string; skillId: string; ratingId: string }
+
+export function addSkillRule({ store }: Admin, workstreamId: string, f: SkillRuleFields): string {
+  if (!f.name.trim()) throw new Error("Enter a rule name.");
+  if (!f.variable) throw new Error("Select the field the condition checks.");
+  if (!f.value.trim()) throw new Error("Enter the value the condition checks for.");
+  if (!store.find("characteristic", f.skillId)) throw new Error("Select a skill.");
+  if (!store.find("ratingvalue", f.ratingId)) throw new Error("Select a proficiency.");
+  const orders = store.table("training_skillrule").filter((r) => r.workstreamid === workstreamId).map((r) => r.ruleorder as number);
+  const id = newGuid();
+  store.insert("training_skillrule", {
+    training_skillruleid: id, workstreamid: workstreamId, name: f.name.trim(), ruleorder: Math.max(0, ...orders) + 1,
+    variable: f.variable, value: f.value.trim(), skillid: f.skillId, ratingvalueid: f.ratingId
+  });
+  return id;
+}
+
+export function deleteSkillRule({ store }: Admin, ruleId: string): void {
+  store.remove("training_skillrule", ruleId);
+}
+
+// ---- Outbound profiles (level 5) ----
+//
+// Learn, Configure outbound and inbound profiles (ms.date 2026-07-30): "In the Copilot Service admin center site
+// map, select Productivity in Support experience. On the Productivity page, select Manage for Outbound and inbound
+// profiles. Select New profile." Then Profile name, Profile type Outbound; Phone number ("only those numbers that
+// are enabled for outbound calling"); Outbound info: Queue, Capacity, Caller ID number. Stored the way Profile
+// Builder stores it: "An outbound profile is stored exactly like an outbound voice workstream with one voice
+// channel" (profile-builder/src/plan.ts), with Voice Workstream Builder's payloads.
+
+export interface OutboundProfileFields { name: string; phoneId: string; queueId: string; capacityProfileId?: string; callerIdPhoneId?: string }
+
+export const outboundProfiles = (store: Store) => store.table("msdyn_liveworkstream").filter((w) => w.msdyn_direction === DIRECTIONS.Outbound && w.statecode === 0);
+
+export function createOutboundProfile({ api, store }: Admin, f: OutboundProfileFields): string {
+  const name = f.name.trim();
+  if (!name) throw new Error("Enter a profile name.");
+  if (store.table("msdyn_liveworkstream").some((w) => String(w.msdyn_name).toLowerCase() === name.toLowerCase())) throw new Error("A profile or workstream with this name already exists.");
+  const phone = store.find("msdyn_ocphonenumber", f.phoneId);
+  if (!phone) throw new Error("Select a phone number.");
+  if (!phone.msdyn_phoneoutboundenabled) throw new Error("This number isn't enabled for outbound calling: its calling plan has no Make calls.");
+  if (!store.find("queue", f.queueId)) throw new Error("Select a queue.");
+  const callerId = f.callerIdPhoneId ?? f.phoneId;
+  const profile = f.capacityProfileId ? store.find("msdyn_capacityprofile", f.capacityProfileId) : store.table("msdyn_capacityprofile").find((p) => p.msdyn_uniquename === DEFAULT_CAPACITY_PROFILE.Outbound);
+  // What the admin center writes on an outbound profile (profile-builder/src/plan.ts): push distribution,
+  // profile-based capacity (30, unused for profiles), screen pop with timeout, no affinity.
+  const id = api.create("msdyn_liveworkstream", workstreamPayload({
+    key: name, name, lines: [], direction: "Outbound", workDistribution: "Push", capacityFormat: "Profile", capacityUnits: 30,
+    presences: [], outboundQueue: f.queueId, notification: "Screen pop with timeout", agentAffinity: false, restrictRecordingDownload: false, restrictTranscriptDownload: false,
+    channels: [], refs: { outboundQueue: f.queueId }
+  }));
+  if (profile) api.create("msdyn_liveworkstreamcapacityprofile", capacityLinkPayload(id, { id: profile.msdyn_capacityprofileid, name: profile.msdyn_name }));
+  api.create("msdyn_ocvoicechannelsetting", channelPayload(id, {
+    line: 0, name, phoneNumber: phone.msdyn_phonenumber, language: "en-US", voiceSpeed: 0, voicePitch: 0,
+    recording: { capture: "none", start: "automatic", agentTranscriptionControls: false, agentRecordingControls: false, requestConsent: false, stopOnHold: false, playNotifications: false, showTranscriptByDefault: false },
+    pstnTransferControls: false, teamsTransferControls: false,
+    outbound: { callerIdNumber: store.find("msdyn_ocphonenumber", callerId)?.msdyn_phonenumber, anonymousCallerId: false },
+    refs: { phoneNumber: f.phoneId, callerIdNumber: callerId }
+  }));
+  return id;
 }

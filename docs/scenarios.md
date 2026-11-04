@@ -29,6 +29,10 @@ Level 3 is about operating hours and overflow, which the health checks don't loo
 | `new-line` | 5 | a new voice workstream with a phone number, into a queue |
 | `business-unit` | 5 | a new business unit under a given parent |
 | `team` | 5 | an owner team in a business unit, with at least N members |
+| `skills` | 4 | Exact Match on a workstream, a skill attachment rule for an IVR choice, and at least N queue members with the skill |
+| `outbound-profile` | 5 | an outbound profile with a number that can make calls, whose calls belong to a queue |
+
+Skills are simulated in src/calls/skills.ts: User management › Skills hub, the workstream's Work classification (skill attachment rules) and Work distribution › Default skill matching algorithm. Exact Match leaves a call unassigned until someone with the skill can take it; Closest Match is simplified (it puts those with the needed skills first). The rules are kept in a training table, training_skillrule, because Learn doesn't document how the platform stores them. Outbound profiles are under Productivity › Outbound and inbound profiles, stored as an outbound workstream with one voice channel, as the Toolbox's Profile Builder does. Played by scripts/skills.js.
 
 Business units and teams are set up in a simulated Power Platform admin center (Settings › Users + permissions › Business units and Teams), reached with the switch at the top of the admin center's site map. Its labels come from Learn and haven't been checked in the real admin center yet. Learn doesn't name the button that creates a team, so the training uses Save. Played by scripts/onboarding.js.
 

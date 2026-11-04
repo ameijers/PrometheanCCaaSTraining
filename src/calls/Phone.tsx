@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 import { useEffect, useState } from "react";
-import { Button, Field, Input, MessageBar, MessageBarBody, Radio, RadioGroup, Select } from "@fluentui/react-components";
+import { Button, Field, Input, MessageBar, MessageBarBody, Radio, RadioGroup, Select, Switch } from "@fluentui/react-components";
 import { parseDecisionXml } from "@toolbox/visual-routing-tester/src/ruleXml";
 import { routeToQueueRuleset } from "../admin/actions";
 import { useStoreVersion, useTraining } from "../shell/context";
@@ -10,6 +10,7 @@ import { Ivr } from "../lessons/checks";
 import { aiCaller, aiStatus, Caller } from "../scenarios/client";
 import { Store } from "../simulator/store";
 import { CallResult, CallTime, DAYS, describeTime, endingOf, lineOf, placeCall } from "./engine";
+import { canSpeak, Line, setSpeechOn, speak, speechOn } from "./speech";
 
 // The phone: dial a simulated number, answer the IVR, and follow the call step by step. Numbers are
 // only ever the simulated environment's, which are all in ranges reserved for fiction.
@@ -42,6 +43,7 @@ export function Phone({ line }: { line?: { dial: string; label: string; ivr?: Iv
   const [time, setTime] = useState("10:00");
   const [calls, setCalls] = useState<{ dial: string; answer: string; at?: CallTime; caller?: Caller; result: CallResult }[]>([]);
   const [busy, setBusy] = useState(false);
+  const [aloud, setAloud] = useState(() => canSpeak() && speechOn());
   const [aiOn, setAiOn] = useState(false);
   const [error, setError] = useState("");
   useEffect(() => { void aiStatus().then((s) => setAiOn(!!s?.available)); }, []);
@@ -65,6 +67,15 @@ export function Phone({ line }: { line?: { dial: string; label: string; ivr?: Iv
       const result = await placeCall(sim.store, { dial, answers, at }, day === "clock" ? { record: true, now: clock.now(), routing } : { record: false });
       const label = ivr?.options.find((o) => o.value === value)?.label ?? value;
       setCalls((c) => [{ dial, answer: label, at, caller, result }, ...c]);
+      if (aloud) {
+        const lines: Line[] = [];
+        if (ivr) lines.push({ who: "ivr", text: ivr.prompt });
+        if (caller) lines.push({ who: "caller", text: caller.says });
+        else if (label) lines.push({ who: "caller", text: label });
+        const last = result.steps[result.steps.length - 1];
+        if (last) lines.push({ who: "narrator", text: last.detail });
+        speak(lines);
+      }
       explain(result.steps.some((s) => s.what === "Overflow") ? "overflow" : result.steps.some((s) => /fallback queue/.test(s.detail)) ? "fallback-queue" : "route-to-queue");
     } finally {
       setBusy(false);
@@ -115,6 +126,7 @@ export function Phone({ line }: { line?: { dial: string; label: string; ivr?: Iv
         </div>
         <Button appearance="primary" disabled={busy || !dial.trim() || (!!ivr && (!answer || (answer === OTHER && !other.trim())))} onClick={() => void call()}>Call</Button>
         {aiOn && <Button disabled={busy || !dial.trim()} onClick={() => void callAsAi()}>Let an AI caller call</Button>}
+        {canSpeak() && <Switch label="Read the call aloud" checked={aloud} onChange={(_, d) => { setAloud(d.checked); setSpeechOn(d.checked); }} />}
         {error && <p className="lesson-problem">{error}</p>}
         <p className="admin-muted phone-note">Simulated: no real call is made. The numbers are fictional. Times are the contact center's local time. Only a call made now reaches a representative; a call at another time shows where it would go.</p>
       </div>

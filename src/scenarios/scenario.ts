@@ -111,7 +111,7 @@ export function outputSchema(kind: ScenarioKind): Record<string, unknown> {
       type: "array",
       items: {
         type: "object", additionalProperties: false,
-        required: ["type", "queue", "workstream", "choice", "hours", "action", "method", "profile", "unit", "parent", "team", "number"],
+        required: ["type", "queue", "workstream", "choice", "hours", "action", "method", "profile", "unit", "parent", "team", "skill", "rating", "number"],
         properties: {
           type: { type: "string", enum: [...GOAL_TYPES] },
           queue: { type: "string", description: "The queue's name (a new one for choice-queue), or an empty string." },
@@ -120,11 +120,13 @@ export function outputSchema(kind: ScenarioKind): Record<string, unknown> {
           hours: { type: "string", description: "For operation-hours: the operating hours record's name. Otherwise an empty string." },
           action: { type: "string", description: "For after-hours: Voicemail, Direct callback or End call. For long-wait: Direct callback or Voicemail. Otherwise an empty string." },
           method: { type: "string", description: "For assignment-method: Least active, Highest capacity or Advanced round robin. Otherwise an empty string." },
-          profile: { type: "string", description: "For capacity: the capacity profile's name. Otherwise an empty string." },
+          profile: { type: "string", description: "For capacity: the capacity profile's name. For outbound-profile: the new outbound profile's name. Otherwise an empty string." },
+          skill: { type: "string", description: "For skills: an existing skill's name. Otherwise an empty string." },
+          rating: { type: "string", description: "For skills: the proficiency, Beginner, Intermediate or Expert. Otherwise an empty string." },
           unit: { type: "string", description: "For business-unit: the new unit's name. For team: the unit the team belongs to. Otherwise an empty string." },
           parent: { type: "string", description: "For business-unit: the existing parent unit's name. Otherwise an empty string." },
           team: { type: "string", description: "For team: the new owner team's name. Otherwise an empty string." },
-          number: { type: "integer", description: "members: at least this many members. choice-queue: members of the new queue. long-wait: minutes. capacity: the work item limit. team: at least this many team members. Otherwise 0." }
+          number: { type: "integer", description: "members: at least this many members. choice-queue: members of the new queue. long-wait: minutes. capacity: the work item limit. team: at least this many team members. skills: at least this many queue members with the skill. Otherwise 0." }
         }
       }
     };
@@ -193,6 +195,8 @@ export function fromOutput(kind: ScenarioKind, level: number, out: any, now = ne
         case "capacity": return { type: "capacity", profile: String(g.profile), limit: n };
         case "business-unit": return { type: "business-unit", unit: String(g.unit), parent: String(g.parent) };
         case "team": return { type: "team", team: String(g.team), unit: String(g.unit), members: n };
+        case "skills": return { type: "skills", workstream: String(g.workstream), choice: String(g.choice), skill: String(g.skill), rating: String(g.rating), queue: String(g.queue), members: n };
+        case "outbound-profile": return { type: "outbound-profile", profile: String(g.profile), queue: String(g.queue) };
         default: return { type: "new-line", workstream: String(g?.workstream ?? ""), queue: String(g?.queue ?? "") };
       }
     });

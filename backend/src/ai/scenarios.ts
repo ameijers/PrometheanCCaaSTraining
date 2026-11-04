@@ -32,12 +32,12 @@ const LEVEL_BRIEF: Record<ScenarioKind, Record<number, string>> = {
     1: "Level 1: 1 or 2 goals of type members or fallback.",
     2: "Level 2: 1 to 3 goals, at least one choice-queue (a new IVR choice value that no rule checks yet, and a new queue name).",
     3: "Level 3: 1 to 3 goals, at least one of operation-hours, after-hours or long-wait. Queues without operation hours need operation-hours or after-hours (after-hours sets Business hours if the queue has none).",
-    4: "Level 4: 1 to 3 goals, at least one of assignment-method or capacity.",
-    5: "Level 5: 1 to 3 goals, at least one of new-line (a new workstream name ending in ' – Voice', with an existing queue as its fallback), business-unit or team."
+    4: "Level 4: 1 to 3 goals, at least one of assignment-method, capacity or skills.",
+    5: "Level 5: 1 to 3 goals, at least one of new-line (a new workstream name ending in ' – Voice', with an existing queue as its fallback), business-unit, team or outbound-profile."
   },
   interview: {
     2: "Level 2: 1 to 3 goals, at least one choice-queue (a new IVR choice value that no rule checks yet, and a new queue name).",
-    4: "Level 4: 1 to 3 goals, at least one of assignment-method or capacity."
+    4: "Level 4: 1 to 3 goals, at least one of assignment-method, capacity or skills."
   }
 };
 
@@ -53,6 +53,8 @@ const GOALS_BRIEF = `The goals you can use (each must NOT be met already in the 
 - new-line: a new voice workstream "workstream" with a phone number, taking calls into the existing queue "queue".
 - business-unit: a new business unit "unit" under the existing business unit "parent" (Contoso, Contoso Sales or Contoso Support).
 - team: a new owner team "team" in the existing (or, with a business-unit goal, new) business unit "unit", with at least "number" members.
+- skills (level 4): callers on "workstream" who choose "choice" (an existing IVR choice that routes to "queue") need the existing skill "skill" at "rating" (Beginner, Intermediate or Expert) with Exact Match, and at least "number" members of "queue" have it. Pick a number higher than the members who have it now.
+- outbound-profile (level 5): a new outbound profile "profile" for calling customers, whose calls belong to the existing voice queue "queue".
 Leave fields a goal doesn't use empty, or 0 for "number".`;
 
 const KIND_BRIEF: Record<ScenarioKind, string> = {

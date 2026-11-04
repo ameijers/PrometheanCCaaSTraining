@@ -58,7 +58,7 @@ export class Routing {
       // While the learner has an offer open, they aren't offered another.
       const exclude = new Set(this.declined.get(w.activityid) ?? []);
       if (this.learnerAgent && this.offers.size) exclude.add(this.learnerAgent);
-      const decision = assignmentFor(this.store, w._msdyn_cdsqueueid_value, w._msdyn_liveworkstreamid_value, exclude);
+      const decision = assignmentFor(this.store, w._msdyn_cdsqueueid_value, w._msdyn_liveworkstreamid_value, exclude, w.activityid);
       this.decisions.set(w.activityid, decision);
       if (!decision.chosen) continue;
       if (decision.chosen.id === this.learnerAgent) this.offers.add(w.activityid);

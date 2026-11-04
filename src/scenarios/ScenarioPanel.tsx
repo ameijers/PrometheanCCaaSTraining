@@ -47,12 +47,12 @@ export function ScenarioPanel({ scenario, answers, onAnswer, hints, onHint, onGo
 }
 
 function FixExercise({ scenario, hints, onHint, onGo, onProgress }: { scenario: Scenario; hints: Record<string, number>; onHint(id: string): void; onGo(tab: "admin" | "diagram"): void; onProgress: OnProgress }) {
-  const { explain } = useTraining();
+  const { explain, sim } = useTraining();
   const version = useStoreVersion();
   const [grade, setGrade] = useState<FixGrade | undefined>();
   const faults = scenario.faults ?? [];
   useEffect(() => {
-    const t = setTimeout(() => void gradeFix(faults).then(setGrade).catch(() => undefined), 150);
+    const t = setTimeout(() => void gradeFix(faults, sim.store).then(setGrade).catch(() => undefined), 150);
     return () => clearTimeout(t);
   }, [version, scenario.id]);
   useEffect(() => {

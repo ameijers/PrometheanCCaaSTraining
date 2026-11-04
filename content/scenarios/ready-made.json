@@ -347,6 +347,46 @@
       "source": "ready-made"
     },
     {
+      "id": "build-4-returns-skills",
+      "kind": "build",
+      "level": 4,
+      "title": "Returns need the right people",
+      "story": [
+        "Returns callers on the customer service line often reach someone who has never handled a return. Customers get passed around, and some give up.",
+        "The service manager wants returns calls to go only to people who know returns well, at Intermediate or better. And with only three of them in the Returns queue now, she wants at least four."
+      ],
+      "goals": [
+        {
+          "type": "skills",
+          "workstream": "Customer Service – Voice",
+          "choice": "Returns",
+          "skill": "Returns",
+          "rating": "Intermediate",
+          "queue": "Returns",
+          "members": 4
+        }
+      ],
+      "source": "ready-made"
+    },
+    {
+      "id": "build-5-billing-callbacks",
+      "kind": "build",
+      "level": 5,
+      "title": "Calling customers back",
+      "story": [
+        "The billing team wants to call customers back about their invoices, instead of waiting for them to ring again.",
+        "Set them up to make calls: a profile called Billing Outbound, with its calls belonging to the Billing queue."
+      ],
+      "goals": [
+        {
+          "type": "outbound-profile",
+          "profile": "Billing Outbound",
+          "queue": "Billing"
+        }
+      ],
+      "source": "ready-made"
+    },
+    {
       "id": "build-5-spare-parts-line",
       "kind": "build",
       "level": 5,

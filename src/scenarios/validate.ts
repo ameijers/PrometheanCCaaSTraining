@@ -105,7 +105,7 @@ async function goalProblems(sim: Simulator, s: Scenario): Promise<string[]> {
   }
   const after = await checkGoals(sim.store, goals);
   after.forEach((checks, i) => checks.forEach((c) => { if (!c.result.passed) p.push(`Goal ${i + 1} isn't met even after building it: “${c.title}”.${c.result.note ? " " + c.result.note : ""}`); }));
-  const { found } = await healthIssues();
+  const { found } = await healthIssues(sim.store);
   const problems = found.filter((f) => f.issue.severity === "problem");
   if (problems.length) p.push(`Building the goals causes problems: ${problems.map((f) => `${f.issue.title} on “${f.name}”`).join("; ")}.`);
   return p;

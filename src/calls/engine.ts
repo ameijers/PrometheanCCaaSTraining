@@ -8,6 +8,7 @@ import { describe as describeOverflow } from "@toolbox/voicemail-builder/src/ove
 import { isWithinOperatingHours } from "@toolbox/visual-routing-tester/src/operatingHours";
 import { cleanId, newGuid, Row, Store } from "../simulator/store";
 import type { Routing } from "./routing";
+import { channelOfNumber } from "../admin/actions";
 
 // A call, step by step (manual 5.2): number → voice channel → workstream → IVR answers → route-to-queue
 // rules → queue. The routing itself is the Toolbox's: the Visual Routing Tester's loadRoutingModel()
@@ -111,7 +112,7 @@ export function findNumber(store: Store, dial: string): Row | undefined {
 // Where a call to this number goes, without the routing: the channel and its workstream.
 export function lineOf(store: Store, dial: string): { number?: Row; channel?: Row; workstream?: Row } {
   const number = findNumber(store, dial);
-  const channel = number && store.table("msdyn_ocvoicechannelsetting").find((c) => c._msdyn_phonenumberid_value === number.msdyn_ocphonenumberid);
+  const channel = number && channelOfNumber(store, number.msdyn_ocphonenumberid);
   const workstream = channel?._msdyn_liveworkstreamid_value ? store.find("msdyn_liveworkstream", channel._msdyn_liveworkstreamid_value) : undefined;
   return { number, channel, workstream };
 }

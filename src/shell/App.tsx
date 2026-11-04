@@ -32,6 +32,7 @@ import { Talk } from "../scenarios/BuildExercise";
 import { Scenario } from "../scenarios/scenario";
 import { scenarioRows } from "../scenarios/world";
 import { TrainingContext } from "./context";
+import { ExportDialog } from "../export/ExportDialog";
 
 export const NAVIGATE_EVENT = "ccaas-navigate";
 
@@ -55,6 +56,7 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
   const [lesson, setLesson] = useState<Lesson>(() => savedLesson ?? makeLesson(template, sim.store, seed ?? newSeed()));
   const [run, setRun] = useState<ScenarioRun | undefined>(savedScenario);
   const [picking, setPicking] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const lessonRef = useRef(lesson);
   lessonRef.current = lesson;
   const runRef = useRef(run);
@@ -234,9 +236,11 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
             <button onClick={restart}>Start again</button>
             <button onClick={download}>Save my work</button>
             <button onClick={() => upload.current?.click()}>Open saved work</button>
+            <button onClick={() => setExporting(true)} title="Export for the Toolbox: download what you built as the Toolbox's CSV templates">Export</button>
             <input ref={upload} type="file" accept="application/json,.json" hidden onChange={(e) => void onUpload(e.target.files?.[0])} />
           </div>
         </header>
+        {exporting && <ExportDialog store={sim.store} start={new Store(run ? scenarioRows(run.scenario) : trainingSeed())} onClose={() => setExporting(false)} />}
         {message && <div className="training-message" role="status">{message}<button aria-label="Close" onClick={() => setMessage("")}>×</button></div>}
         <div className="training-body">
           {run
