@@ -87,7 +87,9 @@ const DEFS: Record<string, Def> = {
     msdyn_routingcontractid: L("msdyn_decisioncontract"), msdyn_masterentityroutingconfigurationid: L("msdyn_masterentityroutingconfiguration"),
     msdyn_outboundqueueid: L("queue"), msdyn_mode: O(), msdyn_workdistributionmode: O(), msdyn_allowedpresences: S, msdyn_autocloseafterinactivity: I,
     msdyn_notification: O(), msdyn_enableagentaffinity: B, msdyn_restrictdownloadrecording: B, msdyn_restrictdownloadtranscript: B,
-    msdyn_conversationmode: O(), msdyn_screenpoptimeout_optionSet: O(), msdyn_blockcapacityforwrapup: I, msdyn_enableselectingfrompushbasedworkstreams: B
+    msdyn_conversationmode: O(), msdyn_screenpoptimeout_optionSet: O(), msdyn_blockcapacityforwrapup: I, msdyn_enableselectingfrompushbasedworkstreams: B,
+    // "Default skill matching algorithm": Exact Match 192350000, Closest Match 192350001 (Learn, msdyn_liveworkstream reference).
+    msdyn_matchinglogic: O()
   }, {
     msdyn_defaultqueue: { kind: "one", column: "msdyn_defaultqueue", target: "queue" },
     // Voicemail Builder binds it with a capital I (voicemail-builder/src/schema.ts).
@@ -232,6 +234,13 @@ const DEFS: Record<string, Def> = {
   // document (it names msdyn_agentchannelstate). The training keeps them here instead of guessing them.
   training_assignment: ["training_assignments", "training_assignmentid", undefined, {
     queueid: G, agentid: G, workitemid: G, assignedon: D, releasedon: D
+  }],
+  // A workstream's skill attachment rules (Learn, Configure work classification rulesets): "if defined
+  // condition satisfies, then attach defined skills to the work item." Learn doesn't document how the
+  // platform stores them, so the training keeps them here: one condition (variable equals value) and one
+  // skill with its rating per rule, in order.
+  training_skillrule: ["training_skillrules", "training_skillruleid", "name", {
+    name: S, workstreamid: G, ruleorder: I, variable: S, value: S, skillid: G, ratingvalueid: G
   }]
 };
 

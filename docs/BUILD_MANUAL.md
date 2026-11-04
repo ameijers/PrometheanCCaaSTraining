@@ -431,7 +431,7 @@ The grading panel shows each check as passed or not, in plain words, with a link
 2. Route-to-queue rules and context variables (IVR choices).
 3. Operating hours, overflow and voicemail.
 4. Skills, capacity profiles and assignment methods.
-5. Several workstreams, customer centers, outbound profiles, and onboarding (business units, teams, users).
+5. Several workstreams, outbound profiles, and onboarding (business units, teams, users). (Customer centers dropped 2026-11-04: they're a Toolbox viewer grouping, not a product setting.)
 
 Every level has ready-made scenarios, and the AI can write more.
 
@@ -590,7 +590,7 @@ Changed 2026-11-03: the old phase 6 ("More of everything") was split into phases
 ### Phase 7 — More exercises
 
 - Levels 4 and 5 (9.3), "Build to requirements" and "Customer interview" (9.1), AI-written feedback and hints that cite a Learn passage (8.2, 9.4), and the rest of the admin pages (6.5) the exercises need.
-- **Done when:** every kind and level has ready-made scenarios that pass 8.3, including check 5; a learner can finish one of each new kind. (Done 2026-11-03, see docs/scenarios.md: "Build to requirements" at levels 1 to 5 and "Customer interview" at levels 2 and 4, made of goal types that each give their checks and a reference solution in code (src/scenarios/goals.ts); 12 ready-made scenarios pass every check; the AI customer and AI hints in the backend; new admin pages: Set operation hours, Overflow handling, User management › Capacity profiles, New workstream. Played in Edge by scripts/build.js. Not done from level 5: customer centers and outbound profiles; skills aren't simulated. Added 2026-11-04: business units and teams, in a simulated Power Platform admin center, with the ready-made scenario "A home for the new parts team", played by scripts/onboarding.js.)
+- **Done when:** every kind and level has ready-made scenarios that pass 8.3, including check 5; a learner can finish one of each new kind. (Done 2026-11-03, see docs/scenarios.md: "Build to requirements" at levels 1 to 5 and "Customer interview" at levels 2 and 4, made of goal types that each give their checks and a reference solution in code (src/scenarios/goals.ts); 12 ready-made scenarios pass every check; the AI customer and AI hints in the backend; new admin pages: Set operation hours, Overflow handling, User management › Capacity profiles, New workstream. Played in Edge by scripts/build.js. Added 2026-11-04: skills (Skills hub, skill attachment rules, Exact and Closest Match, scripts/skills.js) and outbound profiles (Productivity › Outbound and inbound profiles). Customer centers are left out: they're the Toolbox's own way of grouping workstreams in its viewers (contact-center-3d/src/centers.ts: "Dataverse has no such grouping"), not a product setting. Also added 2026-11-04: business units and teams, in a simulated Power Platform admin center, with the ready-made scenario "A home for the new parts team", played by scripts/onboarding.js.)
 
 ### Phase 8 — Classroom
 
@@ -602,7 +602,7 @@ Changed 2026-11-03: the old phase 6 ("More of everything") was split into phases
 - Hosting (decision 15.4), name and branding (15.8), Microsoft's terms for quoting Learn (docs/learn-source.md), AI limits per learner as well as per day (8.4), and a security and accessibility check.
 - **Done when:** the training runs at its public address, and the checks are written up. (Prepared 2026-11-03, see docs/hosting.md and docs/security.md: the backend as Azure Functions (backend/src/functions.ts, api/), Table Storage for classes and usage, staticwebapp.config.json with a strict Content Security Policy checked by scripts/csp.js, a deploy workflow that only runs by hand, the per-learner AI limit, the security and accessibility checks (scripts/a11y.js, axe-core) with their fixes, and Learn's terms read: the quoted documentation is CC BY 4.0, credited in the Learn strip. Name and branding kept (decision 15.8). Live since 2026-11-04 at https://gray-mushroom-00ea8790f.4.azurestaticapps.net, with Azure OpenAI as the AI. Alexander confirmed the reading of the terms and did the keyboard and screen-reader pass on 2026-11-04.)
 
-Optional, not planned in a phase: exporting a design as the Toolbox's CSV templates (9.5), "My own environment" (9.1), and speech for the AI caller (5.5).
+Optional, not planned in a phase: exporting a design as the Toolbox's CSV templates (9.5), "My own environment" (9.1), and speech for the AI caller (5.5). (2026-11-04: the export is done, src/export/toolboxExport.ts, the Export button, with each file read back by the Toolbox's own readRows in tests; speech is done as reading the call aloud with the browser's speech synthesis, src/calls/speech.ts, off by default; speech recognition is left out because Edge and Chrome send the microphone's audio to an online service. "My own environment" waits for a decision: the Toolbox has no export of an environment yet.)
 
 Each phase ends with a short demo for Alexander: screenshots and what to try. Don't start the next phase until he has seen it.
 

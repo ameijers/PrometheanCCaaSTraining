@@ -12,12 +12,15 @@ import { ASSIGNMENT_METHODS, AssignmentMethod, QueueType } from "@toolbox/queue-
 import pagesJson from "../../content/admin-pages/pages.json";
 import { useStoreVersion, useTraining } from "../shell/context";
 import { LEARNER } from "../simulator/learner";
+import { Matching, matchingOf, ratingOf, skillRules } from "../calls/skills";
+import { DEFAULT_CAPACITY_PROFILE } from "@toolbox/voice-workstream-builder/src/voiceSchema";
 import { Row, Store } from "../simulator/store";
 import {
   Admin, addRouteToQueueRule, addUsers, ASSIGNMENT_LABELS, createQueue, deleteRouteToQueueRule, moveRouteToQueueRule, QUEUE_TYPE_LABELS, routeToQueueRuleset,
   setAssignmentMethod, setFallbackQueue, SimpleRule, simpleRule, updateRouteToQueueRule,
   channelOfNumber, findNumber, NUMBER_COUNTRIES, NumberCountry, purchaseNumber, setupWorkstream,
-  addProfileUsers, createCapacityProfile, createVoiceWorkstream, addTeamMembers, createBusinessUnit, createOwnerTeam, OverflowActionKind, OverflowCondition, OverflowPair, readOverflow, saveOverflow, setOperationHours, setWorkItemLimit
+  addProfileUsers, createCapacityProfile, createVoiceWorkstream, addTeamMembers, createBusinessUnit, createOwnerTeam,
+  addSkillRule, createOutboundProfile, createSkill, deleteSkillRule, outboundProfiles, removeUserSkill, setMatchingLogic, setUserSkills, OverflowActionKind, OverflowCondition, OverflowPair, readOverflow, saveOverflow, setOperationHours, setWorkItemLimit
 } from "./actions";
 
 // The simulated Copilot Service admin center: the real menu path, page, section, button and field names
@@ -35,7 +38,8 @@ type Place =
   | { page: "workstreams" } | { page: "workstream"; id: string } | { page: "decision-list"; id: string }
   | { page: "channels" } | { page: "phone-numbers" } | { page: "overflow"; id: string }
   | { page: "user-management" } | { page: "capacity-profiles" } | { page: "capacity-profile"; id: string }
-  | { page: "business-units" } | { page: "teams" };
+  | { page: "business-units" } | { page: "teams" }
+  | { page: "skills" } | { page: "classification"; id: string } | { page: "productivity" } | { page: "outbound-profiles" };
 
 interface AdminUi {
   store: Store;
@@ -53,7 +57,8 @@ const CONCEPT_OF: Record<Place["page"], string> = {
   workstreams: P.workstreams.concept, workstream: P.workstream.concept, "decision-list": P["decision-list"].concept,
   channels: P.channels.concept, "phone-numbers": P["phone-numbers"].concept, overflow: "overflow",
   "user-management": P["user-management"].concept, "capacity-profiles": P["capacity-profiles"].concept, "capacity-profile": P["capacity-profiles"].concept,
-  "business-units": P["business-units"].concept, teams: P.teams.concept
+  "business-units": P["business-units"].concept, teams: P.teams.concept,
+  skills: P.skills.concept, classification: P.classification.concept, productivity: P.productivity.concept, "outbound-profiles": P["outbound-profiles"].concept
 };
 
 // A request to show where a record is configured ("Where is this configured?", manual 6.4). `at` makes each request new.
@@ -69,12 +74,13 @@ export function AdminCenter({ request }: { request?: AdminRequest } = {}) {
   const queueName = (id?: string) => (id ? store.find("queue", id)?.name : undefined);
   const ui: AdminUi = { store, admin: { api: sim.api, store }, go, explain, queueName };
   const inQueues = ["queues", "advanced-queues", "queue", "assignment-method", "overflow"].includes(place.page);
-  const inUsers = ["user-management", "capacity-profiles", "capacity-profile"].includes(place.page);
+  const inUsers = ["user-management", "capacity-profiles", "capacity-profile", "skills"].includes(place.page);
   const inChannels = ["channels", "phone-numbers"].includes(place.page);
-  const section = inQueues ? "queues" : inChannels ? "channels" : inUsers ? "user-management" : "workstreams";
+  const inProductivity = ["productivity", "outbound-profiles"].includes(place.page);
+  const section = inQueues ? "queues" : inChannels ? "channels" : inUsers ? "user-management" : inProductivity ? "productivity" : "workstreams";
   // Business units and teams are in another admin center: the Power Platform admin center (level 5, onboarding).
   const ppac = place.page === "business-units" || place.page === "teams";
-  const learn = ppac ? (pagesJson.ppac.learn as Record<string, string>)[place.page] : pagesJson.siteMap[0].items.find((i) => i.page === section)?.learn;
+  const learn = ppac ? (pagesJson.ppac.learn as Record<string, string>)[place.page] : pagesJson.siteMap.flatMap((g) => g.items as { page?: string; learn?: string }[]).find((i) => i.page === section)?.learn;
 
   return (
     <AdminUiContext.Provider value={ui}>
@@ -100,7 +106,7 @@ export function AdminCenter({ request }: { request?: AdminRequest } = {}) {
                 {g.items.map((i) => {
                   const active = i.page === section;
                   return i.page
-                    ? <button key={i.label} className={`admin-nav${active ? " active" : ""}`} onClick={() => go({ page: i.page as "queues" | "workstreams" | "channels" | "user-management" })}>{i.label}</button>
+                    ? <button key={i.label} className={`admin-nav${active ? " active" : ""}`} onClick={() => go({ page: i.page as "queues" | "workstreams" | "channels" | "user-management" | "productivity" })}>{i.label}</button>
                     : <button key={i.label} className="admin-nav" disabled title={NOT_YET}>{i.label}</button>;
                 })}
               </div>
@@ -122,6 +128,10 @@ export function AdminCenter({ request }: { request?: AdminRequest } = {}) {
             {place.page === "capacity-profile" && <CapacityProfilePage id={place.id} />}
             {place.page === "business-units" && <BusinessUnits />}
             {place.page === "teams" && <Teams />}
+            {place.page === "skills" && <Skills />}
+            {place.page === "classification" && <Classification id={place.id} />}
+            {place.page === "productivity" && <Productivity />}
+            {place.page === "outbound-profiles" && <OutboundProfiles />}
           </section>
         </div>
       </div>
@@ -503,8 +513,9 @@ function WorkstreamPage({ id }: { id: string }) {
         <div className="admin-section">
           <div className="admin-row">
             <div><strong>{rr.classification}</strong><p className="admin-muted admin-tight">{rr.classificationText}</p></div>
-            <Off>{`+ ${rr.createRuleset}`}</Off>
+            <Button appearance="subtle" onClick={() => go({ page: "classification", id })}>{skillRules(store, id).length ? "See more" : `+ ${rr.createRuleset}`}</Button>
           </div>
+          {skillRules(store, id).length > 0 && <p className="admin-tight">{skillRules(store, id).length} skill attachment rule{skillRules(store, id).length === 1 ? "" : "s"}</p>}
         </div>
         <div className="admin-section">
           <div className="admin-row">
@@ -539,6 +550,14 @@ function WorkstreamPage({ id }: { id: string }) {
             <dt>{def.workDistribution.mode}</dt><dd>{(def.workDistribution.modes as Record<string, string>)[String(ws.msdyn_workdistributionmode ?? 192350000)]}</dd>
             <dt>{def.workDistribution.capacity}</dt><dd>{capacity.length ? `${def.workDistribution.profileBased}: ${capacity.join(", ")}` : "–"}</dd>
             <dt>{def.workDistribution.allowedPresences}</dt><dd>{presences.length ? presences.join(", ") : "–"}</dd>
+            <dt>{def.workDistribution.matching} <Info concept="skill-matching" /></dt>
+            <dd>
+              <Dropdown aria-label={def.workDistribution.matching} size="small" value={matchingOf(ws) ?? def.workDistribution.matchingNone} selectedOptions={[matchingOf(ws) ?? "none"]}
+                onOptionSelect={(_, d) => setMatchingLogic(admin, id, d.optionValue === "none" ? undefined : d.optionValue as Matching)}>
+                <Option value="none">{def.workDistribution.matchingNone}</Option>
+                {def.workDistribution.matchingOptions.map((m) => <Option key={m} value={m}>{m}</Option>)}
+              </Dropdown>
+            </dd>
           </dl>
         </div>
         <div className="admin-card">
@@ -1015,7 +1034,7 @@ function UserManagement() {
       {def.cards.map((c) => (
         <div key={c.title} className="admin-card admin-row">
           <div><h2 className="admin-subtitle">{c.title}</h2><p className="admin-muted admin-tight">{c.description}</p></div>
-          <Button appearance="primary" onClick={() => go({ page: "capacity-profiles" })}>{c.action}</Button>
+          <Button appearance="primary" onClick={() => go({ page: c.page as "capacity-profiles" | "skills" })}>{c.action}</Button>
         </div>
       ))}
     </section>
@@ -1247,6 +1266,311 @@ function Teams() {
             {!team.isdefault && <Button appearance="primary" disabled={!picked.size} onClick={() => run(() => addTeamMembers(admin, team.teamid, [...picked]), () => setManaging(undefined))}>+ {def.addMembers}</Button>}
             <Button onClick={() => setManaging(undefined)}>Close</Button>
           </div></DrawerFooter>
+        </OverlayDrawer>
+      )}
+    </section>
+  );
+}
+
+// ---- User management › Skills hub (level 4) ----
+
+function Skills() {
+  const { store, admin } = useUi();
+  const def = P.skills;
+  const skills = store.table("characteristic").filter((c) => c.statecode !== 1).sort((a, b) => String(a.name).localeCompare(String(b.name)));
+  const holders = (skillId: string) => store.table("bookableresourcecharacteristic").filter((l) => l._characteristic_value === skillId).length;
+  const [creating, setCreating] = useState(false);
+  const [name, setName] = useState("");
+  const [error, setError] = useState("");
+  const [editing, setEditing] = useState<string | undefined>();
+  const create = () => { try { const id = createSkill(admin, name); setCreating(false); setName(""); setEditing(id); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } };
+  return (
+    <section>
+      <CommandBar><Button appearance="subtle" onClick={() => { setCreating(true); setError(""); }}>+ {def.create}</Button></CommandBar>
+      <Crumbs items={[{ label: P["user-management"].title, to: { page: "user-management" } }]} />
+      <h1 className="admin-title">{def.title} <Info concept={def.concept} /></h1>
+      <Table size="small" aria-label={def.title}>
+        <TableHeader><TableRow>{def.columns.map((c) => <TableHeaderCell key={c}>{c}</TableHeaderCell>)}</TableRow></TableHeader>
+        <TableBody>
+          {skills.map((k) => (
+            <TableRow key={k.characteristicid}>
+              <TableCell><button className="admin-link" onClick={() => setEditing(k.characteristicid)}>{k.name}</button></TableCell>
+              <TableCell>{def.createDialog.typeValue}</TableCell>
+              <TableCell>{holders(k.characteristicid)}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      <p className="admin-muted">{def.source}</p>
+      {creating && (
+        <Dialog open onOpenChange={(_, d) => { if (!d.open) setCreating(false); }}>
+          <DialogSurface>
+            <DialogBody>
+              <DialogTitle>{def.createDialog.title}</DialogTitle>
+              <DialogContent className="admin-form">
+                <Field label={def.createDialog.type} hint={def.createDialog.typeHint}><Input value={def.createDialog.typeValue} readOnly /></Field>
+                <Field label={def.createDialog.name} required><Input value={name} onChange={(_, v) => setName(v.value)} /></Field>
+                {error && <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>}
+              </DialogContent>
+              <DialogActions>
+                <Button appearance="primary" disabled={!name.trim()} onClick={create}>{def.createDialog.create}</Button>
+                <Button onClick={() => setCreating(false)}>Cancel</Button>
+              </DialogActions>
+            </DialogBody>
+          </DialogSurface>
+        </Dialog>
+      )}
+      {editing && <EditSkillPanel skillId={editing} onClose={() => setEditing(undefined)} />}
+    </section>
+  );
+}
+
+function EditSkillPanel({ skillId, onClose }: { skillId: string; onClose(): void }) {
+  const { store, admin, explain } = useUi();
+  const def = P.skills.edit;
+  const skill = store.find("characteristic", skillId);
+  const ratings = store.table("ratingvalue").sort((a, b) => a.value - b.value);
+  const ratingName = (userId: string) => ratings.find((r) => r.value === ratingOf(store, userId, skillId))?.name;
+  const people = store.table("systemuser").filter((u) => u.accessmode === 0 && !u.isdisabled && store.table("bookableresource").some((r) => r._userid_value === u.systemuserid))
+    .sort((a, b) => String(a.fullname).localeCompare(String(b.fullname)));
+  const holders = people.filter((u) => ratingOf(store, u.systemuserid, skillId) > 0);
+  const [ticked, setTicked] = useState<Set<string>>(new Set());
+  const [adding, setAdding] = useState(false);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [error, setError] = useState("");
+  const run = (work: () => void) => { try { setError(""); work(); explain("skill"); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } };
+  const toggle = (set: Set<string>, id: string, on: boolean) => { const n = new Set(set); if (on) n.add(id); else n.delete(id); return n; };
+  if (!skill) return null;
+  return (
+    <OverlayDrawer open position="end" size="medium" onOpenChange={(_, d) => { if (!d.open) onClose(); }}>
+      <DrawerHeader><DrawerHeaderTitle>{def.title}: {skill.name}</DrawerHeaderTitle></DrawerHeader>
+      <DrawerBody>
+        <div className="admin-row">
+          <h3 className="admin-subtitle">{def.users}</h3>
+          <span>
+            <Button size="small" onClick={() => { setAdding(true); setPicked(new Set()); }}>+ {def.add}</Button>
+            <Menu>
+              <MenuTrigger disableButtonEnhancement><Button size="small" disabled={!ticked.size}>{def.update} ⌄</Button></MenuTrigger>
+              <MenuPopover><MenuList>
+                {ratings.map((r) => <MenuItem key={r.ratingvalueid} onClick={() => run(() => { setUserSkills(admin, skillId, [...ticked], r.ratingvalueid); setTicked(new Set()); })}>{r.name}</MenuItem>)}
+              </MenuList></MenuPopover>
+            </Menu>
+            <Button size="small" disabled={!ticked.size} onClick={() => run(() => { ticked.forEach((u) => removeUserSkill(admin, skillId, u)); setTicked(new Set()); })}>{def.remove}</Button>
+          </span>
+        </div>
+        {adding ? (
+          <div className="admin-card">
+            {people.filter((u) => !holders.includes(u)).map((u) => (
+              <Checkbox key={u.systemuserid} label={u.fullname} checked={picked.has(u.systemuserid)} onChange={(_, d) => setPicked((s0) => toggle(s0, u.systemuserid, !!d.checked))} />
+            ))}
+            <div className="admin-drawer-actions">
+              <Button appearance="primary" disabled={!picked.size} onClick={() => run(() => { setUserSkills(admin, skillId, [...picked], ratings[0].ratingvalueid); setAdding(false); })}>{def.addSelected}</Button>
+              <Button onClick={() => setAdding(false)}>Cancel</Button>
+            </div>
+            <p className="admin-muted">{def.added}</p>
+          </div>
+        ) : (
+          <Table size="small" aria-label={def.users}>
+            <TableHeader><TableRow><TableHeaderCell className="admin-check"><span className="visually-hidden">Select</span></TableHeaderCell><TableHeaderCell>Name</TableHeaderCell><TableHeaderCell>{def.proficiency}</TableHeaderCell></TableRow></TableHeader>
+            <TableBody>
+              {holders.map((u) => (
+                <TableRow key={u.systemuserid}>
+                  <TableCell className="admin-check"><Checkbox aria-label={`Select ${u.fullname}`} checked={ticked.has(u.systemuserid)} onChange={(_, d) => setTicked((s0) => toggle(s0, u.systemuserid, !!d.checked))} /></TableCell>
+                  <TableCell>{u.fullname}</TableCell>
+                  <TableCell>{ratingName(u.systemuserid) ?? "–"}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+        {!holders.length && !adding && <p className="admin-muted">Nobody has this skill yet. Select {def.add}.</p>}
+        {error && <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>}
+      </DrawerBody>
+      <DrawerFooter><div className="admin-drawer-actions"><Button onClick={onClose}>Close</Button></div></DrawerFooter>
+    </OverlayDrawer>
+  );
+}
+
+// ---- Workstream › Work classification: skill attachment rules (level 4) ----
+
+function Classification({ id }: { id: string }) {
+  const { store, admin } = useUi();
+  const def = P.classification;
+  const ws = store.find("msdyn_liveworkstream", id);
+  const rules = skillRules(store, id);
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<string | undefined>();
+  const name = (table: string, rowId: string) => String(store.find(table, rowId)?.name ?? "(deleted)");
+  return (
+    <section>
+      <Crumbs items={[{ label: "Workstreams", to: { page: "workstreams" } }, { label: ws?.msdyn_name ?? "", to: { page: "workstream", id } }]} />
+      <h1 className="admin-title">{def.title} <Info concept={def.concept} /></h1>
+      <div className="admin-card">
+        <div className="admin-row">
+          <h2 className="admin-subtitle">{ws?.msdyn_name} skill attachment rules</h2>
+          <span>
+            <Button appearance="subtle" onClick={() => setOpen(true)}>+ {def.createRule}</Button>
+            <Button appearance="subtle" disabled={!selected} onClick={() => { deleteSkillRule(admin, selected!); setSelected(undefined); }}>{def.delete}</Button>
+          </span>
+        </div>
+        <MessageBar intent="info"><MessageBarBody>{def.simplified}</MessageBarBody></MessageBar>
+        <Table size="small" aria-label={def.title}>
+          <TableHeader><TableRow><TableHeaderCell className="admin-check"><span className="visually-hidden">Select</span></TableHeaderCell>{def.columns.map((c) => <TableHeaderCell key={c}>{c}</TableHeaderCell>)}</TableRow></TableHeader>
+          <TableBody>
+            {rules.map((r, i) => (
+              <TableRow key={r.training_skillruleid} className={r.training_skillruleid === selected ? "admin-selected" : undefined}>
+                <TableCell className="admin-check"><Radio aria-label={`Select ${r.name}`} checked={r.training_skillruleid === selected} onChange={() => setSelected(r.training_skillruleid)} /></TableCell>
+                <TableCell>{i + 1}</TableCell><TableCell>{r.name}</TableCell><TableCell>{r.variable} equals {r.value}</TableCell>
+                <TableCell>{name("characteristic", r.skillid)} ({name("ratingvalue", r.ratingvalueid)})</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        {!rules.length && <p className="admin-muted">No rules yet. Select {def.createRule}.</p>}
+        {matchingOf(ws) ? null : <p className="admin-muted">Skills only count when the workstream's Default skill matching algorithm is set (Work distribution).</p>}
+      </div>
+      {open && <SkillRulePanel workstreamId={id} onClose={() => setOpen(false)} />}
+    </section>
+  );
+}
+
+function SkillRulePanel({ workstreamId, onClose }: { workstreamId: string; onClose(): void }) {
+  const { store, admin, explain } = useUi();
+  const d = P.classification.panel;
+  const variables = store.table("msdyn_ocliveworkstreamcontextvariable").filter((v) => v._msdyn_liveworkstreamid_value === workstreamId).map((v) => String(v.msdyn_name));
+  const skills = store.table("characteristic").filter((c) => c.statecode !== 1).sort((a, b) => String(a.name).localeCompare(String(b.name)));
+  const ratings = store.table("ratingvalue").sort((a, b) => a.value - b.value);
+  const [f, setF] = useState({ name: "", variable: "", value: "", skillId: "", ratingId: "" });
+  const [error, setError] = useState("");
+  const save = () => { try { addSkillRule(admin, workstreamId, f); explain("skill-attachment"); onClose(); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } };
+  return (
+    <OverlayDrawer open position="end" size="medium" onOpenChange={(_, o) => { if (!o.open) onClose(); }}>
+      <DrawerHeader><DrawerHeaderTitle>{d.title}</DrawerHeaderTitle></DrawerHeader>
+      <DrawerBody className="admin-form">
+        <Field label={d.ruleName} required><Input value={f.name} onChange={(_, v) => setF({ ...f, name: v.value })} /></Field>
+        <h3 className="admin-subtitle">{d.conditions}</h3>
+        <div className="admin-condition">
+          <Dropdown aria-label="Field" placeholder="Field" value={f.variable} selectedOptions={f.variable ? [f.variable] : []} onOptionSelect={(_, o) => setF({ ...f, variable: o.optionValue ?? "" })}>
+            {variables.map((v) => <Option key={v} value={v}>{v}</Option>)}
+          </Dropdown>
+          <Input aria-label="Operator" value={d.operator} readOnly />
+          <Input aria-label="Value" placeholder="Value" value={f.value} onChange={(_, v) => setF({ ...f, value: v.value })} />
+        </div>
+        <h3 className="admin-subtitle">{d.output}</h3>
+        <Field label={d.skill} required>
+          <Dropdown placeholder="Select a skill" value={skills.find((k) => k.characteristicid === f.skillId)?.name ?? ""} selectedOptions={f.skillId ? [f.skillId] : []} onOptionSelect={(_, o) => setF({ ...f, skillId: o.optionValue ?? "" })}>
+            {skills.map((k) => <Option key={k.characteristicid} value={k.characteristicid}>{k.name}</Option>)}
+          </Dropdown>
+        </Field>
+        <Field label={d.proficiency} required>
+          <Dropdown placeholder="Select a proficiency" value={ratings.find((r) => r.ratingvalueid === f.ratingId)?.name ?? ""} selectedOptions={f.ratingId ? [f.ratingId] : []} onOptionSelect={(_, o) => setF({ ...f, ratingId: o.optionValue ?? "" })}>
+            {ratings.map((r) => <Option key={r.ratingvalueid} value={r.ratingvalueid}>{r.name}</Option>)}
+          </Dropdown>
+        </Field>
+        {error && <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>}
+      </DrawerBody>
+      <DrawerFooter><div className="admin-drawer-actions"><Button appearance="primary" onClick={save}>{d.create}</Button><Button onClick={onClose}>Cancel</Button></div></DrawerFooter>
+    </OverlayDrawer>
+  );
+}
+
+// ---- Productivity › Outbound and inbound profiles (level 5) ----
+
+function Productivity() {
+  const { go } = useUi();
+  const def = P.productivity;
+  return (
+    <section>
+      <h1 className="admin-title">{def.title}</h1>
+      {def.cards.map((c) => (
+        <div key={c.title} className="admin-card admin-row">
+          <div><h2 className="admin-subtitle">{c.title}</h2><p className="admin-muted admin-tight">{c.description}</p></div>
+          <Button appearance="primary" onClick={() => go({ page: "outbound-profiles" })}>{c.action}</Button>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function OutboundProfiles() {
+  const { store, admin, explain, queueName } = useUi();
+  const def = P["outbound-profiles"];
+  const c = def.create;
+  const profiles = outboundProfiles(store).sort((a, b) => String(a.msdyn_name).localeCompare(String(b.msdyn_name)));
+  const numberOf = (wsId: string) => {
+    const ch = store.table("msdyn_ocvoicechannelsetting").find((x) => x._msdyn_liveworkstreamid_value === wsId);
+    return ch?._msdyn_phonenumberid_value ? store.find("msdyn_ocphonenumber", ch._msdyn_phonenumberid_value)?.msdyn_phonenumber : undefined;
+  };
+  const shared = store.table("msdyn_ocphonenumber").filter((n) => n.msdyn_phoneoutboundenabled).sort((a, b) => String(a.msdyn_phonenumber).localeCompare(String(b.msdyn_phonenumber)));
+  const queues = store.table("queue").filter((q) => q.msdyn_isomnichannelqueue === true && q.statecode === 0 && q.msdyn_queuetype === VOICE_QUEUE).sort((a, b) => String(a.name).localeCompare(String(b.name)));
+  const capacity = store.table("msdyn_capacityprofile").sort((a, b) => String(a.msdyn_name).localeCompare(String(b.msdyn_name)));
+  const defaultCapacity = capacity.find((p) => p.msdyn_uniquename === DEFAULT_CAPACITY_PROFILE.Outbound)?.msdyn_capacityprofileid ?? "";
+  const empty = { name: "", phoneId: "", queueId: "", capacityProfileId: defaultCapacity, callerIdPhoneId: "" };
+  const [open, setOpen] = useState(false);
+  const [f, setF] = useState(empty);
+  const [error, setError] = useState("");
+  const save = () => {
+    try {
+      createOutboundProfile(admin, { ...f, capacityProfileId: f.capacityProfileId || undefined, callerIdPhoneId: f.callerIdPhoneId || undefined });
+      setOpen(false); setF(empty); explain("outbound-profile");
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+  };
+  const phoneLabel = (id: string) => store.find("msdyn_ocphonenumber", id)?.msdyn_phonenumber ?? "";
+  return (
+    <section>
+      <CommandBar><Button appearance="subtle" onClick={() => { setOpen(true); setError(""); }}>+ {def.newButton}</Button></CommandBar>
+      <Crumbs items={[{ label: P.productivity.title, to: { page: "productivity" } }]} />
+      <h1 className="admin-title">{def.title} <Info concept={def.concept} /></h1>
+      <Table size="small" aria-label={def.title}>
+        <TableHeader><TableRow>{def.columns.map((x) => <TableHeaderCell key={x}>{x}</TableHeaderCell>)}</TableRow></TableHeader>
+        <TableBody>
+          {profiles.map((pr) => (
+            <TableRow key={pr.msdyn_liveworkstreamid}>
+              <TableCell>{pr.msdyn_name}</TableCell><TableCell>{c.outbound}</TableCell>
+              <TableCell>{numberOf(pr.msdyn_liveworkstreamid) ?? "–"}</TableCell><TableCell>{queueName(pr._msdyn_outboundqueueid_value) ?? "–"}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      {!profiles.length && <p className="admin-muted">No profiles yet. Select {def.newButton}.</p>}
+      {open && (
+        <OverlayDrawer open position="end" size="medium" onOpenChange={(_, o) => { if (!o.open) setOpen(false); }}>
+          <DrawerHeader><DrawerHeaderTitle>{c.title}</DrawerHeaderTitle></DrawerHeader>
+          <DrawerBody className="admin-form">
+            <h3 className="admin-subtitle">{c.settings}</h3>
+            <Field label={c.name} required><Input value={f.name} onChange={(_, v) => setF({ ...f, name: v.value })} /></Field>
+            <Field label={c.type} hint="Inbound profiles aren't part of the training.">
+              <Dropdown value={c.outbound} selectedOptions={["outbound"]}><Option value="outbound">{c.outbound}</Option><Option value="inbound" disabled>{c.inbound}</Option></Dropdown>
+            </Field>
+            <h3 className="admin-subtitle">{c.phone}</h3>
+            {shared.length ? (
+              <Field label={c.sharedNumbers} required>
+                <Dropdown placeholder="Select a number" value={f.phoneId ? phoneLabel(f.phoneId) : ""} selectedOptions={f.phoneId ? [f.phoneId] : []} onOptionSelect={(_, o) => setF({ ...f, phoneId: o.optionValue ?? "" })}>
+                  {shared.map((n) => <Option key={n.msdyn_ocphonenumberid} value={n.msdyn_ocphonenumberid}>{n.msdyn_phonenumber}</Option>)}
+                </Dropdown>
+              </Field>
+            ) : <MessageBar intent="warning"><MessageBarBody>{c.noNumbers}</MessageBarBody></MessageBar>}
+            <h3 className="admin-subtitle">{c.info}</h3>
+            <Field label={c.queue} required>
+              <Dropdown placeholder="Select a queue" value={queueName(f.queueId) ?? ""} selectedOptions={f.queueId ? [f.queueId] : []} onOptionSelect={(_, o) => setF({ ...f, queueId: o.optionValue ?? "" })}>
+                {queues.map((q) => <Option key={q.queueid} value={q.queueid}>{q.name}</Option>)}
+              </Dropdown>
+            </Field>
+            <Field label={c.capacity}>
+              <Dropdown value={capacity.find((p) => p.msdyn_capacityprofileid === f.capacityProfileId)?.msdyn_name ?? ""} selectedOptions={f.capacityProfileId ? [f.capacityProfileId] : []} onOptionSelect={(_, o) => setF({ ...f, capacityProfileId: o.optionValue ?? "" })}>
+                {capacity.map((p) => <Option key={p.msdyn_capacityprofileid} value={p.msdyn_capacityprofileid}>{p.msdyn_name}</Option>)}
+              </Dropdown>
+            </Field>
+            <Field label={c.callerId}>
+              <Dropdown value={f.callerIdPhoneId ? phoneLabel(f.callerIdPhoneId) : f.phoneId ? `${phoneLabel(f.phoneId)} ${c.profileNumber}` : ""} selectedOptions={[f.callerIdPhoneId || "profile"]} onOptionSelect={(_, o) => setF({ ...f, callerIdPhoneId: o.optionValue === "profile" ? "" : o.optionValue ?? "" })}>
+                <Option value="profile" text={c.profileNumber}>{f.phoneId ? `${phoneLabel(f.phoneId)} ${c.profileNumber}` : c.profileNumber}</Option>
+                {shared.filter((n) => n.msdyn_ocphonenumberid !== f.phoneId).map((n) => <Option key={n.msdyn_ocphonenumberid} value={n.msdyn_ocphonenumberid}>{n.msdyn_phonenumber}</Option>)}
+              </Dropdown>
+            </Field>
+            <p className="admin-muted">{def.simplified}</p>
+            {error && <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>}
+          </DrawerBody>
+          <DrawerFooter><div className="admin-drawer-actions"><Button appearance="primary" disabled={!f.name.trim() || !f.phoneId || !f.queueId} onClick={save}>{c.save}</Button><Button onClick={() => setOpen(false)}>Cancel</Button></div></DrawerFooter>
         </OverlayDrawer>
       )}
     </section>

@@ -3,6 +3,7 @@
 
 import { ASSIGNMENT_LABELS } from "../admin/actions";
 import { newGuid, Row, Store } from "../simulator/store";
+import { answersOf, matchingOf, meetsAll, needsText, requiredSkills, skillScore } from "./skills";
 
 // Who gets a call waiting in a queue (manual 5.2 step 7). Simplified: the out-of-the-box assignment
 // methods only, as Microsoft Learn describes them, with the representative's presence and capacity.
@@ -25,8 +26,9 @@ import { newGuid, Row, Store } from "../simulator/store";
 //   "Work item limit: Number of units of the work type that you can assign to the representative"; a
 //   representative's own limit (msdyn_maxunits) overrides the profile's default; "Users must be configured as a
 //   bookable resource to be assigned the capacity profile."
-// Not simulated: skills (no workstream in the training has a skill step), queue priority across queues,
-// custom assignment rulesets, unit-based capacity, and presence changing by itself.
+// - Skills: Exact Match and Closest Match, simplified (src/calls/skills.ts).
+// Not simulated: queue priority across queues, custom assignment rulesets, unit-based capacity, and presence
+// changing by itself.
 
 // msdyn_ocliveworkitem.statuscode, as the Toolbox reads it (environment-3d-explorer/src/live.ts):
 // 1 Open (waiting), 2 Active, 4 Closed, 5 Wrap-up. statecode 0 is open, 1 closed.
@@ -123,18 +125,31 @@ function leastActiveWhy(chosen: Representative, next: Representative): string {
   return `Nobody has finished a call yet, so the training goes by the order people joined the queue (simplified): ${chosen.name} is first.`;
 }
 
-export function assignmentFor(store: Store, queueId: string, workstreamId: string, exclude?: Set<string>): Assignment {
+export function assignmentFor(store: Store, queueId: string, workstreamId: string, exclude?: Set<string>, workItemId?: string): Assignment {
   const method = methodOf(store.find("queue", queueId));
-  const reps = representatives(store, queueId, workstreamId, exclude);
+  const needs = workItemId ? requiredSkills(store, workstreamId, answersOf(store, workItemId)) : [];
+  const matching = needs.length ? matchingOf(store.find("msdyn_liveworkstream", workstreamId)) : undefined;
+  // Exact Match: only those with every needed skill at the needed rating or better.
+  const reps = representatives(store, queueId, workstreamId, exclude).map((r) =>
+    matching === "Exact Match" && !r.notNow && !meetsAll(store, r.id, needs) ? { ...r, notNow: `doesn't have ${needsText(needs)}` } : r);
+  const skillNote = !needs.length ? "" : matching === "Exact Match" ? ` The call needs ${needsText(needs)} (Exact Match).`
+    : matching === "Closest Match" ? ` The call needs ${needsText(needs)}: Closest Match puts those who have it first (simplified).`
+    : ` A rule attached ${needsText(needs)}, but the workstream has no Default skill matching algorithm, so the training doesn't use the skill.`;
   if (method === "No auto assignment") return { method, representatives: reps, why: "The queue doesn't assign calls automatically: a representative picks them up." };
   const ready = reps.filter((r) => !r.notNow);
-  if (!ready.length) return { method, representatives: reps, why: reps.length ? "Nobody in the queue can take it now, so it waits and routing keeps trying." : "The queue has no members, so the call waits." };
-  const order = method === "Highest capacity" ? highestCapacity : method === "Advanced round robin" ? roundRobin : leastActive;
+  if (!ready.length) {
+    const why = matching === "Exact Match" && reps.some((r) => r.notNow?.startsWith("doesn't have"))
+      ? `Nobody who can take calls now has ${needsText(needs)}, so the call stays unassigned in the queue (Exact Match).`
+      : reps.length ? "Nobody in the queue can take it now, so it waits and routing keeps trying." : "The queue has no members, so the call waits.";
+    return { method, representatives: reps, why };
+  }
+  const base = method === "Highest capacity" ? highestCapacity : method === "Advanced round robin" ? roundRobin : leastActive;
+  const order = matching === "Closest Match" ? (a: Representative, b: Representative) => (skillScore(store, b.id, needs) - skillScore(store, a.id, needs)) || base(a, b) : base;
   const [chosen, ...rest] = [...ready].sort(order);
-  const why = !rest.length ? `${chosen.name} is the only one who can take it.`
+  const why = (!rest.length ? `${chosen.name} is the only one who can take it.`
     : method === "Least active" ? leastActiveWhy(chosen, rest[0])
     : method === "Highest capacity" ? (chosen.free > rest[0].free ? `${chosen.name} has the most free capacity.` : `${chosen.name} is next in round robin order among those with the most free capacity.`)
-    : `${chosen.name} is next in the queue's round robin order.`;
+    : `${chosen.name} is next in the queue's round robin order.`) + skillNote;
   return { method, representatives: reps, chosen, why };
 }
 

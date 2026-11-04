@@ -254,6 +254,42 @@
         "checkedOn": "2026-11-03",
         "quote": "A business unit is a logical grouping of related business activities."
       }
+    },
+    {
+      "id": "skill-matching",
+      "title": "Skill matching",
+      "summary": "A workstream's Default skill matching algorithm decides how skills count: Exact Match only gives a call to someone with every needed skill at the needed level; Closest Match gives it to whoever comes closest.",
+      "learn": {
+        "title": "Understand how skill match algorithm works in unified routing",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/set-up-skill-based-routing",
+        "date": "2026-05-07",
+        "checkedOn": "2026-11-04",
+        "quote": "If a representative isn't available with all the required skills and corresponding proficiency, then the conversation remains unassigned in the queue."
+      }
+    },
+    {
+      "id": "skill-attachment",
+      "title": "Skill attachment rules",
+      "summary": "A workstream's work classification rules add skills to an incoming call, for example the Returns skill when the caller picks Returns in the IVR.",
+      "learn": {
+        "title": "Configure work classification rulesets",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/configure-work-classification",
+        "date": "2026-05-08",
+        "checkedOn": "2026-11-04",
+        "quote": "Skill attachment rules are a subtype of logical work classification rules and are defined to attach skills to the work item."
+      }
+    },
+    {
+      "id": "outbound-profile",
+      "title": "Outbound profile",
+      "summary": "An outbound profile lets representatives call customers: it sets the number they call from, the caller ID customers see, and the queue the calls belong to.",
+      "learn": {
+        "title": "Configure outbound and inbound profiles",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/configure-outbound-inbound-profiles",
+        "date": "2026-07-30",
+        "checkedOn": "2026-11-04",
+        "quote": "You can define how representatives use the outbound calls and which representatives can make those calls."
+      }
     }
   ]
 }
