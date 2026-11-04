@@ -12,6 +12,8 @@ import { COLUMNS as UNIT_COLUMNS } from "@toolbox/business-unit-builder/src/temp
 import { COLUMNS as TEAM_COLUMNS } from "@toolbox/team-builder/src/template";
 import { COLUMNS as USER_COLUMNS } from "@toolbox/user-setup/src/template";
 import { COLUMNS as CHANNEL_COLUMNS } from "@toolbox/voice-channel-builder/src/template";
+import { COLUMNS as WORKSTREAM_COLUMNS } from "@toolbox/voice-workstream-builder/src/template";
+import { CAPACITY_FORMAT, NOTIFICATION, PRESENCES, WORK_DISTRIBUTION } from "@toolbox/voice-workstream-builder/src/voiceSchema";
 import { parseDecisionXml } from "@toolbox/visual-routing-tester/src/ruleXml";
 import { ASSIGNMENT_LABELS, isOutbound, outboundProfiles, QUEUE_TYPE_LABELS, routeToQueueRuleset, simpleRule } from "../admin/actions";
 import { skillRules } from "../calls/skills";
@@ -103,22 +105,43 @@ export function exportDesign(store: Store, start: Store): Export {
     };
   });
 
-  // New phone lines on inbound workstreams that were there at the start (Voice Channel Builder adds channels to
-  // existing workstreams only; a new workstream's lines go with the workstream). Language is required there, and
-  // the training doesn't ask for one: the channel's own language setting if it has one, otherwise en-US, noted.
+  // Phone lines. Both voice tools require a language, and the training doesn't ask for one: the channel's
+  // own language setting if it has one, otherwise en-US, noted.
+  const channelRow = (c: Row, tool: string) => {
+    const setting = store.table("msdyn_ocvoicechannellanguagesetting").find((l) => l._msdyn_ocvoicechannelsettingid_value === c.msdyn_ocvoicechannelsettingid && l.msdyn_isprimary !== false);
+    const language = name("msdyn_oclanguage", setting?._msdyn_languageid_value, "msdyn_localecode");
+    if (!language) notExported.push(`The language of the channel “${c.msdyn_name}”: the training doesn't set one, so the file says en-US. Change it to the line's language before you run ${tool}.`);
+    return { channel_name: String(c.msdyn_name), phone_number: e164(name("msdyn_ocphonenumber", c._msdyn_phonenumberid_value, "msdyn_phonenumber")), language: language || "en-US" };
+  };
+  const label = (values: Record<string, number>, value: unknown) => Object.keys(values).find((k) => values[k] === Number(value)) ?? "";
+
+  // New inbound voice workstreams with their lines (Voice Workstream Builder): one row per line, the
+  // workstream's settings on its first row, as in the tool's example.
+  const workstreamRows: Record<string, string>[] = [];
+  for (const ws of store.table("msdyn_liveworkstream").filter((w) => newWs(w) && w.msdyn_enablevoicev2 && !isOutbound(store, w.msdyn_liveworkstreamid))) {
+    const capacity = store.table("msdyn_liveworkstreamcapacityprofile").find((l) => l._msdyn_workstream_id_value === ws.msdyn_liveworkstreamid);
+    const settings: Record<string, string> = {
+      workstream_name: String(ws.msdyn_name), direction: "Inbound",
+      work_distribution: label(WORK_DISTRIBUTION, ws.msdyn_workdistributionmode), capacity_format: label(CAPACITY_FORMAT, ws.msdyn_capacityformat),
+      capacity_profile: name("msdyn_capacityprofile", capacity?._msdyn_capacityprofile_id_value, "msdyn_name"),
+      capacity_units: ws.msdyn_capacityrequired == null ? "" : String(ws.msdyn_capacityrequired),
+      allowed_presences: String(ws.msdyn_allowedpresences ?? "").split(",").map((v) => label(PRESENCES, v)).filter(Boolean).join("|"),
+      default_queue: name("queue", ws._msdyn_defaultqueue_value), notification: label(NOTIFICATION, ws.msdyn_notification),
+      agent_affinity: ws.msdyn_enableagentaffinity ? "Yes" : "No",
+      restrict_recording_download: ws.msdyn_restrictdownloadrecording ? "Yes" : "No", restrict_transcript_download: ws.msdyn_restrictdownloadtranscript ? "Yes" : "No"
+    };
+    const lines = store.table("msdyn_ocvoicechannelsetting").filter((c) => c._msdyn_liveworkstreamid_value === ws.msdyn_liveworkstreamid);
+    if (!lines.length) workstreamRows.push(settings);
+    lines.forEach((c, i) => workstreamRows.push({ ...(i ? { workstream_name: settings.workstream_name } : settings), ...channelRow(c, "Voice Workstream Builder") }));
+  }
+
+  // New lines on inbound workstreams that were there at the start (Voice Channel Builder adds channels to
+  // existing workstreams only).
   const startWsIds = new Set(start.table("msdyn_liveworkstream").map((w) => w.msdyn_liveworkstreamid));
   const newChannel = isNew("msdyn_ocvoicechannelsetting", "msdyn_ocvoicechannelsettingid");
   const channelRows = store.table("msdyn_ocvoicechannelsetting")
     .filter((c) => newChannel(c) && startWsIds.has(c._msdyn_liveworkstreamid_value) && !isOutbound(store, c._msdyn_liveworkstreamid_value))
-    .map((c) => {
-      const setting = store.table("msdyn_ocvoicechannellanguagesetting").find((l) => l._msdyn_ocvoicechannelsettingid_value === c.msdyn_ocvoicechannelsettingid && l.msdyn_isprimary !== false);
-      const language = name("msdyn_oclanguage", setting?._msdyn_languageid_value, "msdyn_localecode");
-      if (!language) notExported.push(`The language of the channel “${c.msdyn_name}”: the training doesn't set one, so the file says en-US. Change it to the line's language before you run Voice Channel Builder.`);
-      return {
-        workstream_name: name("msdyn_liveworkstream", c._msdyn_liveworkstreamid_value, "msdyn_name"), channel_name: String(c.msdyn_name),
-        phone_number: e164(name("msdyn_ocphonenumber", c._msdyn_phonenumberid_value, "msdyn_phonenumber")), language: language || "en-US"
-      };
-    });
+    .map((c) => ({ workstream_name: name("msdyn_liveworkstream", c._msdyn_liveworkstreamid_value, "msdyn_name"), ...channelRow(c, "Voice Channel Builder") }));
 
   // Business units (Business Unit Builder) and owner teams (Team Builder), and who's in the teams (User Setup).
   const unitRows = store.table("businessunit").filter(isNew("businessunit", "businessunitid"))
@@ -137,7 +160,7 @@ export function exportDesign(store: Store, start: Store): Export {
   const startWs = new Map(start.table("msdyn_liveworkstream").map((w) => [w.msdyn_liveworkstreamid, w]));
   for (const ws of store.table("msdyn_liveworkstream")) {
     const before = startWs.get(ws.msdyn_liveworkstreamid);
-    if (!before && !outboundProfiles(store).includes(ws)) notExported.push(`The workstream “${ws.msdyn_name}”: create it with Voice Workstream Builder, which needs settings the training doesn't ask for.`);
+    if (!before && !ws.msdyn_enablevoicev2) notExported.push(`The workstream “${ws.msdyn_name}”: the Toolbox creates voice workstreams only. Create it in the admin center.`);
     if (skillRules(store, ws.msdyn_liveworkstreamid).length) notExported.push(`Skill attachment rules on “${ws.msdyn_name}”: no Toolbox tool creates them. Add them in the admin center.`);
     if (before && before.msdyn_matchinglogic !== ws.msdyn_matchinglogic) notExported.push(`The Default skill matching algorithm of “${ws.msdyn_name}”: set it in the admin center.`);
     if (before && before._msdyn_defaultqueue_value !== ws._msdyn_defaultqueue_value) notExported.push(`The fallback queue of “${ws.msdyn_name}”: set it in the admin center.`);
@@ -156,17 +179,19 @@ export function exportDesign(store: Store, start: Store): Export {
     else if (before.msdyn_defaultmaxunits !== p.msdyn_defaultmaxunits) notExported.push(`The work item limit of “${p.msdyn_name}”: set it in the admin center.`);
   }
 
+  // In the order to run them: what a later file names must exist by then.
   const files = [
-    file("Queue Builder", "advanced-queues.csv", QUEUE_COLUMNS, queueRows),
-    file("Queue Membership", "queue-membership.csv", MEMBERSHIP_COLUMNS, memberRows),
-    file("Route-to-Queue Builder", "route-to-queue.csv", RULE_COLUMNS, ruleRows),
-    file("Skill Assignment", "skills.csv", SKILL_COLUMNS, skillRows),
-    file("Capacity Profile Assignment", "capacity-profiles.csv", CAPACITY_COLUMNS, capacityRows),
-    file("Profile Builder", "outbound-profiles.csv", PROFILE_COLUMNS, profileRows),
-    file("Voice Channel Builder", "voice-channels.csv", CHANNEL_COLUMNS, channelRows),
     file("Business Unit Builder", "business-units.csv", UNIT_COLUMNS, unitRows),
     file("Team Builder", "teams.csv", TEAM_COLUMNS, teamRows),
-    file("User Setup", "users.csv", USER_COLUMNS, userRows)
+    file("User Setup", "users.csv", USER_COLUMNS, userRows),
+    file("Queue Builder", "advanced-queues.csv", QUEUE_COLUMNS, queueRows),
+    file("Queue Membership", "queue-membership.csv", MEMBERSHIP_COLUMNS, memberRows),
+    file("Voice Workstream Builder", "voice-workstreams.csv", WORKSTREAM_COLUMNS, workstreamRows),
+    file("Voice Channel Builder", "voice-channels.csv", CHANNEL_COLUMNS, channelRows),
+    file("Profile Builder", "outbound-profiles.csv", PROFILE_COLUMNS, profileRows),
+    file("Route-to-Queue Builder", "route-to-queue.csv", RULE_COLUMNS, ruleRows),
+    file("Skill Assignment", "skills.csv", SKILL_COLUMNS, skillRows),
+    file("Capacity Profile Assignment", "capacity-profiles.csv", CAPACITY_COLUMNS, capacityRows)
   ].filter((f): f is ExportFile => !!f);
   return { files, notExported: [...new Set(notExported)] };
 }

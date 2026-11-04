@@ -24,8 +24,8 @@ export function ExportDialog({ store, start, onClose }: { store: Store; start: S
           <DialogTitle>Export for the Toolbox</DialogTitle>
           <DialogContent>
             <p>
-              What you built here, as the Promethean CCaaS Toolbox's CSV templates. In a real environment, open each tool, load its file,
-              check the plan and run it. Only what's new compared with the start of the exercise is in the files.
+              What you built here, as the Promethean CCaaS Toolbox's CSV templates. In a real environment, go down the list in this order: open each tool,
+              load its file, check the plan and run it. Only what's new compared with the start of the exercise is in the files.
             </p>
             {result.files.length ? (
               <ul className="export-files">
@@ -36,14 +36,22 @@ export function ExportDialog({ store, start, onClose }: { store: Store; start: S
                   </li>
                 ))}
               </ul>
-            ) : <MessageBar intent="info"><MessageBarBody>Nothing to export yet: build something in the admin center first.</MessageBarBody></MessageBar>}
+            ) : (
+              <MessageBar intent="info">
+                <MessageBarBody>
+                  {result.notExported.length
+                    ? "No files this time: what you changed has no Toolbox template. Below is what to do in the admin center instead."
+                    : "Nothing to export yet: build something in the admin center first."}
+                </MessageBarBody>
+              </MessageBar>
+            )}
             {result.notExported.length > 0 && (
               <>
                 <h3 className="export-subtitle">Not in the files</h3>
                 <ul className="export-notes">{result.notExported.map((n) => <li key={n}>{n}</li>)}</ul>
               </>
             )}
-            <p className="export-muted">The phone numbers in the files are the training's fictional numbers: replace them with your own before you run Profile Builder or Voice Channel Builder.</p>
+            <p className="export-muted">The phone numbers in the files are the training's fictional numbers: replace them with your own before you run the voice tools (Voice Workstream Builder, Voice Channel Builder, Profile Builder).</p>
           </DialogContent>
           <DialogActions><Button onClick={onClose}>Close</Button></DialogActions>
         </DialogBody>

@@ -15,6 +15,8 @@ import { COLUMNS as TEAM_COLUMNS } from "@toolbox/team-builder/src/template";
 import { COLUMNS as USER_COLUMNS } from "@toolbox/user-setup/src/template";
 import { COLUMNS as CHANNEL_COLUMNS } from "@toolbox/voice-channel-builder/src/template";
 import { validateChannels } from "@toolbox/voice-channel-builder/src/plan";
+import { COLUMNS as WORKSTREAM_COLUMNS } from "@toolbox/voice-workstream-builder/src/template";
+import { validateCsv as validateWorkstreams } from "@toolbox/voice-workstream-builder/src/validate";
 import { findNumber, purchaseNumber, setupWorkstream } from "../../src/admin/actions";
 import { exportDesign } from "../../src/export/toolboxExport";
 import { solve } from "../../src/scenarios/goals";
@@ -41,7 +43,8 @@ const COLUMNS: Record<string, [ColumnDef[], string]> = {
   "business-units.csv": [UNIT_COLUMNS, "name"],
   "teams.csv": [TEAM_COLUMNS, "team_name"],
   "users.csv": [USER_COLUMNS, "user"],
-  "voice-channels.csv": [CHANNEL_COLUMNS, "channel_name"]
+  "voice-channels.csv": [CHANNEL_COLUMNS, "channel_name"],
+  "voice-workstreams.csv": [WORKSTREAM_COLUMNS, "workstream_name"]
 };
 
 describe("export to the Toolbox's CSV templates", () => {
@@ -55,7 +58,9 @@ describe("export to the Toolbox's CSV templates", () => {
     const read = readRows(parseCsv(f!.csv), columns, key);
     for (const row of read.rows) {
       for (const c of columns) {
-        if (c.choices) row.choice(c.header);
+        // A list column (several values separated by |) is read as a list, the way its tool reads it.
+        if (c.list || (c as { kind?: string }).kind === "list") row.list(c.header);
+        else if (c.choices) row.choice(c.header);
         if (c.required) expect(row.cell(c.header)).not.toBe("");
       }
     }
@@ -74,6 +79,22 @@ describe("export to the Toolbox's CSV templates", () => {
     expect(parsed.workstreams.map((w) => [w.name, w.channels.length])).toEqual([["Customer Service – Voice", 1]]);
     expect(parsed.workstreams[0].channels[0].phoneNumber).toMatch(/^\+1425/);
     expect(result.notExported.some((n) => n.startsWith("The language of the channel"))).toBe(true);
+  });
+
+  test("the new workstream passes Voice Workstream Builder's own checks, with its settings and line", () => {
+    const parsed = validateWorkstreams(parseCsv(fileFor("voice-workstreams.csv")!.csv));
+    expect(parsed.issues.filter((i) => i.severity === "error")).toEqual([]);
+    const spareParts = parsed.workstreams.find((w) => w.name === "Spare Parts – Voice")!;
+    expect(spareParts).toMatchObject({ direction: "Inbound", workDistribution: "Push", capacityFormat: "Profile", presences: ["Available", "Busy"] });
+    expect(spareParts.channels.map((c) => c.phoneNumber)).toEqual([expect.stringMatching(/^\+1425/)]);
+    expect(fileFor("voice-workstreams.csv")!.csv).toContain("Order Desk");
+    expect(result.notExported.some((n) => n.startsWith("The workstream “Spare Parts"))).toBe(false);
+  });
+
+  test("the files come in the order to run them", () => {
+    const order = result.files.map((f) => f.tool);
+    expect(order.indexOf("Queue Builder")).toBeLessThan(order.indexOf("Voice Workstream Builder"));
+    expect(order.indexOf("Voice Workstream Builder")).toBeLessThan(order.indexOf("Route-to-Queue Builder"));
   });
 
   test("what the exercises built is in the files", () => {
