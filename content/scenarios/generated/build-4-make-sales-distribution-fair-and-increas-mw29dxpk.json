@@ -1,0 +1,24 @@
+{
+  "id": "build-4-make-sales-distribution-fair-and-increas-mw29dxpk",
+  "kind": "build",
+  "level": 4,
+  "title": "Make Sales distribution fair and increase voice capacity",
+  "story": [
+    "Alex in Contoso Sales wants calls in the Sales queue handed out more fairly so each agent gets a turn.",
+    "He also wants agents to be able to handle more inbound voice work at the same time. Update the inbound voice capacity profile so the team can take more work without lost calls."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "goals": [
+    {
+      "type": "assignment-method",
+      "queue": "Sales",
+      "method": "Advanced round robin"
+    },
+    {
+      "type": "capacity",
+      "profile": "Default voice inbound",
+      "limit": 3
+    }
+  ]
+}

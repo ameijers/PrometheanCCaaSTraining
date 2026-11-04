@@ -41,6 +41,19 @@ const LEVEL_BRIEF: Record<ScenarioKind, Record<number, string>> = {
   }
 };
 
+// The goal types a level is about. Left to itself the AI keeps picking the same one (four level 4 scenarios
+// in a row were all about capacity, none about skills), so each new scenario gets one, picked at random, it
+// must include (manual 9.4b, variety).
+const FOCUS: Partial<Record<ScenarioKind, Record<number, string[]>>> = {
+  build: { 3: ["operation-hours", "after-hours", "long-wait"], 4: ["assignment-method", "capacity", "skills"], 5: ["new-line", "business-unit", "team", "outbound-profile"] },
+  interview: { 4: ["assignment-method", "capacity", "skills"] }
+};
+
+export function pickFocus(kind: ScenarioKind, level: number, random: () => number = Math.random): string | undefined {
+  const options = FOCUS[kind]?.[level];
+  return options?.[Math.floor(random() * options.length)];
+}
+
 const GOALS_BRIEF = `The goals you can use (each must NOT be met already in the environment below, and code checks that):
 - members: the queue has at least "number" members (more than it has now).
 - fallback: the workstream's fallback queue becomes "queue" (a different one than now).
@@ -86,12 +99,12 @@ The environment:
 ${environmentText(env)}`;
 }
 
-export function userPrompt(kind: ScenarioKind, level: number, avoid: string[]): string {
+export function userPrompt(kind: ScenarioKind, level: number, avoid: string[], focus?: string): string {
   return `Write a "${KIND_TITLES[kind]}" scenario.
 
 ${KIND_BRIEF[kind]}
 
-${LEVEL_BRIEF[kind][level]}
+${LEVEL_BRIEF[kind][level]}${focus ? ` This time, one of the goals must be of type ${focus}.` : ""}
 
 Title: up to 80 characters. Story: two or three short paragraphs.${avoid.length ? `\n\nOther scenarios already exist with these titles; write something different:\n${avoid.map((t) => `- ${t}`).join("\n")}` : ""}`;
 }
@@ -104,12 +117,14 @@ export interface Written { scenario?: Scenario; attempts: { problems: string[] }
 export interface Attempt { text: string; problems: string[] }
 export interface AttemptResult { scenario?: Scenario; text: string; problems: string[] }
 
-export async function writeScenarioAttempt(ai: AiProvider, kind: ScenarioKind, level: number, options: { avoid?: string[]; previous?: Attempt[] } = {}): Promise<AttemptResult> {
+export async function writeScenarioAttempt(ai: AiProvider, kind: ScenarioKind, level: number, options: { avoid?: string[]; previous?: Attempt[]; random?: () => number } = {}): Promise<AttemptResult> {
   if (!LEVEL_BRIEF[kind]?.[level]) throw new AiError(`There's no level ${level} for this kind of scenario.`, 400);
   const previous = options.previous ?? [];
   if (previous.length >= MAX_ATTEMPTS) throw new AiError(`A scenario gets ${MAX_ATTEMPTS} tries.`, 400);
   const env = await healthyEnvironment();
-  const turns: Turn[] = [{ role: "user", text: userPrompt(kind, level, options.avoid ?? []) }];
+  // A focus only on the first try: a later try fixes the earlier draft, which already has its focus.
+  const focus = previous.length ? undefined : pickFocus(kind, level, options.random);
+  const turns: Turn[] = [{ role: "user", text: userPrompt(kind, level, options.avoid ?? [], focus) }];
   for (const a of previous) turns.push({ role: "assistant", text: a.text }, { role: "user", text: `The training's checks found these problems:\n${a.problems.map((p) => `- ${p}`).join("\n")}\n\nWrite the whole scenario again with these fixed.` });
   const { json, text } = await ai.complete(systemPrompt(env), turns, outputSchema(kind));
   const scenario = fromOutput(kind, level, json);

@@ -1,0 +1,31 @@
+{
+  "id": "build-5-add-wholesale-voice-a-new-team-and-outbo-mw29f36g",
+  "kind": "build",
+  "level": 5,
+  "title": "Add Wholesale – Voice, a new team and outbound profile",
+  "story": [
+    "Liam in Contoso Sales wants a new phone line called Wholesale – Voice. Calls to that line should go into the existing Order Desk queue so the order team handles wholesale enquiries.",
+    "Emma asks for a new owner team in Contoso Sales named Wholesale Ops. She wants at least four people in that team to manage the wholesale workload and reporting.",
+    "Raj also wants a new outbound profile called Wholesale Outbound. Outbound calls from that profile should belong to the Order Desk queue so agents log activity against the same queue."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "goals": [
+    {
+      "type": "new-line",
+      "workstream": "Wholesale – Voice",
+      "queue": "Order Desk"
+    },
+    {
+      "type": "team",
+      "team": "Wholesale Ops",
+      "unit": "Contoso Sales",
+      "members": 4
+    },
+    {
+      "type": "outbound-profile",
+      "profile": "Wholesale Outbound",
+      "queue": "Order Desk"
+    }
+  ]
+}

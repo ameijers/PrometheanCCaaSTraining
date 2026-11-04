@@ -1,0 +1,31 @@
+{
+  "id": "build-5-add-wholesale-voice-line-and-grow-enterp-mw29e60q",
+  "kind": "build",
+  "level": 5,
+  "title": "Add Wholesale – Voice line and grow Enterprise Sales team",
+  "story": [
+    "Sarah, the sales manager, wants a new phone line for wholesale customers. Calls should go to Enterprise Sales so the big deals land with the right group.",
+    "She also wants a new owner team called Wholesale Sales Team in the Contoso Sales business unit. The team should have at least four people.",
+    "Finally, Sarah asks that Enterprise Sales be staffed up so it has at least eight members in total."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "goals": [
+    {
+      "type": "members",
+      "queue": "Enterprise Sales",
+      "atLeast": 8
+    },
+    {
+      "type": "new-line",
+      "workstream": "Wholesale – Voice",
+      "queue": "Enterprise Sales"
+    },
+    {
+      "type": "team",
+      "team": "Wholesale Sales Team",
+      "unit": "Contoso Sales",
+      "members": 4
+    }
+  ]
+}

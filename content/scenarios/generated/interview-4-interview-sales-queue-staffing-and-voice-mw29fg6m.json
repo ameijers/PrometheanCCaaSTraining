@@ -1,0 +1,50 @@
+{
+  "id": "interview-4-interview-sales-queue-staffing-and-voice-mw29fg6m",
+  "kind": "interview",
+  "level": 4,
+  "title": "Interview: Sales queue staffing and voice limits",
+  "story": [
+    "Aisha is the retail sales manager at Contoso. She wants to improve how calls are handled for Sales.",
+    "She has tracked long waits on the Sales queue. The calls come in on Retail Sales – Voice through the Contoso Sales IVR (Microsoft Copilot Studio)."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "goals": [
+    {
+      "type": "members",
+      "queue": "Sales",
+      "atLeast": 5
+    },
+    {
+      "type": "capacity",
+      "profile": "Default voice inbound",
+      "limit": 3
+    }
+  ],
+  "interview": {
+    "persona": "Aisha, the retail sales manager",
+    "opening": "I want to reduce waits in Sales and make sure agents can handle more calls.",
+    "topics": [
+      {
+        "ask": "How many people do you want on the Sales team during the day?",
+        "answer": "We should have at least five people on Sales so we can cover busy times.",
+        "goal": 0
+      },
+      {
+        "ask": "Should agents be able to handle more than one customer at a time?",
+        "answer": "Yes. We want agents to be able to handle up to three calls at once.",
+        "goal": 1
+      }
+    ],
+    "extras": [
+      {
+        "ask": "Do you want to change Enterprise Sales right now?",
+        "answer": "Not right now. Focus on Sales first."
+      },
+      {
+        "ask": "Are Order Desk hours fine as they are?",
+        "answer": "Yes. Order Desk can stay the same."
+      }
+    ]
+  }
+}
