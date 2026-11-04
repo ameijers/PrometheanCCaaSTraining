@@ -1,0 +1,145 @@
+{
+  "id": "new-menu-choice",
+  "title": "A new menu choice",
+  "level": 2,
+  "company": "Contoso",
+  "summary": "Route a new IVR choice to a new queue.",
+  "about": "A lesson template (manual 9.4b). Each run picks a phone line with an IVR and a new menu choice that fits that kind of line (pick.choices, by a word in the workstream name; \"*\" for any other line) from the simulated environment, and fills in the {placeholders}: {choice}, {line}, {dial}, {workstream}, {menu}, {variable}, {suggested} (a queue whose agents fit the new work) and {fallback}.",
+  "pick": {
+    "choices": {
+      "Customer Service": [
+        "Repairs",
+        "Warranty",
+        "Cancellations",
+        "Invoices",
+        "Delivery"
+      ],
+      "Retail Sales": [
+        "Delivery",
+        "Store pickup",
+        "Subscriptions",
+        "Gift cards",
+        "Invoices"
+      ],
+      "Technical Support": [
+        "Repairs",
+        "Spare parts",
+        "Warranty",
+        "Installation",
+        "Cancellations"
+      ],
+      "*": [
+        "Repairs",
+        "Warranty",
+        "Delivery",
+        "Invoices"
+      ]
+    }
+  },
+  "finished": "{choice} calls reach the right people now. Open the Diagram to see the route you built.",
+  "story": [
+    "Contoso's {line} is answered by an IVR first. It asks callers what their call is about and sends them to {menu}.",
+    "This week the bot team added a new choice to the menu: {choice}. Nobody told the contact center. Your job: make sure {choice} calls reach people who can help."
+  ],
+  "tasks": [
+    {
+      "id": "see-problem",
+      "title": "Call the line and choose {choice}",
+      "do": "Open the Phone tab, call the {line} and choose {choice}. Look at where the call ends up.",
+      "check": {
+        "type": "callMade",
+        "answers": {
+          "{variable}": "{choice}"
+        }
+      },
+      "done": "The call ended in {fallback}, the workstream's fallback queue: no rule knows about {choice} yet.",
+      "concept": "fallback-queue",
+      "tab": "phone",
+      "hints": [
+        "Use the Phone tab. The line's number is already filled in.",
+        "After you choose {choice}, read the call trace: which step decides the queue?"
+      ]
+    },
+    {
+      "id": "create-queue",
+      "title": "Create a voice queue named {choice}",
+      "do": "In the admin center, create an advanced queue named {choice} for calls.",
+      "check": {
+        "type": "row",
+        "table": "queue",
+        "where": {
+          "name": "{choice}",
+          "msdyn_queuetype": 192350002,
+          "msdyn_isomnichannelqueue": true
+        },
+        "close": [
+          "name"
+        ]
+      },
+      "concept": "create-queue",
+      "tab": "admin",
+      "hints": [
+        "Queues are under Customer support in the site map.",
+        "Under Advanced queues, select Manage, then New queue. The type for calls is Voice."
+      ]
+    },
+    {
+      "id": "add-users",
+      "title": "Add at least two users to {choice}",
+      "do": "Pick the people who will take {choice} calls. Agents from {suggested} know this work well.",
+      "check": {
+        "type": "members",
+        "queue": "{choice}",
+        "atLeast": 2
+      },
+      "concept": "queue-users",
+      "tab": "admin",
+      "hints": [
+        "Open the {choice} queue.",
+        "Select Add users, tick at least two people, then select Add."
+      ]
+    },
+    {
+      "id": "add-rule",
+      "title": "Route {choice} calls to the {choice} queue",
+      "do": "Add a route-to-queue rule to the {workstream} workstream: when the caller chose {choice}, route the call to {choice}.",
+      "check": {
+        "type": "call",
+        "dial": "{dial}",
+        "answers": {
+          "{variable}": "{choice}"
+        },
+        "expect": {
+          "queue": "{choice}"
+        }
+      },
+      "concept": "create-rule",
+      "tab": "admin",
+      "hints": [
+        "Rules belong to a workstream: open Workstreams, then {workstream}, then its ruleset under Route to queues.",
+        "Select Create rule. Under Conditions, select Add, then Add row. The IVR stores the caller's choice in {variable}; the value for {choice} is {choice}."
+      ]
+    },
+    {
+      "id": "test-call",
+      "title": "Test it: call again and choose {choice}",
+      "do": "Call the {line} again, choose {choice}, and check where the call goes now.",
+      "check": {
+        "type": "callMade",
+        "answers": {
+          "{variable}": "{choice}"
+        },
+        "expect": {
+          "queue": "{choice}"
+        }
+      },
+      "done": "{choice} calls now wait in their own queue, where people can answer them. Open the Diagram to see the new route.",
+      "concept": "route-to-queue",
+      "tab": "phone",
+      "hints": [
+        "Use the Phone tab again.",
+        "If the call still ends in {fallback}, check the rule's condition: variable, value and queue."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "id": "fix-1-sales-callers-stuck-on-hold-with-no-answ-mw1xawie",
+  "kind": "fix",
+  "level": 1,
+  "title": "Sales callers stuck on hold with no answer",
+  "story": [
+    "Customers call the sales line and choose Sales in the IVR. They wait on hold for a long time with no agent answering.",
+    "Sales team members do not see incoming calls. Team leads watch wait times climb and see missed calls. Some customers hang up and do not get a callback or voicemail.",
+    "Sarah in the contact centre and Mark in ops both report the same issue. They ask you to check the environment and fix whatever is wrong."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "faults": [
+    {
+      "type": "no-members",
+      "queue": "Sales"
+    },
+    {
+      "type": "fallback-queue-off",
+      "workstream": "Retail Sales – Voice"
+    }
+  ]
+}

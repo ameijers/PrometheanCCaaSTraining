@@ -1,0 +1,24 @@
+{
+  "id": "build-5-add-a-wholesale-voice-line-to-order-desk-mw1xef6m",
+  "kind": "build",
+  "level": 5,
+  "title": "Add a Wholesale voice line to Order Desk and increase staffing",
+  "story": [
+    "Emma in wholesale asks for a new phone line for wholesale customers. She wants calls on that line to go straight to the Order Desk queue so staff there can handle them.",
+    "She also asks that Order Desk has more people. She wants at least nine agents available so the team can cover the new line and reduce wait times."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "goals": [
+    {
+      "type": "new-line",
+      "workstream": "Wholesale – Voice",
+      "queue": "Order Desk"
+    },
+    {
+      "type": "members",
+      "queue": "Order Desk",
+      "atLeast": 9
+    }
+  ]
+}

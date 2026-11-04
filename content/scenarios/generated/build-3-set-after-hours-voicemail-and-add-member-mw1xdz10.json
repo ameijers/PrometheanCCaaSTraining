@@ -1,0 +1,24 @@
+{
+  "id": "build-3-set-after-hours-voicemail-and-add-member-mw1xdz10",
+  "kind": "build",
+  "level": 3,
+  "title": "Set after-hours voicemail and add members to Returns",
+  "story": [
+    "Maria, the Contoso returns manager, wants the Returns queue to send calls to Voicemail outside business hours. She wants a clear out-of-hours experience for customers.",
+    "She also asks for more people on the rota. Add enough staff so the Returns queue has at least eight members."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "goals": [
+    {
+      "type": "members",
+      "queue": "Returns",
+      "atLeast": 8
+    },
+    {
+      "type": "after-hours",
+      "queue": "Returns",
+      "action": "Voicemail"
+    }
+  ]
+}

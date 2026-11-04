@@ -1,0 +1,55 @@
+# Deploys the training to Azure Static Web Apps (decision 15.4, phase 9). See docs/hosting.md.
+#
+# It only runs when someone starts it by hand (Actions > Deploy the training > Run workflow): pushing to
+# the repo never deploys. Deploy only when Alexander says so (CLAUDE.md).
+#
+# Needs two repository secrets:
+#   AZURE_STATIC_WEB_APPS_API_TOKEN   the static web app's deployment token (Azure portal > the app > Manage deployment token)
+#   TOOLBOX_TOKEN                     read access to ameijers/PrometheanCCaaSToolbox, for the submodule (if that repo is private)
+# The keys the backend uses (Claude or Azure OpenAI, Table Storage, SITE_ORIGIN) are app settings in Azure, not secrets here.
+#
+# The workflow's shape is Microsoft Learn's "Build configuration for Azure Static Web Apps" (ms.date 2024-11-04):
+# the app is built here and deployed as it is (skip_app_build, output_location ''), the API from api/.
+
+name: Deploy the training
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Build, test and deploy
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.TOOLBOX_TOKEN || github.token }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install
+        run: npm ci
+
+      - name: Test (the same checks as before calling work done)
+        run: |
+          npx jest --runInBand
+          npx tsc --noEmit -p .
+
+      - name: Build the site and the backend
+        run: |
+          npm run build
+          npm run backend:build
+
+      - name: Deploy
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: "dist"
+          output_location: ""
+          skip_app_build: true
+          api_location: "api"

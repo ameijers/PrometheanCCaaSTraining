@@ -1,0 +1,24 @@
+{
+  "id": "build-1-add-partner-desk-staff-and-change-custom-mw1xdahh",
+  "kind": "build",
+  "level": 1,
+  "title": "Add partner desk staff and change customer-service fallback",
+  "story": [
+    "Lina, the contact centre manager, wants one more person on the Partner Desk so partners get a faster response. She asks you to make the Partner Desk have at least three members.",
+    "She also says callers who pick an option the Customer Service IVR does not recognise should go to Escalations instead of Overflow. This will make sure strange or urgent calls reach a senior team quickly."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "goals": [
+    {
+      "type": "members",
+      "queue": "Partner Desk",
+      "atLeast": 3
+    },
+    {
+      "type": "fallback",
+      "workstream": "Customer Service – Voice",
+      "queue": "Escalations"
+    }
+  ]
+}

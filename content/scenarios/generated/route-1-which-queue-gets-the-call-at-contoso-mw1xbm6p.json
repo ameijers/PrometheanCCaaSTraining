@@ -1,0 +1,53 @@
+{
+  "id": "route-1-which-queue-gets-the-call-at-contoso-mw1xbm6p",
+  "kind": "route",
+  "level": 1,
+  "title": "Which queue gets the call at Contoso?",
+  "story": [
+    "Contoso has many phone lines for sales, service and support. Each line sends callers to a queue based on the menu choice or the line itself.",
+    "Use the four short calls below to predict which queue will receive each call and what happens next."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "questions": [
+    {
+      "id": "q1",
+      "caller": "Hi, I want to place an order.",
+      "dial": "+44 20 7946 0100",
+      "choice": "Sales",
+      "answer": {
+        "queue": "Sales",
+        "outcome": "Agent"
+      }
+    },
+    {
+      "id": "q2",
+      "caller": "Hello, I have a question about my bill.",
+      "dial": "+44 20 7946 0102",
+      "choice": "Billing",
+      "answer": {
+        "queue": "Billing",
+        "outcome": "Agent"
+      }
+    },
+    {
+      "id": "q3",
+      "caller": "My router needs advanced technical help.",
+      "dial": "+44 20 7946 0105",
+      "choice": "2",
+      "answer": {
+        "queue": "Tier 2 Support",
+        "outcome": "Agent"
+      }
+    },
+    {
+      "id": "q4",
+      "caller": "I need help in Dutch.",
+      "dial": "+44 20 7946 0107",
+      "answer": {
+        "queue": "Overflow",
+        "outcome": "Agent"
+      }
+    }
+  ]
+}

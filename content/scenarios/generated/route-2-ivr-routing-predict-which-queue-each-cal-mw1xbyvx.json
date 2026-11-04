@@ -1,0 +1,54 @@
+{
+  "id": "route-2-ivr-routing-predict-which-queue-each-cal-mw1xbyvx",
+  "kind": "route",
+  "level": 2,
+  "title": "IVR routing: predict which queue each call reaches",
+  "story": [
+    "You are testing Contoso phone menus. Read each call and pick the queue it reaches.",
+    "Sam and Lina test common menu choices. One call uses a choice that no rule checks, so it should go to the fallback queue."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "questions": [
+    {
+      "id": "q1",
+      "caller": "Hi, I want to place a new order.",
+      "dial": "+44 20 7946 0100",
+      "choice": "Sales",
+      "answer": {
+        "queue": "Sales",
+        "outcome": "Agent"
+      }
+    },
+    {
+      "id": "q2",
+      "caller": "I need help with a bill.",
+      "dial": "+44 20 7946 0102",
+      "choice": "Billing",
+      "answer": {
+        "queue": "Billing",
+        "outcome": "Agent"
+      }
+    },
+    {
+      "id": "q3",
+      "caller": "My service is down and I need advanced help.",
+      "dial": "+44 20 7946 0105",
+      "choice": "2",
+      "answer": {
+        "queue": "Tier 2 Support",
+        "outcome": "Agent"
+      }
+    },
+    {
+      "id": "q4",
+      "caller": "I need help with the menu.",
+      "dial": "+44 20 7946 0101",
+      "choice": "Help",
+      "answer": {
+        "queue": "Overflow",
+        "outcome": "Agent"
+      }
+    }
+  ]
+}

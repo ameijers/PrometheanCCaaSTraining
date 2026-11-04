@@ -1,0 +1,13 @@
+{
+  "name": "promethean-ccaas-training-api",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "description": "The training's backend as an Azure Functions app, built into dist/ by npm run backend:build in the repo root.",
+  "main": "dist/index.js",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.4.0",
+    "@azure/data-tables": "^13.3.2",
+    "@azure/functions": "^4.17.0"
+  }
+}
