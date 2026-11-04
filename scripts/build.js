@@ -126,6 +126,11 @@ async function main() {
     await page.waitForSelector(".lesson-finished");
     await shot("build4-done");
     console.log("both exercises finished");
+
+    // What was built, as the Toolbox's CSV files, in the order to run them.
+    await click("header button", "Export");
+    await waitText("[role=dialog]", "in this order");
+    await shot("export");
   } catch (e) {
     await page.screenshot({ path: path.join(out, "failure.png") });
     throw new Error(`${e.message} (after step ${n}, waiting for ${last})${errors.length ? `\npage errors:\n${errors.join("\n")}` : ""}`);
