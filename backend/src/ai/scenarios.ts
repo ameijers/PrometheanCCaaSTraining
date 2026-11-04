@@ -61,12 +61,12 @@ const GOALS_BRIEF = `The goals you can use (each must NOT be met already in the 
 - operation-hours: the queue keeps the operating hours record "hours" (one of the names in the environment).
 - after-hours: calls to the queue outside its opening times get "action" (Voicemail, Direct callback or End call).
 - long-wait: when the predicted wait for the queue is "number" minutes or more, callers get "action" (Direct callback or Voicemail).
-- assignment-method: the queue hands out calls with "method" (Least active, Highest capacity or Advanced round robin; not its current one).
-- capacity: the capacity profile "profile" gets a work item limit of "number" (not its current one; the voice profile is "Default voice inbound", limit 1 now).
+- assignment-method: the queue hands out calls with "method" (Least active, Highest capacity or Advanced round robin; not the queue's current method, which the environment lists).
+- capacity: the capacity profile "profile" gets a work item limit of "number" (not its current one). Use only a name from the environment's capacity profiles; never make one up. For voice calls that's "Default voice inbound".
 - new-line: a new voice workstream "workstream" with a phone number, taking calls into the existing queue "queue".
 - business-unit: a new business unit "unit" under the existing business unit "parent" (Contoso, Contoso Sales or Contoso Support).
 - team: a new owner team "team" in the existing (or, with a business-unit goal, new) business unit "unit", with at least "number" members.
-- skills (level 4): callers on "workstream" who choose "choice" (an existing IVR choice that routes to "queue") need the existing skill "skill" at "rating" (Beginner, Intermediate or Expert) with Exact Match, and at least "number" members of "queue" have it. Pick a number higher than the members who have it now.
+- skills (level 4): callers on "workstream" who choose "choice" (an existing IVR choice that routes to "queue") need the existing skill "skill" at "rating" (Beginner, Intermediate or Expert) with Exact Match, and at least "number" members of "queue" have it. The environment lists, per queue, how many members have each skill at each proficiency or better: pick a number higher than that, and no higher than the members the queue has now. Use only skills the environment lists.
 - outbound-profile (level 5): a new outbound profile "profile" for calling customers, whose calls belong to the existing voice queue "queue".
 Leave fields a goal doesn't use empty, or 0 for "number".`;
 

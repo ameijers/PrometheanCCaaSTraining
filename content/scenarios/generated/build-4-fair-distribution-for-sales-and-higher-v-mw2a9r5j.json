@@ -1,0 +1,29 @@
+{
+  "id": "build-4-fair-distribution-for-sales-and-higher-v-mw2a9r5j",
+  "kind": "build",
+  "level": 4,
+  "title": "Fair distribution for Sales and higher voice limit",
+  "story": [
+    "Liam is the Sales manager. He says a few agents get most calls while others are idle.",
+    "He asks you to make call distribution fair. He also wants two more people added to the Sales queue, and a bigger voice work item limit so agents can handle more simultaneous calls."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "goals": [
+    {
+      "type": "assignment-method",
+      "queue": "Sales",
+      "method": "Advanced round robin"
+    },
+    {
+      "type": "members",
+      "queue": "Sales",
+      "atLeast": 5
+    },
+    {
+      "type": "capacity",
+      "profile": "Default voice inbound",
+      "limit": 3
+    }
+  ]
+}
