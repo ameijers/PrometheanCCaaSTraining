@@ -1,0 +1,64 @@
+{
+  "id": "interview-4-interview-sales-call-routing-and-voice-c-mw2a8glh",
+  "kind": "interview",
+  "level": 4,
+  "title": "Interview: Sales call routing and voice capacity",
+  "story": [
+    "You meet Liam, the retail operations manager at Contoso.",
+    "He wants to change how Sales calls are handed out and how many calls each agent can handle."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "goals": [
+    {
+      "type": "assignment-method",
+      "queue": "Sales",
+      "method": "Advanced round robin"
+    },
+    {
+      "type": "capacity",
+      "profile": "Default voice inbound",
+      "limit": 4
+    }
+  ],
+  "interview": {
+    "persona": "Liam, the retail operations manager",
+    "opening": "We need to improve how sales calls are assigned and handled.",
+    "topics": [
+      {
+        "ask": "How are incoming sales calls given to agents today?",
+        "answer": "They go into the Sales queue but often one or two agents get most of the calls while others wait.",
+        "goal": 0
+      },
+      {
+        "ask": "Do you want calls to be shared more evenly?",
+        "answer": "Yes. We want a steady rotation so everyone gets a fair share of calls.",
+        "goal": 0
+      },
+      {
+        "ask": "How many calls should an agent handle at once?",
+        "answer": "Right now agents only take one. We want them to be able to manage more, maybe up to four at the same time.",
+        "goal": 1
+      },
+      {
+        "ask": "Why do you want the higher limit?",
+        "answer": "So agents can handle callbacks and hold short tasks without losing efficiency.",
+        "goal": 1
+      }
+    ],
+    "extras": [
+      {
+        "ask": "Do you need a new phone number for sales?",
+        "answer": "Not right now. The current numbers work."
+      },
+      {
+        "ask": "Do you want different hours for the Sales queue?",
+        "answer": "No. The current opening hours are fine."
+      },
+      {
+        "ask": "Are there any special skills agents must have?",
+        "answer": "No special skills beyond normal sales training."
+      }
+    ]
+  }
+}

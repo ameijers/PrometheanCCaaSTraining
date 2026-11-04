@@ -43,7 +43,11 @@ describe("writing a scenario", () => {
   test("the AI sees the environment in plain words", async () => {
     const prompt = systemPrompt(await healthyEnvironment());
     expect(prompt).toMatch(/\+44 20 7946 0102 rings the workstream “Customer Service – Voice”/);
-    expect(prompt).toMatch(/“Billing”: 8 members, open Monday to Friday, 09:00 to 17:00\. Overflow: Out of operating hours: Voicemail/);
+    expect(prompt).toMatch(/“Billing”: 8 members, assignment method Least active, open Monday to Friday, 09:00 to 17:00\. Overflow: Out of operating hours: Voicemail/);
+    // What the AI got wrong live before it was in the prompt: skills per queue, the skills and the capacity profiles there are.
+    expect(prompt).toMatch(/“Sales”: 3 members.* Members with each skill, at that proficiency or better: Sales: 2 at Beginner, 1 at Intermediate, 0 at Expert/);
+    expect(prompt).toMatch(/Skills: Sales, English, .*Proficiencies, lowest first: Beginner, Intermediate, Expert\./);
+    expect(prompt).toContain("Capacity profiles: Default voice inbound (limit 1), Default messaging (limit 1), Default voice outbound (limit 1). No others exist.");
   });
 
   test("a scenario that fails goes back with what failed, and is saved once it passes", async () => {

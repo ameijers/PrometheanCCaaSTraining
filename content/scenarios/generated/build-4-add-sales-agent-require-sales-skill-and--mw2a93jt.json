@@ -1,0 +1,33 @@
+{
+  "id": "build-4-add-sales-agent-require-sales-skill-and--mw2a93jt",
+  "kind": "build",
+  "level": 4,
+  "title": "Add Sales agent, require Sales skill and increase voice limit",
+  "story": [
+    "Rita manages the Retail Sales team. She wants callers who pick Sales on the Retail Sales – Voice menu to reach only agents who have the Sales skill at Intermediate level.",
+    "She also needs one more agent in the Sales queue so there are four agents, and she asks for a bigger inbound voice capacity so more callers can wait before callbacks are offered."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "goals": [
+    {
+      "type": "members",
+      "queue": "Sales",
+      "atLeast": 4
+    },
+    {
+      "type": "skills",
+      "workstream": "Retail Sales – Voice",
+      "choice": "Sales",
+      "skill": "Sales",
+      "rating": "Intermediate",
+      "queue": "Sales",
+      "members": 4
+    },
+    {
+      "type": "capacity",
+      "profile": "Default voice inbound",
+      "limit": 4
+    }
+  ]
+}

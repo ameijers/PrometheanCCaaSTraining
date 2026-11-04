@@ -1,0 +1,24 @@
+{
+  "id": "build-4-grow-sales-team-and-increase-voice-work--mw2a80t5",
+  "kind": "build",
+  "level": 4,
+  "title": "Grow Sales team and increase voice work item limit",
+  "story": [
+    "Laura, the Sales manager, says callers wait too long. Some agents are overloaded and others sit idle.",
+    "She asks for more people in the Sales queue. She also wants agents to be able to handle more than one voice work item at a time so calls move faster."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "goals": [
+    {
+      "type": "members",
+      "queue": "Sales",
+      "atLeast": 5
+    },
+    {
+      "type": "capacity",
+      "profile": "Default voice inbound",
+      "limit": 3
+    }
+  ]
+}

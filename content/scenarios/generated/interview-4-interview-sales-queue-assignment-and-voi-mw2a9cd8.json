@@ -1,0 +1,55 @@
+{
+  "id": "interview-4-interview-sales-queue-assignment-and-voi-mw2a9cd8",
+  "kind": "interview",
+  "level": 4,
+  "title": "Interview: Sales queue assignment and voice capacity",
+  "story": [
+    "You meet Aisha, the contact centre manager for Contoso sales. She wants to improve how incoming sales calls are handled.",
+    "Talk with her to find the changes she needs. Then build the changes in the simulated environment."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "goals": [
+    {
+      "type": "assignment-method",
+      "queue": "Sales",
+      "method": "Highest capacity"
+    },
+    {
+      "type": "capacity",
+      "profile": "Default voice inbound",
+      "limit": 3
+    }
+  ],
+  "interview": {
+    "persona": "Aisha, the contact centre manager",
+    "opening": "We need fewer dropped or delayed sales calls and less agent burnout.",
+    "topics": [
+      {
+        "ask": "What problem do you see with how calls are handed to agents now?",
+        "answer": "Sometimes busy agents get more calls while others sit idle. We want calls given to agents who have the most free capacity.",
+        "goal": 0
+      },
+      {
+        "ask": "How should the system choose who gets the next call?",
+        "answer": "Prefer agents who have the lightest load so work is spread fairly and faster for customers.",
+        "goal": 0
+      },
+      {
+        "ask": "Do you want agents to take more than one voice work item at a time?",
+        "answer": "Yes. We need agents to handle a few voice items so callbacks and transfers don't block the queue. Three would be ideal.",
+        "goal": 1
+      }
+    ],
+    "extras": [
+      {
+        "ask": "Are peak hours different for sales this quarter?",
+        "answer": "Yes, mornings are busier, but that doesn't change the need for fair assignment."
+      },
+      {
+        "ask": "Will agents need extra training for this change?",
+        "answer": "A short briefing will help, but the change should be mostly technical."
+      }
+    ]
+  }
+}

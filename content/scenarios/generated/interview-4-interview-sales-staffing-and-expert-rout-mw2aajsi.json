@@ -1,0 +1,64 @@
+{
+  "id": "interview-4-interview-sales-staffing-and-expert-rout-mw2aajsi",
+  "kind": "interview",
+  "level": 4,
+  "title": "Interview: Sales staffing and expert routing",
+  "story": [
+    "You meet Lina, the retail sales manager at Contoso. She wants new order callers to reach true experts and for the Sales queue to have enough people.",
+    "You will ask Lina what she needs, then make the changes in the Contoso test environment."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "goals": [
+    {
+      "type": "members",
+      "queue": "Sales",
+      "atLeast": 4
+    },
+    {
+      "type": "skills",
+      "workstream": "Retail Sales – Voice",
+      "choice": "Sales",
+      "skill": "Sales",
+      "rating": "Expert",
+      "queue": "Sales",
+      "members": 4
+    }
+  ],
+  "interview": {
+    "persona": "Lina, the retail sales manager",
+    "opening": "We must make sure new order calls go to experts and we have enough people on the Sales queue.",
+    "topics": [
+      {
+        "ask": "Do we need more staff on the Sales queue to handle order calls?",
+        "answer": "Yes. Right now we are short. I want at least four people on Sales so calls don’t pile up.",
+        "goal": 0
+      },
+      {
+        "ask": "Could we cover peak times with our current team?",
+        "answer": "Not reliably. Hire or assign one more so we have four agents available on Sales.",
+        "goal": 0
+      },
+      {
+        "ask": "Should the Sales IVR option go only to senior reps?",
+        "answer": "Absolutely. New order callers need an expert on the line, not a trainee.",
+        "goal": 1
+      },
+      {
+        "ask": "How many experts should be available for the Sales option?",
+        "answer": "Make sure four people on Sales are marked as Expert for the Sales skill.",
+        "goal": 1
+      }
+    ],
+    "extras": [
+      {
+        "ask": "Do you want to change the IVR prompt for Sales?",
+        "answer": "No, the prompt is fine — focus on the people who get the calls."
+      },
+      {
+        "ask": "Should callers get callback options if wait is long?",
+        "answer": "We can look at that later. For now, fix staffing and expert routing."
+      }
+    ]
+  }
+}

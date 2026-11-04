@@ -5,7 +5,9 @@ import { QUEUE_TYPES } from "@toolbox/queue-builder/src/queueSchema";
 import { loadRoutingModel } from "@toolbox/visual-routing-tester/src/dataverse";
 import { Workstream } from "@toolbox/visual-routing-tester/src/model";
 import { parseDecisionXml } from "@toolbox/visual-routing-tester/src/ruleXml";
-import { routeToQueueRuleset } from "../admin/actions";
+import { ASSIGNMENT_LABELS, routeToQueueRuleset } from "../admin/actions";
+import { SKILL_TYPE } from "@toolbox/skill-assignment/src/model";
+import { ratingOf } from "../calls/skills";
 import { overflowTrigger } from "../calls/engine";
 import { cleanId, Rows, Store } from "../simulator/store";
 import { healthySeed } from "../simulator/seeds/healthy";
@@ -82,11 +84,17 @@ export interface Line {
 
 export interface QueueInfo {
   name: string; members: number; hours?: string; overflow: string[]; routed: boolean;
+  // The assignment method, and per skill how many members have it at each proficiency or better.
+  method?: string; skills?: string[];
   // Where a call can end because of this queue's overflow rules (for answer choices, src/scenarios/grade.ts).
   ends: Answer[];
 }
 
-export interface Environment { lines: Line[]; queues: QueueInfo[] }
+export interface Environment {
+  lines: Line[]; queues: QueueInfo[];
+  // The skills and proficiencies there are, and the capacity profiles with their work item limits.
+  skills?: string[]; ratings?: string[]; capacityProfiles?: string[];
+}
 
 // Reads the environment the way the call engine does: through the Toolbox's routing model, so the
 // description and the calls agree. Needs the simulator's Xrm in place (as for placeCall).
@@ -113,6 +121,8 @@ export async function describeEnvironment(store: Store): Promise<Environment> {
   }
   const routedTo = new Set(model.workstreams.flatMap((w) => [w.fallbackQueueId, ...w.queueRoutingRules.flatMap((r) => r.targets.map((t) => t.queueId))]));
   const hoursOf = new Map(store.table("msdyn_operatinghour").map((h) => [h.msdyn_operatinghourid, HOURS.find((x) => x.name === h.msdyn_name)]));
+  const skillRows = store.table("characteristic").filter((c) => c.characteristictype === SKILL_TYPE);
+  const ratings = [...store.table("ratingvalue")].sort((a, b) => Number(a.value) - Number(b.value));
   const queues: QueueInfo[] = model.queues.map((q) => {
     const row = store.find("queue", cleanId(q.id));
     const hours = row?._msdyn_operatinghourid_value ? hoursOf.get(row._msdyn_operatinghourid_value) : undefined;
@@ -122,9 +132,16 @@ export async function describeEnvironment(store: Store): Promise<Environment> {
     });
     const ends: Answer[] = [...q.preQueueOverflowRules, ...q.inQueueOverflowRules].flatMap((r): Answer[] =>
       r.outcome === "Queue Transfer" ? (queueName(r.targetQueueId) ? [{ queue: queueName(r.targetQueueId), outcome: "Agent" }] : []) : r.outcome ? [{ queue: q.name, outcome: r.outcome }] : []);
-    return { name: q.name, members: store.table("queuemembership").filter((m) => m.queueid === cleanId(q.id)).length, ...(hours ? { hours: describeHours(hours) } : {}), overflow, routed: routedTo.has(q.id), ends };
+    const memberIds = store.table("queuemembership").filter((m) => m.queueid === cleanId(q.id)).map((m) => m.systemuserid as string);
+    const skills = skillRows.flatMap((sk) => {
+      const counts = ratings.map((r) => [r.name, memberIds.filter((u) => ratingOf(store, u, sk.characteristicid) >= Number(r.value)).length] as const);
+      return counts[0][1] ? [`${sk.name}: ${counts.map(([name, n]) => `${n} at ${name}`).join(", ")}`] : [];
+    });
+    const method = row?.msdyn_assignmentstrategy == null ? undefined : ASSIGNMENT_LABELS[row.msdyn_assignmentstrategy];
+    return { name: q.name, members: memberIds.length, ...(method ? { method } : {}), skills, ...(hours ? { hours: describeHours(hours) } : {}), overflow, routed: routedTo.has(q.id), ends };
   });
-  return { lines, queues };
+  const capacityProfiles = store.table("msdyn_capacityprofile").map((p) => `${p.msdyn_name} (limit ${p.msdyn_defaultmaxunits ?? 1})`);
+  return { lines, queues, skills: skillRows.map((sk) => String(sk.name)), ratings: ratings.map((r) => String(r.name)), capacityProfiles };
 }
 
 // The same, as text for the AI.
@@ -134,6 +151,10 @@ export function environmentText(env: Environment): string {
     ...l.choices.map((c) => `  - Choice value “${c.value}”: rule “${c.rule}” routes to ${c.queues.length > 1 ? `${c.queues.join(" or ")}, picked at random (don't use this choice in a call to predict)` : c.queues[0]}.`),
     `  - Anything else goes to the fallback queue${l.fallback ? ` “${l.fallback}”` : ": none is set"}.`
   ].join("\n"));
-  const queues = env.queues.map((q) => `- “${q.name}”: ${q.members} member${q.members === 1 ? "" : "s"}${q.routed ? "" : ", nothing routes here"}${q.hours ? `, open ${q.hours}` : ", no operating hours (always open)"}${q.overflow.length ? `. Overflow: ${q.overflow.join("; ")}` : ""}.`);
-  return `Phone lines:\n${lines.join("\n")}\n\nQueues:\n${queues.join("\n")}`;
+  const queues = env.queues.map((q) => `- “${q.name}”: ${q.members} member${q.members === 1 ? "" : "s"}${q.method ? `, assignment method ${q.method}` : ""}${q.routed ? "" : ", nothing routes here"}${q.hours ? `, open ${q.hours}` : ", no operating hours (always open)"}${q.overflow.length ? `. Overflow: ${q.overflow.join("; ")}` : ""}.${q.skills?.length ? ` Members with each skill, at that proficiency or better: ${q.skills.join("; ")}.` : ""}`);
+  const more = [
+    env.skills?.length ? `Skills: ${env.skills.join(", ")}. Proficiencies, lowest first: ${env.ratings?.join(", ")}.` : "",
+    env.capacityProfiles?.length ? `Capacity profiles: ${env.capacityProfiles.join(", ")}. No others exist.` : ""
+  ].filter(Boolean);
+  return `Phone lines:\n${lines.join("\n")}\n\nQueues:\n${queues.join("\n")}${more.length ? `\n\n${more.join("\n")}` : ""}`;
 }
