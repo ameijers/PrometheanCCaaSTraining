@@ -488,11 +488,12 @@ export function createOutboundProfile({ api, store }: Admin, f: OutboundProfileF
   if (!store.find("queue", f.queueId)) throw new Error("Select a queue.");
   const callerId = f.callerIdPhoneId ?? f.phoneId;
   const profile = f.capacityProfileId ? store.find("msdyn_capacityprofile", f.capacityProfileId) : store.table("msdyn_capacityprofile").find((p) => p.msdyn_uniquename === DEFAULT_CAPACITY_PROFILE.Outbound);
-  // What the admin center writes on an outbound profile (profile-builder/src/plan.ts): push distribution,
+  // What the admin center writes on an outbound profile (profile-builder/src/plan.ts, and IMPLEMENTATION_STATUS.md
+  // for the live one: presences Available and Busy): push distribution,
   // profile-based capacity (30, unused for profiles), screen pop with timeout, no affinity.
   const id = api.create("msdyn_liveworkstream", workstreamPayload({
     key: name, name, lines: [], direction: "Outbound", workDistribution: "Push", capacityFormat: "Profile", capacityUnits: 30,
-    presences: [], outboundQueue: f.queueId, notification: "Screen pop with timeout", agentAffinity: false, restrictRecordingDownload: false, restrictTranscriptDownload: false,
+    presences: ["Available", "Busy"], outboundQueue: f.queueId, notification: "Screen pop with timeout", agentAffinity: false, restrictRecordingDownload: false, restrictTranscriptDownload: false,
     channels: [], refs: { outboundQueue: f.queueId }
   }));
   if (profile) api.create("msdyn_liveworkstreamcapacityprofile", capacityLinkPayload(id, { id: profile.msdyn_capacityprofileid, name: profile.msdyn_name }));
