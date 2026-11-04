@@ -1,0 +1,60 @@
+{
+  "id": "interview-4-interview-retail-sales-staffing-and-voic-mw29eom2",
+  "kind": "interview",
+  "level": 4,
+  "title": "Interview: Retail Sales staffing and voice capacity",
+  "story": [
+    "You meet Maya, the retail operations manager. She says Sales is falling behind and customers wait too long.",
+    "You will ask questions to learn what she needs. Then you will build the changes in the Contoso environment."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "goals": [
+    {
+      "type": "members",
+      "queue": "Sales",
+      "atLeast": 5
+    },
+    {
+      "type": "assignment-method",
+      "queue": "Sales",
+      "method": "Highest capacity"
+    },
+    {
+      "type": "capacity",
+      "profile": "Default voice inbound",
+      "limit": 3
+    }
+  ],
+  "interview": {
+    "persona": "Maya, the retail operations manager",
+    "opening": "Our Sales queue is falling behind and customers wait too long.",
+    "topics": [
+      {
+        "ask": "How many people do you think Sales needs on the phones to keep up?",
+        "answer": "We need at least five people on Sales so calls stop piling up.",
+        "goal": 0
+      },
+      {
+        "ask": "When a call comes in, do you want it sent to whoever's been idle longest or the agent with the most free capacity?",
+        "answer": "Send it to the agent with the most free capacity so busy people don't get more work.",
+        "goal": 1
+      },
+      {
+        "ask": "How many calls should each agent be able to handle at once?",
+        "answer": "Agents should be able to handle up to three work items at the same time.",
+        "goal": 2
+      }
+    ],
+    "extras": [
+      {
+        "ask": "Do you want Sales to take emails too?",
+        "answer": "Not right now. We first want to fix voice capacity."
+      },
+      {
+        "ask": "Are there specific people who must stay on Sales?",
+        "answer": "A few seniors should stay, but we can move others as needed."
+      }
+    ]
+  }
+}

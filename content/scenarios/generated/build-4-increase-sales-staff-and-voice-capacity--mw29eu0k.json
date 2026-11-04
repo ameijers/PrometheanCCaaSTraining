@@ -1,0 +1,24 @@
+{
+  "id": "build-4-increase-sales-staff-and-voice-capacity--mw29eu0k",
+  "kind": "build",
+  "level": 4,
+  "title": "Increase Sales staff and voice capacity for busy hours",
+  "story": [
+    "Anna in Contoso retail says callers wait too long at the Sales queue. She wants more people answering Sales calls during the day.",
+    "She also asks for the inbound voice profile to allow more simultaneous work items so agents can handle more calls. Build this in the admin center to meet her request."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "goals": [
+    {
+      "type": "members",
+      "queue": "Sales",
+      "atLeast": 5
+    },
+    {
+      "type": "capacity",
+      "profile": "Default voice inbound",
+      "limit": 3
+    }
+  ]
+}

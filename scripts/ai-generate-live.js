@@ -6,7 +6,7 @@
 // three. The hosted backend checks every try (manual 8.3) and keeps the ones that pass, so learners see them
 // at once. A copy of each goes to content/scenarios/generated/ for a person to look at.
 //
-//   node scripts/ai-generate-live.js <site address> [count]
+//   node scripts/ai-generate-live.js <site address> [count] [kinds, e.g. build:4,interview:4]
 //
 // Every try counts towards the site's AI limits (AI_DAILY_LIMIT; AI_LEARNER_LIMIT for this script's own
 // learner id, like any learner).
@@ -15,14 +15,15 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 
-const [site, countArg = "10"] = process.argv.slice(2);
+const [site, countArg = "10", only] = process.argv.slice(2);
 if (!site || !/^https:\/\//.test(site)) { console.error("Give the site's address: node scripts/ai-generate-live.js https://<name>.azurestaticapps.net [count]"); process.exit(1); }
 const base = site.replace(/\/+$/, "");
 const count = Number(countArg);
 const learner = crypto.randomBytes(16).toString("hex");
 const out = path.join(__dirname, "../content/scenarios/generated");
 // Every kind and level (src/scenarios/scenario.ts LEVELS), in turn.
-const plan = [["fix", 1], ["fix", 2], ["route", 1], ["route", 2], ["route", 3], ["build", 1], ["build", 2], ["build", 3], ["build", 4], ["build", 5], ["interview", 2], ["interview", 4]];
+const all = [["fix", 1], ["fix", 2], ["route", 1], ["route", 2], ["route", 3], ["build", 1], ["build", 2], ["build", 3], ["build", 4], ["build", 5], ["interview", 2], ["interview", 4]];
+const plan = only ? only.split(",").map((k) => { const [kind, level] = k.split(":"); return [kind, Number(level)]; }) : all;
 
 async function attempt(kind, level, previous) {
   const res = await fetch(`${base}/api/ai/scenario`, {
