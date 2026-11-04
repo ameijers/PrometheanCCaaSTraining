@@ -43,7 +43,7 @@ export function ExportDialog({ store, start, onClose }: { store: Store; start: S
                 <ul className="export-notes">{result.notExported.map((n) => <li key={n}>{n}</li>)}</ul>
               </>
             )}
-            <p className="export-muted">The phone numbers in the files are the training's fictional numbers: replace them with your own before you run Profile Builder.</p>
+            <p className="export-muted">The phone numbers in the files are the training's fictional numbers: replace them with your own before you run Profile Builder or Voice Channel Builder.</p>
           </DialogContent>
           <DialogActions><Button onClick={onClose}>Close</Button></DialogActions>
         </DialogBody>

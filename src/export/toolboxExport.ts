@@ -11,8 +11,9 @@ import { COLUMNS as PROFILE_COLUMNS } from "@toolbox/profile-builder/src/templat
 import { COLUMNS as UNIT_COLUMNS } from "@toolbox/business-unit-builder/src/template";
 import { COLUMNS as TEAM_COLUMNS } from "@toolbox/team-builder/src/template";
 import { COLUMNS as USER_COLUMNS } from "@toolbox/user-setup/src/template";
+import { COLUMNS as CHANNEL_COLUMNS } from "@toolbox/voice-channel-builder/src/template";
 import { parseDecisionXml } from "@toolbox/visual-routing-tester/src/ruleXml";
-import { ASSIGNMENT_LABELS, outboundProfiles, QUEUE_TYPE_LABELS, routeToQueueRuleset, simpleRule } from "../admin/actions";
+import { ASSIGNMENT_LABELS, isOutbound, outboundProfiles, QUEUE_TYPE_LABELS, routeToQueueRuleset, simpleRule } from "../admin/actions";
 import { skillRules } from "../calls/skills";
 import { Row, Store } from "../simulator/store";
 
@@ -102,6 +103,23 @@ export function exportDesign(store: Store, start: Store): Export {
     };
   });
 
+  // New phone lines on inbound workstreams that were there at the start (Voice Channel Builder adds channels to
+  // existing workstreams only; a new workstream's lines go with the workstream). Language is required there, and
+  // the training doesn't ask for one: the channel's own language setting if it has one, otherwise en-US, noted.
+  const startWsIds = new Set(start.table("msdyn_liveworkstream").map((w) => w.msdyn_liveworkstreamid));
+  const newChannel = isNew("msdyn_ocvoicechannelsetting", "msdyn_ocvoicechannelsettingid");
+  const channelRows = store.table("msdyn_ocvoicechannelsetting")
+    .filter((c) => newChannel(c) && startWsIds.has(c._msdyn_liveworkstreamid_value) && !isOutbound(store, c._msdyn_liveworkstreamid_value))
+    .map((c) => {
+      const setting = store.table("msdyn_ocvoicechannellanguagesetting").find((l) => l._msdyn_ocvoicechannelsettingid_value === c.msdyn_ocvoicechannelsettingid && l.msdyn_isprimary !== false);
+      const language = name("msdyn_oclanguage", setting?._msdyn_languageid_value, "msdyn_localecode");
+      if (!language) notExported.push(`The language of the channel “${c.msdyn_name}”: the training doesn't set one, so the file says en-US. Change it to the line's language before you run Voice Channel Builder.`);
+      return {
+        workstream_name: name("msdyn_liveworkstream", c._msdyn_liveworkstreamid_value, "msdyn_name"), channel_name: String(c.msdyn_name),
+        phone_number: e164(name("msdyn_ocphonenumber", c._msdyn_phonenumberid_value, "msdyn_phonenumber")), language: language || "en-US"
+      };
+    });
+
   // Business units (Business Unit Builder) and owner teams (Team Builder), and who's in the teams (User Setup).
   const unitRows = store.table("businessunit").filter(isNew("businessunit", "businessunitid"))
     .map((u) => ({ name: String(u.name), parent_business_unit: name("businessunit", u._parentbusinessunitid_value) }));
@@ -145,6 +163,7 @@ export function exportDesign(store: Store, start: Store): Export {
     file("Skill Assignment", "skills.csv", SKILL_COLUMNS, skillRows),
     file("Capacity Profile Assignment", "capacity-profiles.csv", CAPACITY_COLUMNS, capacityRows),
     file("Profile Builder", "outbound-profiles.csv", PROFILE_COLUMNS, profileRows),
+    file("Voice Channel Builder", "voice-channels.csv", CHANNEL_COLUMNS, channelRows),
     file("Business Unit Builder", "business-units.csv", UNIT_COLUMNS, unitRows),
     file("Team Builder", "teams.csv", TEAM_COLUMNS, teamRows),
     file("User Setup", "users.csv", USER_COLUMNS, userRows)

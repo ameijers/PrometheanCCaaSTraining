@@ -4,7 +4,7 @@ Answers to the open decisions in [BUILD_MANUAL.md](BUILD_MANUAL.md) section 15, 
 
 | # | Decision | Answer | Date |
 | --- | --- | --- | --- |
-| 15.2 | GitHub repo | Private repo (planned name `ameijers/PrometheanCCaaSTraining`; not created yet) | 2026-11-02 |
+| 15.2 | GitHub repo | Private repo `ameijers/PrometheanCCaaSTraining` (created by Alexander 2026-11-04) | 2026-11-02 |
 | 15.6 | License | MIT, like the Toolbox | 2026-11-02 |
 | 15.1 | Audience | Consultants and administrators who set up Contact Center first; supervisors and team leads second | 2026-11-03 |
 | 15.3 | AI provider | Claude (Anthropic API), behind one provider interface so it can be switched later. Same day, because cost matters: Azure OpenAI added as a second provider, and the Claude model made a setting (docs/scenarios.md) | 2026-11-03 |
