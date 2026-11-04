@@ -15,6 +15,7 @@ jest.mock("@azure/data-tables", () => ({
       createTable: async () => undefined,
       getEntity: async (p: string, k: string) => { const r = rows.get(`${p}|${k}`); if (!r) throw Object.assign(new Error("Not found"), { statusCode: 404 }); return r; },
       upsertEntity: async (e: any) => { rows.set(`${e.partitionKey}|${e.rowKey}`, e); },
+      deleteEntity: async (p: string, k: string) => { if (!rows.delete(`${p}|${k}`)) throw Object.assign(new Error("Not found"), { statusCode: 404 }); },
       listEntities: (o: any) => {
         const p = /PartitionKey eq '([^']+)'/.exec(o.queryOptions.filter)![1];
         return (async function* () { for (const r of rows.values()) if (r.partitionKey === p) yield r; })();
@@ -28,6 +29,10 @@ process.env.STORAGE_CONNECTION_STRING = "UseDevelopmentStorage=true";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require("../../backend/src/functions");
 import { TableStore } from "../../backend/src/tableStore";
+import { FileStore } from "../../backend/src/kv";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 
 const call = (method: string, url: string, body?: unknown, origin?: string) => registered.options.handler({
   method, url, query: new URL(url).searchParams,
@@ -54,7 +59,7 @@ test("only the site's own pages may write, and bad JSON is refused", async () =>
   expect(bad).toMatchObject({ status: 400, jsonBody: { error: "The request is not valid JSON." } });
 });
 
-test("the Table Storage store gets, puts and lists by partition", async () => {
+test("the Table Storage store gets, puts, lists by partition and removes", async () => {
   const store = new TableStore("UseDevelopmentStorage=true");
   expect(await store.get("counts", "2026-11-03")).toBeUndefined();
   await store.put("counts", "2026-11-03", 4);
@@ -62,4 +67,17 @@ test("the Table Storage store gets, puts and lists by partition", async () => {
   expect(await store.get("counts", "2026-11-03")).toBe(4);
   expect((await store.list<number>("counts")).map((r) => r.key).sort()).toEqual(["2026-11-03", "2026-11-04"]);
   await expect(store.put("bad partition", "k", 1)).rejects.toThrow(/Not a valid key/);
+  await store.remove("counts", "2026-11-03");
+  await store.remove("counts", "2026-11-03"); // already gone: nothing happens
+  expect((await store.list<number>("counts")).map((r) => r.key)).toEqual(["2026-11-04"]);
+});
+
+test("the file store removes too", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "kv-"));
+  const store = new FileStore(dir);
+  await store.put("class", "ABCDEF", { name: "A" });
+  await store.put("class", "GHJKLM", { name: "B" });
+  await store.remove("class", "ABCDEF");
+  await store.remove("class", "NOPQRS");
+  expect((await store.list("class")).map((r) => r.key)).toEqual(["GHJKLM"]);
 });

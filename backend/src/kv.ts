@@ -12,6 +12,8 @@ export interface KvStore {
   get<T>(partition: string, key: string): Promise<T | undefined>;
   put(partition: string, key: string, value: unknown): Promise<void>;
   list<T>(partition: string): Promise<{ key: string; value: T }[]>;
+  // Removes a value; nothing happens when it isn't there.
+  remove(partition: string, key: string): Promise<void>;
 }
 
 const SAFE = /^[\w:-]{1,120}$/;
@@ -53,6 +55,18 @@ export class FileStore implements KvStore {
   async list<T>(partition: string): Promise<{ key: string; value: T }[]> {
     return Object.entries(this.read(partition)).map(([key, value]) => ({ key, value: value as T }));
   }
+
+  remove(partition: string, key: string): Promise<void> {
+    checkKey(partition, key);
+    const run = this.queue.then(() => {
+      const all = this.read(partition);
+      if (!(key in all)) return;
+      delete all[key];
+      fs.writeFileSync(this.file(partition), JSON.stringify(all));
+    });
+    this.queue = run.catch(() => undefined);
+    return run;
+  }
 }
 
 // For tests: nothing on disk.
@@ -65,4 +79,5 @@ export class MemoryStore implements KvStore {
     this.data.get(partition)!.set(key, JSON.parse(JSON.stringify(value)));
   }
   async list<T>(partition: string): Promise<{ key: string; value: T }[]> { return [...(this.data.get(partition) ?? [])].map(([key, value]) => ({ key, value: value as T })); }
+  async remove(partition: string, key: string): Promise<void> { checkKey(partition, key); this.data.get(partition)?.delete(key); }
 }

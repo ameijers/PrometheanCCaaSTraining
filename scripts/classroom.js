@@ -88,6 +88,24 @@ async function main() {
     await waitText(trainer, ".trainer-table", "Sam", 15000);
     await shot(trainer, "trainer-progress");
 
+    // Managing the class: close it, and a new learner can't join; reopen it; remove Sam.
+    await click(trainer, ".trainer-manage button", "Close the class");
+    await waitText(trainer, ".trainer-status", "Closed");
+    await shot(trainer, "trainer-class-closed");
+    const late = current = await open(await browser.createBrowserContext());
+    await late.goto(`http://localhost:${port}/?class=${code}`, { waitUntil: "networkidle0" });
+    await late.waitForSelector("[role=dialog] input");
+    await (await late.$$("[role=dialog] input"))[1].type("Kim");
+    await click(late, "[role=dialog] button", "Join");
+    await waitText(late, "[role=dialog]", "is closed");
+    await shot(late, "learner-class-closed");
+    current = trainer;
+    await click(trainer, ".trainer-manage button", "Reopen the class");
+    await waitText(trainer, ".trainer-status", "Open");
+    await trainer.click("button[aria-label='Remove Sam']");
+    await waitText(trainer, ".trainer-body", "Nobody has started yet");
+    await shot(trainer, "trainer-learner-removed");
+
     // The guided tour, on the learner's screen.
     current = learner;
     await click(learner, ".training-env button", "Tour");
@@ -97,6 +115,12 @@ async function main() {
     await learner.click(".tour-controls button[aria-label='Next step']");
     await learner.click(".tour-controls button[aria-label='Next step']");
     await shot(learner, "tour-admin-center");
+
+    // The trainer deletes the class: its code stops working.
+    current = trainer;
+    await click(trainer, ".trainer-manage button", "Delete the class");
+    await waitText(trainer, ".lesson-title", "Create a class");
+    console.log(`class ${code} deleted`);
   } catch (e) {
     if (current) await current.screenshot({ path: path.join(out, "failure.png") });
     throw new Error(`${e.message} (after step ${n}, waiting for ${last})${errors.length ? `\npage errors:\n${errors.join("\n")}` : ""}`);
