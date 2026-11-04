@@ -7,7 +7,7 @@ import { KvStore, checkKey } from "./kv";
 // The backend's store when it's hosted (phase 9): Azure Table Storage, one table. A partition is the
 // table's PartitionKey, a key its RowKey, and the value is kept as JSON text in one column. Calls as
 // documented in @azure/data-tables (TableClient: fromConnectionString, createTable, getEntity,
-// upsertEntity, listEntities).
+// upsertEntity, listEntities, deleteEntity).
 
 interface Row { value: string }
 
@@ -48,5 +48,15 @@ export class TableStore implements KvStore {
       out.push({ key: String(row.rowKey), value: JSON.parse(row.value) as T });
     }
     return out;
+  }
+
+  async remove(partition: string, key: string): Promise<void> {
+    checkKey(partition, key);
+    await this.ready;
+    try {
+      await this.client.deleteEntity(partition, key);
+    } catch (e) {
+      if ((e as { statusCode?: number }).statusCode !== 404) throw e;
+    }
   }
 }

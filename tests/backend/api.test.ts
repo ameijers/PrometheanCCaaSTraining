@@ -59,6 +59,79 @@ describe("classes", () => {
   test("only the training's own pages may write", async () => {
     expect((await a.handle(req("POST", "/classes", { name: "A", scenarios: ["x"] }, { origin: "https://evil.example" }))).status).toBe(403);
     expect((await a.handle(req("POST", "/classes", { name: "A", scenarios: ["x"] }, { origin: undefined }))).status).toBe(403);
+    expect((await a.handle(req("POST", "/classes/ABCDEF/delete", { key: "k" }, { origin: "https://evil.example" }))).status).toBe(403);
+  });
+});
+
+describe("a trainer passcode", () => {
+  const withPasscode = createApi({ settings: { ...settings, trainerPasscode: "contoso-trainers" }, store: new MemoryStore(), cacheDir: path.join(os.tmpdir(), "learn-cache-test"), allowed: (o) => o === SITE });
+
+  test("is asked for when it's set, and not otherwise", async () => {
+    expect((await withPasscode.handle(req("GET", "/trainer"))).body).toEqual({ passcodeRequired: true });
+    expect((await api().handle(req("GET", "/trainer"))).body).toEqual({ passcodeRequired: false });
+  });
+
+  test("only the right passcode creates a class", async () => {
+    const make = (passcode?: string) => withPasscode.handle(req("POST", "/classes", { name: "A", scenarios: ["x"], passcode }));
+    expect((await make()).body).toEqual({ error: "That isn't the trainer passcode. Ask whoever runs the training for it." });
+    expect((await make("contoso")).status).toBe(403);
+    expect((await make("contoso-trainers")).status).toBe(200);
+  });
+});
+
+describe("managing a class", () => {
+  const a = api();
+  const other = "fedcba9876543210fedcba9876543210";
+  const report = (code: string, who: string) => a.handle(req("POST", `/classes/${code}/progress`, { learnerId: who, name: who === learner ? "Sam" : "Kim", scenarioId: "x", title: "X", checks: [], done: false, hints: 0 }));
+  const make = async (extra: object = {}) => (await a.handle(req("POST", "/classes", { name: "Workshop", scenarios: ["x"], ...extra }))).body as { code: string; trainerKey: string };
+  const seen = async (code: string, key: string) => (await a.handle(req("GET", `/classes/${code}/progress?key=${key}`))).body as any;
+
+  test("an end date in the past stops joining and progress; the trainer still sees the class and can move it", async () => {
+    const { code, trainerKey } = await make({ openUntil: "2020-01-31" });
+    expect((await a.handle(req("GET", `/classes/${code}`))).body).toEqual({ error: "The class Workshop ended on 2020-01-31. Ask your trainer." });
+    expect((await report(code, learner)).status).toBe(410);
+    expect((await seen(code, trainerKey)).class).toMatchObject({ openUntil: "2020-01-31", open: false, closed: false });
+    const moved = await a.handle(req("POST", `/classes/${code}/settings`, { key: trainerKey, openUntil: "2999-12-31" }));
+    expect(moved.body).toMatchObject({ openUntil: "2999-12-31", open: true });
+    expect((await report(code, learner)).status).toBe(200);
+    expect((await a.handle(req("POST", `/classes/${code}/settings`, { key: trainerKey, openUntil: "" }))).body).not.toHaveProperty("openUntil");
+    expect((await a.handle(req("POST", "/classes", { name: "B", scenarios: ["x"], openUntil: "next week" }))).body).toEqual({ error: "The end date must be a date like 2026-12-31." });
+  });
+
+  test("a closed class takes no one until it's reopened", async () => {
+    const { code, trainerKey } = await make();
+    expect((await a.handle(req("POST", `/classes/${code}/settings`, { key: trainerKey, closed: true }))).body).toMatchObject({ closed: true, open: false });
+    expect((await a.handle(req("GET", `/classes/${code}`))).status).toBe(410);
+    expect((await report(code, learner)).body).toEqual({ error: "The class Workshop is closed. Ask your trainer." });
+    await a.handle(req("POST", `/classes/${code}/settings`, { key: trainerKey, closed: false }));
+    expect((await report(code, learner)).status).toBe(200);
+  });
+
+  test("a removed learner's progress goes, and they can't report again; the others stay", async () => {
+    const { code, trainerKey } = await make();
+    await report(code, learner);
+    await report(code, other);
+    expect((await a.handle(req("POST", `/classes/${code}/remove`, { key: trainerKey, learnerId: learner }))).body).toEqual({ removed: true });
+    expect((await seen(code, trainerKey)).progress.map((p: any) => p.name)).toEqual(["Kim"]);
+    expect((await report(code, learner)).status).toBe(403);
+    expect((await report(code, other)).status).toBe(200);
+  });
+
+  test("deleting removes the class and its progress for good", async () => {
+    const { code, trainerKey } = await make();
+    await report(code, learner);
+    expect((await a.handle(req("POST", `/classes/${code}/delete`, { key: trainerKey }))).body).toEqual({ deleted: true });
+    expect((await a.handle(req("GET", `/classes/${code}`))).status).toBe(404);
+    expect((await a.handle(req("GET", `/classes/${code}/progress?key=${trainerKey}`))).status).toBe(404);
+  });
+
+  test("every change needs the trainer's key", async () => {
+    const { code } = await make();
+    for (const [action, body] of [["settings", { closed: true }], ["remove", { learnerId: learner }], ["delete", {}]] as const) {
+      expect((await a.handle(req("POST", `/classes/${code}/${action}`, { ...body, key: "0".repeat(32) }))).status).toBe(403);
+      expect((await a.handle(req("POST", `/classes/${code}/${action}`, body))).status).toBe(403);
+    }
+    expect((await a.handle(req("GET", `/classes/${code}`))).status).toBe(200);
   });
 });
 

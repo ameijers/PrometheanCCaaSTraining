@@ -13,6 +13,7 @@ Answers to the open decisions in [BUILD_MANUAL.md](BUILD_MANUAL.md) section 15, 
 | 15.5 | Sign-in and progress | Class codes: a trainer creates a class and gets a code; learners join with the code and a display name. No accounts, no personal data beyond the name. Entra ID can come later | 2026-11-03 |
 | 15.4 | Hosting (update) | Azure Static Web Apps, with the backend as Azure Functions. Prepared in phase 9; deployed only when Alexander says so | 2026-11-03 |
 | 15.8 | Name and branding | Keep "Promethean CCaaS Training", by Promethean Academy, with its current look | 2026-11-03 |
+| 15.5 | Sign-in and progress (update) | Still no accounts. Added: an optional trainer passcode (TRAINER_PASSCODE) for creating classes, and class management with the trainer link: a last day, close and reopen, remove a learner, delete. Entra ID sign-in for trainers stays possible later | 2026-11-04 |
 | — | Role of the Toolbox | A head start for building the training, not its subject. Its code runs underneath and the Environment Diagram is shown; learners don't use its tools. The tools run against the simulator in tests only. (Manual 2.5.) | 2026-11-02 |
 
 No open decisions left.

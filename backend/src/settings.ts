@@ -15,6 +15,8 @@ import * as path from "path";
 //   AZURE_OPENAI_DEPLOYMENT  the deployment name of a model that supports structured outputs
 //   AI_DAILY_LIMIT           AI requests per day for the whole training, default 40 (manual 8.4)
 //   AI_LEARNER_LIMIT         AI requests per learner per day, default 15
+//   TRAINER_PASSCODE         if set, creating a class needs this passcode (docs/classroom.md). Unset: anyone may
+//                            create a class, 10 a day per browser
 // Without a key, the AI is switched off and the training runs on ready-made scenarios.
 
 export const ROOT = path.resolve(__dirname, "../..");
@@ -32,6 +34,7 @@ export interface Settings {
   dailyLimit: number;
   learnerLimit: number;
   port: number;
+  trainerPasscode?: string;
 }
 
 export const settings: Settings = {
@@ -41,5 +44,6 @@ export const settings: Settings = {
   azure: { endpoint: env("AZURE_OPENAI_ENDPOINT"), apiKey: env("AZURE_OPENAI_API_KEY"), deployment: env("AZURE_OPENAI_DEPLOYMENT") },
   dailyLimit: Number(env("AI_DAILY_LIMIT") ?? 40),
   learnerLimit: Number(env("AI_LEARNER_LIMIT") ?? 15),
-  port: Number(env("PORT") ?? 7071)
+  port: Number(env("PORT") ?? 7071),
+  trainerPasscode: env("TRAINER_PASSCODE")
 };

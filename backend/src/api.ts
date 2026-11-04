@@ -8,7 +8,7 @@ import { UsageLimits } from "./ai/limits";
 import { AiError, AiProvider } from "./ai/provider";
 import { answerAsCustomer, Attempt, MAX_ATTEMPTS, writeCaller, writeHint, writeScenarioAttempt } from "./ai/scenarios";
 import { ArticleCache } from "./cache";
-import { Classes, isLearnerId } from "./classes";
+import { Classes, isLearnerId, sameSecret } from "./classes";
 import { KvStore } from "./kv";
 import { Concept, ConceptStatus, statusOf } from "./learn";
 import { Settings } from "./settings";
@@ -28,10 +28,14 @@ import conceptsJson from "../../content/concepts.json";
 //   POST /ai/caller                   { dial }: the AI plays a caller on that line (manual 5.5)
 //   POST /ai/interview                { scenario, talk, question }: the AI customer answers (manual 8.2)
 //   POST /ai/hint                     { requirement, checks, concept }: a hint based on the concept's Learn passage
-//   POST /classes                     { name, scenarios }: a trainer creates a class (manual 10)
-//   GET  /classes/<code>              the class's name and exercises
-//   POST /classes/<code>/progress     a learner's progress on an exercise
+//   GET  /trainer                     whether creating a class needs the trainer passcode
+//   POST /classes                     { name, scenarios, openUntil?, passcode? }: a trainer creates a class (manual 10)
+//   GET  /classes/<code>              the class's name and exercises, while it's open
+//   POST /classes/<code>/progress     a learner's progress on an exercise, while the class is open
 //   GET  /classes/<code>/progress?key the class's progress, for its trainer
+//   POST /classes/<code>/settings     { key, openUntil?, closed? }: the trainer sets an end date, or closes or reopens it
+//   POST /classes/<code>/remove       { key, learnerId }: the trainer removes a learner and their progress
+//   POST /classes/<code>/delete       { key }: the trainer deletes the class and all its progress
 // POSTs are only taken from the training's own pages. AI requests carry the learner's random id
 // (header X-Learner), for the per-learner limit.
 
@@ -108,6 +112,7 @@ export function createApi(o: ApiOptions) {
         return ok({ available: !!chosen.provider, provider: chosen.provider?.name, off: chosen.off, usedToday: used.today, dailyLimit: limits.daily, usedByYou: used.learner, learnerLimit: limits.perLearner });
       }
       if (p === "/ai/scenarios") return ok({ scenarios: await scenarios() });
+      if (p === "/trainer") return ok({ passcodeRequired: !!o.settings.trainerPasscode });
       const cls = p.match(/^\/classes\/(\w+)$/);
       if (cls) return ok(await classes.get(cls[1]));
       const prog = p.match(/^\/classes\/(\w+)\/progress$/);
@@ -144,17 +149,28 @@ export function createApi(o: ApiOptions) {
       }
       if (p === "/classes") {
         // Anyone on the site may create a class, so a few a day per browser, to keep the store from filling up.
+        // With TRAINER_PASSCODE set, only people who have the passcode may.
         if (!isLearnerId(r.learner)) throw new AiError("The training didn't say who's asking.", 400);
+        const { name, scenarios: list, openUntil, passcode } = await r.body();
+        if (o.settings.trainerPasscode && !sameSecret(passcode, o.settings.trainerPasscode)) throw new AiError("That isn't the trainer passcode. Ask whoever runs the training for it.", 403);
         const key = `${new Date().toISOString().slice(0, 10)}:classes:${r.learner}`;
         const made = (await o.store.get<number>("usage", key)) ?? 0;
         if (made >= CLASSES_PER_DAY) throw new AiError(`You've created ${CLASSES_PER_DAY} classes today. Try again tomorrow.`, 429);
-        const { name, scenarios: list } = await r.body();
-        const created = await classes.create(name, list);
+        const created = await classes.create(name, list, openUntil);
         await o.store.put("usage", key, made + 1);
         return ok(created);
       }
       const prog = p.match(/^\/classes\/(\w+)\/progress$/);
       if (prog) { await classes.report(prog[1], await r.body(50_000)); return ok({ saved: true }); }
+      const manage = p.match(/^\/classes\/(\w+)\/(settings|remove|delete)$/);
+      if (manage) {
+        const [, code, action] = manage;
+        const body = await r.body();
+        if (action === "settings") return ok(await classes.update(code, body?.key, { ...("openUntil" in (body ?? {}) ? { openUntil: body.openUntil } : {}), closed: body?.closed }));
+        if (action === "remove") { await classes.removeLearner(code, body?.key, body?.learnerId); return ok({ removed: true }); }
+        await classes.delete(code, body?.key);
+        return ok({ deleted: true });
+      }
     }
     return { status: 404, body: { error: "Not found." } };
   }

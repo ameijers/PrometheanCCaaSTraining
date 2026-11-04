@@ -26,6 +26,7 @@ The browser finds the backend by itself: `http://localhost:7071` on this machine
 | `ANTHROPIC_API_KEY` and optionally `AI_MODEL` | for Claude (decision 15.3) |
 | or `AI_PROVIDER=azure-openai`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT` | for Azure OpenAI |
 | `AI_DAILY_LIMIT`, `AI_LEARNER_LIMIT` | optional; 40 and 15 by default |
+| `TRAINER_PASSCODE` | optional, recommended; creating a class then needs this passcode. Give it to your trainers only (docs/classroom.md) |
 
    Without an AI key the training runs on its ready-made scenarios. Without a storage connection string the backend keeps classes in its temporary folder, which is lost when it restarts: fine for a look, not for a class.
 
