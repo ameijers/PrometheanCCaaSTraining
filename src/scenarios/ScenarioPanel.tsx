@@ -52,7 +52,7 @@ function FixExercise({ scenario, hints, onHint, onGo, onProgress }: { scenario: 
   const [grade, setGrade] = useState<FixGrade | undefined>();
   const faults = scenario.faults ?? [];
   useEffect(() => {
-    const t = setTimeout(() => void gradeFix(faults, sim.store).then(setGrade).catch(() => undefined), 150);
+    const t = setTimeout(() => void gradeFix(faults).then(setGrade).catch(() => undefined), 150);
     return () => clearTimeout(t);
   }, [version, scenario.id]);
   useEffect(() => {

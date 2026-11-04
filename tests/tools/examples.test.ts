@@ -34,6 +34,7 @@ import * as voice from "@toolbox/voice-workstream-builder/src/dataverse";
 import { validateCsv as validateWorkstreams } from "@toolbox/voice-workstream-builder/src/validate";
 import { resolvePlan as resolveWorkstreams } from "@toolbox/voice-workstream-builder/src/resolve";
 import { executePlan as runWorkstreams } from "@toolbox/voice-workstream-builder/src/execute";
+import { addChannels, resolveChannelPlan, validateChannels } from "@toolbox/voice-channel-builder/src/plan";
 import { resolveProfiles, validateProfiles } from "@toolbox/profile-builder/src/plan";
 import * as routes from "@toolbox/route-to-queue-builder/src/dataverse";
 import { resolvePlan as resolveRoutes, validateCsv as validateRoutes } from "@toolbox/route-to-queue-builder/src/plan";
@@ -126,6 +127,14 @@ describe("each bulk tool runs its example CSV to the end", () => {
     expect(failuresOf(await runWorkstreams(plan, voice.dataverseSource))).toEqual([]);
   });
 
+  test("Voice Channel Builder", async () => {
+    const before = count("msdyn_ocvoicechannelsetting");
+    const plan = resolveChannelPlan(validateChannels(csv("voice-channel-builder")), await voice.dataverseSource.loadCatalog());
+    expect(errorsOf(plan.issues)).toEqual([]);
+    expect(failuresOf(await addChannels(plan, voice.dataverseSource))).toEqual([]);
+    expect(count("msdyn_ocvoicechannelsetting")).toBe(before + 3);
+  });
+
   test("Profile Builder (in an environment of its own)", async () => {
     // Its example and Voice Workstream Builder's both create "Callbacks – Outbound", so it runs on a fresh
     // training environment.
@@ -179,6 +188,6 @@ test("every example CSV in the Toolbox is covered", () => {
   const withExamples = fs.readdirSync(tools).filter((t) => fs.existsSync(path.join(tools, t, "examples"))).sort();
   expect(withExamples).toEqual([
     "business-unit-builder", "capacity-profile-assignment", "profile-builder", "queue-builder", "queue-membership", "route-to-queue-builder",
-    "skill-assignment", "team-builder", "user-setup", "voice-workstream-builder", "voicemail-builder"
+    "skill-assignment", "team-builder", "user-setup", "voice-channel-builder", "voice-workstream-builder", "voicemail-builder"
   ]);
 });

@@ -48,11 +48,12 @@ export function exampleSupportRows(): Rows {
     // Queues the voice-workstream-builder, route-to-queue-builder and voicemail-builder examples name.
     queue: ["Sales Fallback", "Support Fallback", "Callbacks", "Claims Fallback", "Sales – Orders", "Support – Returns", "Support – Technical", "Sales – Voice", "Support – Voice", "Billing – Voice"]
       .map((name, i) => ({ queueid: id("84", i + 1), name, msdyn_queuetype: VOICE_QUEUE, msdyn_isomnichannelqueue: true })),
-    // route-to-queue-builder's example adds rules to "Billing – Voice", which no other example creates.
-    msdyn_liveworkstream: [{
-      msdyn_liveworkstreamid: id("85", 1), msdyn_name: "Billing – Voice", msdyn_streamsource: VOICE_STREAM, msdyn_direction: 0, msdyn_enablevoicev2: true,
+    // route-to-queue-builder's example adds rules to "Billing – Voice", and voice-channel-builder's adds channels
+    // to "Contoso Voice" and "Contoso Voice Sales"; no other example creates them.
+    msdyn_liveworkstream: ["Billing – Voice", "Contoso Voice", "Contoso Voice Sales"].map((name, i) => ({
+      msdyn_liveworkstreamid: id("85", i + 1), msdyn_name: name, msdyn_streamsource: VOICE_STREAM, msdyn_direction: 0, msdyn_enablevoicev2: true,
       _msdyn_defaultqueue_value: id("84", 10)
-    }],
+    })),
     // Phone numbers the voice-workstream-builder and profile-builder examples use, all in fiction ranges
     // (examples.ts swaps the two non-fiction numbers in the CSVs for these).
     msdyn_ocphonenumber: [
