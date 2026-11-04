@@ -1,0 +1,50 @@
+{
+  "id": "interview-4-interview-enterprise-sales-assignment-an-mw2bygtm",
+  "kind": "interview",
+  "level": 4,
+  "title": "Interview: Enterprise Sales assignment and voice limit",
+  "story": [
+    "Asha is the sales operations manager at Contoso. She invited you to talk about phone handling for Retail Sales – Voice.",
+    "She says callers wait too long and work is not shared fairly. She wants agents to take more calls at once and for Enterprise Sales to get calls in a fair rotation."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "goals": [
+    {
+      "type": "capacity",
+      "profile": "Default voice inbound",
+      "limit": 3
+    },
+    {
+      "type": "assignment-method",
+      "queue": "Enterprise Sales",
+      "method": "Advanced round robin"
+    }
+  ],
+  "interview": {
+    "persona": "Asha, the sales operations manager",
+    "opening": "We need to handle more incoming sales calls and balance them better.",
+    "topics": [
+      {
+        "ask": "How many calls should one agent handle during busy times?",
+        "answer": "I want agents to be able to handle up to three live calls so customers do not wait.",
+        "goal": 0
+      },
+      {
+        "ask": "Should calls go to the least busy agent or be shared another way?",
+        "answer": "Share them evenly. Everyone should get a fair turn, not just the same people.",
+        "goal": 1
+      }
+    ],
+    "extras": [
+      {
+        "ask": "Do you still want voicemail after hours?",
+        "answer": "Yes, keep voicemail for after hours so we can follow up."
+      },
+      {
+        "ask": "Do you need simple reports on call volumes?",
+        "answer": "Yes. A weekly summary is fine."
+      }
+    ]
+  }
+}

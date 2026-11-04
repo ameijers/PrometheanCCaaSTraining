@@ -1,0 +1,33 @@
+{
+  "id": "build-4-require-intermediate-sales-skill-change--mw2by31a",
+  "kind": "build",
+  "level": 4,
+  "title": "Require Intermediate Sales skill, change Sales method and raise voice limit",
+  "story": [
+    "Sarah is the Retail Sales manager. She wants callers who choose Sales to go only to agents who have the Sales skill at Intermediate level.",
+    "She also wants the Sales queue to hand out calls by Highest capacity so work is balanced. She asks to raise the Default voice inbound limit to 3 so the team can take more calls at the same time."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "goals": [
+    {
+      "type": "skills",
+      "workstream": "Retail Sales – Voice",
+      "choice": "Sales",
+      "skill": "Sales",
+      "rating": "Intermediate",
+      "queue": "Sales",
+      "members": 2
+    },
+    {
+      "type": "assignment-method",
+      "queue": "Sales",
+      "method": "Highest capacity"
+    },
+    {
+      "type": "capacity",
+      "profile": "Default voice inbound",
+      "limit": 3
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "id": "interview-4-interview-retail-sales-routing-capacity--mw2bxskd",
+  "kind": "interview",
+  "level": 4,
+  "title": "Interview: Retail Sales routing, capacity and English skill",
+  "story": [
+    "You meet Tom, the retail sales manager, in a small meeting room. He wants to fix how incoming sales calls are offered to agents.",
+    "Tom explains there are wrong matches and long waits. He wants routing, capacity and English skill checks changed to match how his team works."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "goals": [
+    {
+      "type": "assignment-method",
+      "queue": "Sales",
+      "method": "Highest capacity"
+    },
+    {
+      "type": "capacity",
+      "profile": "Default voice inbound",
+      "limit": 2
+    },
+    {
+      "type": "skills",
+      "workstream": "Retail Sales – Voice",
+      "choice": "Sales",
+      "skill": "English",
+      "rating": "Intermediate",
+      "queue": "Sales",
+      "members": 3
+    }
+  ],
+  "interview": {
+    "persona": "Tom, the retail sales manager",
+    "opening": "We need to improve how incoming sales calls are handled.",
+    "topics": [
+      {
+        "ask": "Do you want calls sent to whoever has been idle the longest, or someone who has most spare capacity?",
+        "answer": "Pick agents with the most spare capacity. I don't want to give another call to someone already stretched.",
+        "goal": 0
+      },
+      {
+        "ask": "Should agents be allowed to handle more than one inbound sales call at once?",
+        "answer": "Yes. Let agents take two sales calls at the same time during busy periods.",
+        "goal": 1
+      },
+      {
+        "ask": "Do incoming sales calls need a language or skill requirement?",
+        "answer": "Yes. Only agents who meet an intermediate level of English should be offered these sales calls. All three sales agents must meet that level.",
+        "goal": 2
+      }
+    ],
+    "extras": [
+      {
+        "ask": "Are the sales opening hours the usual office times?",
+        "answer": "Yes. The retail sales line is open weekdays from nine to five."
+      },
+      {
+        "ask": "Do you want voicemail outside opening times?",
+        "answer": "Keep voicemail outside hours, that's fine."
+      },
+      {
+        "ask": "Do we change the enterprise routing too?",
+        "answer": "No, leave the enterprise line as it is."
+      }
+    ]
+  }
+}
