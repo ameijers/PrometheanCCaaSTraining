@@ -13,6 +13,9 @@ import { COLUMNS as SKILL_COLUMNS } from "@toolbox/skill-assignment/src/template
 import { COLUMNS as UNIT_COLUMNS } from "@toolbox/business-unit-builder/src/template";
 import { COLUMNS as TEAM_COLUMNS } from "@toolbox/team-builder/src/template";
 import { COLUMNS as USER_COLUMNS } from "@toolbox/user-setup/src/template";
+import { COLUMNS as CHANNEL_COLUMNS } from "@toolbox/voice-channel-builder/src/template";
+import { validateChannels } from "@toolbox/voice-channel-builder/src/plan";
+import { findNumber, purchaseNumber, setupWorkstream } from "../../src/admin/actions";
 import { exportDesign } from "../../src/export/toolboxExport";
 import { solve } from "../../src/scenarios/goals";
 import { Scenario } from "../../src/scenarios/scenario";
@@ -24,6 +27,9 @@ const sim = createSimulator();
 const admin = { api: sim.api, store: sim.store };
 const built = (readyMade.scenarios as unknown as Scenario[]).filter((s) => s.kind === "build");
 for (const s of built) for (const g of s.goals ?? []) solve(admin, g);
+// A second line on a workstream that was there at the start: Voice Channel Builder's job.
+const customerService = sim.store.table("msdyn_liveworkstream").find((w) => w.msdyn_name === "Customer Service – Voice")!;
+setupWorkstream(admin, purchaseNumber(admin, findNumber(sim.store, "United States", "425 (Washington)")!, { receive: true, make: false }), customerService.msdyn_liveworkstreamid);
 const result = exportDesign(sim.store, start.store);
 const fileFor = (name: string) => result.files.find((f) => f.fileName === name);
 
@@ -34,7 +40,8 @@ const COLUMNS: Record<string, [ColumnDef[], string]> = {
   "skills.csv": [SKILL_COLUMNS, "user"],
   "business-units.csv": [UNIT_COLUMNS, "name"],
   "teams.csv": [TEAM_COLUMNS, "team_name"],
-  "users.csv": [USER_COLUMNS, "user"]
+  "users.csv": [USER_COLUMNS, "user"],
+  "voice-channels.csv": [CHANNEL_COLUMNS, "channel_name"]
 };
 
 describe("export to the Toolbox's CSV templates", () => {
@@ -59,6 +66,14 @@ describe("export to the Toolbox's CSV templates", () => {
     const parsed = validateProfiles(parseCsv(fileFor("outbound-profiles.csv")!.csv));
     expect(parsed.issues.filter((i) => i.severity === "error")).toEqual([]);
     expect(parsed.workstreams.map((w) => [w.name, w.outboundQueue])).toEqual([["Billing Outbound", "Billing"]]);
+  });
+
+  test("the new line passes Voice Channel Builder's own checks, and only it is in the file", () => {
+    const parsed = validateChannels(parseCsv(fileFor("voice-channels.csv")!.csv));
+    expect(parsed.issues.filter((i) => i.severity === "error")).toEqual([]);
+    expect(parsed.workstreams.map((w) => [w.name, w.channels.length])).toEqual([["Customer Service – Voice", 1]]);
+    expect(parsed.workstreams[0].channels[0].phoneNumber).toMatch(/^\+1425/);
+    expect(result.notExported.some((n) => n.startsWith("The language of the channel"))).toBe(true);
   });
 
   test("what the exercises built is in the files", () => {

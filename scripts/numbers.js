@@ -68,6 +68,11 @@ async function main() {
     await waitText(".phone-steps", "Partner Line – Voice");
     await shot("new-number-rings");
     console.log(`${number} rings Partner Line – Voice`);
+
+    // The new line, exported for the Toolbox's Voice Channel Builder.
+    await click("header button", "Export");
+    await waitText("[role=dialog]", "Voice Channel Builder");
+    await shot("export-voice-channels");
   } catch (e) {
     await page.screenshot({ path: path.join(out, "failure.png") });
     throw new Error(`${e.message} (after step ${n}, waiting for ${last})${errors.length ? `\npage errors:\n${errors.join("\n")}` : ""}`);
