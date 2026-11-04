@@ -1,0 +1,43 @@
+{
+  "name": "promethean-ccaas-training",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "build": "webpack --config webpack.config.js",
+    "test": "jest --runInBand",
+    "typecheck": "tsc --noEmit -p .",
+    "serve": "npm run build && npx serve dist -l 5480",
+    "surface": "node scripts/webapi-surface.js",
+    "walkthrough": "node scripts/walkthrough.js walkthrough",
+    "backend": "npm run backend:build && node backend/dist/server.js",
+    "learn:review": "npm run backend:build && node backend/dist/review.js",
+    "backend:build": "webpack --config webpack.backend.js",
+    "ai:generate": "npm run backend:build && node backend/dist/generate.js",
+    "deploy:azure": "node scripts/deploy-azure.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.4.0",
+    "@fluentui/react-components": "^9.75.1",
+    "@fluentui/react-icons": "^2.0.345",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@azure/data-tables": "^13.3.2",
+    "@azure/functions": "^4.17.0",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "axe-core": "^4.14.0",
+    "html-webpack-plugin": "^5.6.3",
+    "jest": "^29.7.0",
+    "puppeteer-core": "^25.16.0",
+    "ts-jest": "^29.2.5",
+    "ts-loader": "^9.6.2",
+    "typescript": "^5.7.2",
+    "webpack": "^5.110.3",
+    "webpack-cli": "^6.0.1"
+  }
+}

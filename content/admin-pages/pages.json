@@ -1,0 +1,553 @@
+{
+  "about": "The simulated Copilot Service admin center's pages. Menu path, page, section, button and field names as the real admin center shows them (checked in academyexperiment on 2026-11-02), with the Learn article for each page. Our own look. Only the Contact Center parts; the Customer Service parts (basic queues, routing dialogs, case and email settings) are left out. Descriptions are our own words or quoted from Learn.",
+  "checkedInAdminCenter": "2026-11-02",
+  "notice": "Omnichannel configuration changes take up to 15 minutes to reflect.",
+  "noticeTraining": "In the training, changes take effect straight away.",
+  "siteMap": [
+    {
+      "group": "Customer support",
+      "items": [
+        {
+          "label": "Overview"
+        },
+        {
+          "label": "User management",
+          "page": "user-management",
+          "learn": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/capacity-profiles"
+        },
+        {
+          "label": "AI Agents"
+        },
+        {
+          "label": "Channels",
+          "page": "channels",
+          "learn": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/voice-channel-manage-phone-numbers"
+        },
+        {
+          "label": "Intent"
+        },
+        {
+          "label": "Queues",
+          "page": "queues",
+          "learn": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/queues-omnichannel"
+        },
+        {
+          "label": "Routing"
+        },
+        {
+          "label": "Conversation Orchestration"
+        },
+        {
+          "label": "Workstreams",
+          "page": "workstreams",
+          "learn": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/create-workstreams"
+        }
+      ]
+    }
+  ],
+  "pages": {
+    "queues": {
+      "title": "Queues",
+      "concept": "queue",
+      "intro": "Queues collect work and hand it out to customer service representatives.",
+      "cards": [
+        {
+          "title": "Advanced queues",
+          "description": "Set assignment methods to distribute work automatically, and manage the queue's users, operating hours and overflow.",
+          "action": "Manage",
+          "page": "advanced-queues"
+        }
+      ]
+    },
+    "advanced-queues": {
+      "title": "Queues",
+      "crumbs": [
+        "Queues"
+      ],
+      "concept": "create-queue",
+      "newButton": "New queue",
+      "refresh": "Refresh",
+      "search": "Search queues",
+      "columns": [
+        "Name",
+        "Queue priority",
+        "Type",
+        "Owner",
+        "Created on"
+      ],
+      "createDialog": {
+        "title": "Create a queue",
+        "intro": "A queue collects work for a group of users. After you create it, you add users, an assignment method and operation hours.",
+        "fields": {
+          "name": "Name",
+          "type": "Type",
+          "typePlaceholder": "Select a queue type",
+          "priority": "Queue priority",
+          "priorityInfo": "A smaller number is a higher priority: queue 1 is served before queue 2.",
+          "description": "Description",
+          "owner": "Owner"
+        },
+        "types": [
+          "Messaging",
+          "Record",
+          "Voice"
+        ],
+        "submit": "Create"
+      }
+    },
+    "queue": {
+      "concept": "queue",
+      "edit": "Edit",
+      "header": {
+        "type": "Type",
+        "owner": "Owner"
+      },
+      "users": {
+        "tabs": [
+          "Users",
+          "User groups"
+        ],
+        "search": "Search",
+        "seeMore": "See more",
+        "addUsers": "Add users",
+        "columns": [
+          "Name",
+          "Type",
+          "Role",
+          "Capacity profile",
+          "Capacity",
+          "Business unit",
+          "Date added"
+        ],
+        "empty": "No users yet. Select Add users.",
+        "concept": "queue-users"
+      },
+      "addUsersPanel": {
+        "title": "Add Users",
+        "intro": "Pick the customer service representatives who can get work from this queue.",
+        "search": "Search",
+        "columns": [
+          "Name",
+          "Type",
+          "Role",
+          "Capacity profile",
+          "Capacity",
+          "Business unit"
+        ],
+        "submit": "Add",
+        "cancel": "Cancel"
+      },
+      "assignmentMethod": {
+        "title": "Assignment method",
+        "seeMore": "See more",
+        "readOnly": "Read-only",
+        "concept": "assignment-method",
+        "none": "Not set"
+      },
+      "overflow": {
+        "title": "Overflow handling",
+        "edit": "Edit",
+        "condition": "Condition",
+        "action": "Action",
+        "none": "No overflow conditions.",
+        "page": "Overflow handling",
+        "before": "Before work items are queued",
+        "queued": "When work items are queued",
+        "add": "Add condition-action pair",
+        "save": "Save and close",
+        "value": "Value",
+        "conditions": {
+          "outOfHours": "Out of operation hours",
+          "callsWaiting": "Work item limit exceeds",
+          "estimatedWait": "Average wait time",
+          "waitTime": "Waiting time in queue exceeds"
+        },
+        "units": {
+          "callsWaiting": "work items",
+          "estimatedWait": "minutes",
+          "waitTime": "seconds"
+        },
+        "actions": [
+          "Assign to queue anyway",
+          "Direct callback",
+          "End call",
+          "Transfer to a different queue",
+          "Voicemail"
+        ],
+        "queuedActions": [
+          "Direct callback",
+          "Transfer to a different queue",
+          "Voicemail"
+        ],
+        "targetQueue": "Queue",
+        "source": "Labels from Learn, Manage overflow of work items in queues (ms.date 2026-10-30), not yet checked in the admin center. Transfer to an external number isn't in the training. The training takes wait time in queue in seconds; the admin center takes a number and a unit."
+      },
+      "operationHours": {
+        "title": "Operation hours",
+        "optional": "Optional",
+        "button": "Set operation hours",
+        "text": "Without operation hours, the queue is open 24/7."
+      },
+      "metrics": {
+        "title": "Metrics Threshold",
+        "optional": "Optional",
+        "button": "Add Threshold"
+      },
+      "operationHoursDialog": {
+        "title": "Set operation hours",
+        "name": "Name",
+        "save": "Save and close",
+        "source": "Learn, Create and manage queues for unified routing (ms.date 2026-07-22)"
+      }
+    },
+    "assignment-method": {
+      "title": "Assignment method",
+      "saveClose": "Save & close",
+      "refresh": "Refresh",
+      "createNew": "Create new",
+      "readOnly": "Read-only",
+      "concept": "assignment-method",
+      "intro": "Pick how this queue hands out its work. A custom assignment method (Create new) isn't part of the training yet.",
+      "methods": [
+        {
+          "name": "Highest capacity",
+          "description": "Assigns a work item to a service representative with the highest available capacity. (Learn)"
+        },
+        {
+          "name": "Advanced round robin",
+          "description": "Assigns a work item to the representative who matches the criteria for skills, presence, and capacity. The initial order is based on when a user is added to the queue. (Learn)"
+        },
+        {
+          "name": "Least active",
+          "description": "Assigns a work item to the representative who has been least active among all those who match skills, presence, and capacity. (Learn)"
+        },
+        {
+          "name": "No auto assignment",
+          "description": "Work items stay in the queue until someone assigns them by hand.",
+          "notInTraining": true
+        }
+      ]
+    },
+    "workstreams": {
+      "title": "Workstreams",
+      "concept": "workstream",
+      "newButton": "New workstream",
+      "refresh": "Refresh",
+      "view": "All workstreams",
+      "columns": [
+        "Name",
+        "Category",
+        "Type",
+        "Channel",
+        "Proactive engagements",
+        "Owner",
+        "Created on"
+      ],
+      "types": {
+        "192350000": "Record",
+        "192440000": "Voice"
+      },
+      "otherType": "Messaging",
+      "directions": {
+        "0": "Inbound",
+        "1": "Outbound"
+      },
+      "voiceChannel": "Voice call",
+      "createDialog": {
+        "title": "Create a workstream",
+        "name": "Name",
+        "type": "Type",
+        "voice": "Voice",
+        "mode": "Work distribution mode",
+        "push": "Push",
+        "pushNote": "For voice, push mode only is available.",
+        "fallback": "Fallback queue",
+        "chooseExisting": "Choose existing",
+        "create": "Create",
+        "source": "Learn, Create and manage workstreams (ms.date 2026-05-08). The training creates voice workstreams only."
+      }
+    },
+    "workstream": {
+      "concept": "workstream",
+      "edit": "Edit",
+      "header": {
+        "channel": "Channel",
+        "type": "Type",
+        "owner": "Owner"
+      },
+      "routingRules": {
+        "title": "Routing rules",
+        "noFallback": "No fallback queue is set for this workstream: work that matches no rule goes to the default queue.",
+        "setUpFallback": "Set up a fallback queue",
+        "classification": "Work classification (optional)",
+        "classificationText": "Add details to incoming work with classification rules, for more precise routing and assignment.",
+        "createRuleset": "Create ruleset",
+        "routeToQueues": "Route to queues",
+        "routeToQueuesText": "Rules send incoming work to the right queue. Work that matches no rule goes to the fallback queue.",
+        "fallbackQueue": "Fallback queue",
+        "hitPolicy": "Rule hit policy",
+        "hitPolicies": {
+          "first": "Hit-first",
+          "all": "Hit-all"
+        },
+        "columns": [
+          "Ruleset name",
+          "Type",
+          "Description"
+        ],
+        "rulesetType": "Logical - Decision list",
+        "concept": "route-to-queue",
+        "fallbackConcept": "fallback-queue"
+      },
+      "workDistribution": {
+        "title": "Work distribution",
+        "seeMore": "See more",
+        "mode": "Work distribution mode",
+        "modes": {
+          "192350000": "Push",
+          "192350001": "Pick"
+        },
+        "capacity": "Capacity",
+        "profileBased": "Profile based",
+        "allowedPresences": "Allowed presences",
+        "presences": {
+          "192360000": "Available",
+          "192360001": "Busy",
+          "192360002": "Busy - DND",
+          "192360003": "Away",
+          "192360004": "Offline"
+        }
+      },
+      "aiAgent": {
+        "title": "AI agent",
+        "optional": "Optional",
+        "add": "Add AI agent"
+      },
+      "advanced": "Show advanced settings"
+    },
+    "decision-list": {
+      "title": "Decision list",
+      "concept": "create-rule",
+      "owner": "Owner",
+      "createRule": "Create rule",
+      "refresh": "Refresh",
+      "commands": [
+        "Move up",
+        "Move down",
+        "Edit",
+        "Delete"
+      ],
+      "info": "Rules are checked in order. A call goes to the queue of the first rule that matches.",
+      "columns": [
+        "Order",
+        "Rule name",
+        "Condition",
+        "Queue"
+      ],
+      "panel": {
+        "title": "Create route to queue rule",
+        "intro": "Add conditions and select the queue to route to.",
+        "ruleName": "Rule Name",
+        "rootRecord": "Root record:",
+        "rootRecordName": "Conversation",
+        "rootRecordText": "Conditions start from the conversation, and can use its related records and attributes.",
+        "conditions": "Conditions",
+        "and": "And",
+        "add": "Add",
+        "addMenu": [
+          "Add row",
+          "Add group",
+          "Add related entity"
+        ],
+        "field": "Select a field",
+        "operators": [
+          "Equals"
+        ],
+        "value": "Value",
+        "routeToQueues": "Route to queues",
+        "addQueue": "Add queue",
+        "queue": "Queue",
+        "queuePlaceholder": "Select queue",
+        "submit": "Create",
+        "cancel": "Cancel",
+        "simplified": "Simplified for the training: rows on the workstream's context variables with Equals. Groups, related records and other operators aren't in the training yet."
+      }
+    },
+    "channels": {
+      "title": "Channels",
+      "concept": "voice-channel",
+      "source": "Learn, Manage phone numbers (ms.date 2026-06-17): Channels in Customer support, then Manage for Phone numbers. Only the Phone numbers card is in the training.",
+      "cards": [
+        {
+          "title": "Phone numbers",
+          "description": "Get phone numbers for the voice channel and put them on voice workstreams.",
+          "action": "Manage",
+          "page": "phone-numbers"
+        }
+      ]
+    },
+    "phone-numbers": {
+      "title": "Phone numbers",
+      "crumbs": [
+        "Channels"
+      ],
+      "concept": "phone-number",
+      "source": "Button, dialog, field and status names from Learn, Manage phone numbers (ms.date 2026-06-17), not yet checked in the admin center. The column names are our words for what Learn says the list shows.",
+      "add": "Add ACS number",
+      "setup": "Setup workstream",
+      "edit": "Edit",
+      "release": "Release number",
+      "columns": [
+        "Phone number",
+        "Carrier",
+        "Calling plan",
+        "Workstream",
+        "Status"
+      ],
+      "carrier": "Azure Communication Services",
+      "status": {
+        "ready": "Ready for setup",
+        "connected": "Connected"
+      },
+      "plans": {
+        "receive": "Receive calls",
+        "make": "Make calls"
+      },
+      "dialog": {
+        "title": "Add phone number",
+        "features": "Features",
+        "summary": "Summary",
+        "country": "Country/Region",
+        "numberType": "Number type",
+        "tollFree": "Toll-free",
+        "geographic": "Geographic",
+        "callingPlans": "Calling plans",
+        "smsPlans": "SMS plans",
+        "smsNone": "None",
+        "smsSend": "Send SMS",
+        "smsSendReceive": "Send and receive SMS",
+        "location": "Location",
+        "find": "Find numbers",
+        "purchase": "Purchase phone number",
+        "done": "Done",
+        "fiction": "Simulated: the training hands out numbers reserved for fiction (US 555-0100 to 555-0199, London 020 7946 0000 to 0999). There are no fictional toll-free numbers, so Toll-free and SMS are off.",
+        "usOnly": "In the real admin center, only United States numbers are bought here; numbers from other countries come from Azure Communication Services."
+      },
+      "setupDialog": {
+        "title": "Setup workstream",
+        "intro": "A phone number can be on only one voice workstream. The training adds a voice channel with this number to the workstream you pick.",
+        "workstream": "Workstream"
+      }
+    },
+    "user-management": {
+      "title": "User management",
+      "concept": "capacity-profile",
+      "cards": [
+        {
+          "title": "Capacity profile",
+          "description": "Set how much work representatives can take at the same time.",
+          "action": "Manage",
+          "page": "capacity-profiles"
+        }
+      ],
+      "source": "Learn, Create and manage capacity profiles (ms.date 2026-02-03): User management in Customer support, then Manage for Capacity profile. Only that card is in the training."
+    },
+    "capacity-profiles": {
+      "title": "Capacity profiles",
+      "crumbs": [
+        "User management"
+      ],
+      "concept": "capacity-profile",
+      "createNew": "Create new",
+      "columns": [
+        "Profile name",
+        "Work item limit",
+        "Users"
+      ],
+      "createDialog": {
+        "title": "Create capacity profile",
+        "details": "Details",
+        "users": "Users",
+        "name": "Profile name",
+        "limit": "Work item limit",
+        "reset": "Reset frequency",
+        "blocking": "Assignment blocking",
+        "create": "Create"
+      },
+      "profile": {
+        "details": "Details",
+        "users": "Users",
+        "limit": "Work item limit",
+        "addUser": "Add user",
+        "save": "Save",
+        "noUsers": "No users have this profile yet."
+      },
+      "source": "Labels from Learn, Create and manage capacity profiles (ms.date 2026-02-03), not yet checked in the admin center. Reset frequency and Assignment blocking aren't simulated."
+    },
+    "business-units": {
+      "title": "Business units",
+      "concept": "business-unit",
+      "newButton": "New business unit",
+      "columns": [
+        "Name",
+        "Parent business unit"
+      ],
+      "create": {
+        "title": "Create new business unit",
+        "name": "Name",
+        "parent": "Parent business unit",
+        "save": "Save"
+      }
+    },
+    "teams": {
+      "title": "Teams",
+      "concept": "team",
+      "newButton": "Create team",
+      "manage": "Manage team members",
+      "addMembers": "Add team members",
+      "remove": "Remove",
+      "columns": [
+        "Team name",
+        "Business unit",
+        "Team type",
+        "Members"
+      ],
+      "create": {
+        "title": "Create team",
+        "name": "Team name",
+        "description": "Description",
+        "unit": "Business unit",
+        "admin": "Administrator",
+        "type": "Team type",
+        "owner": "Owner",
+        "save": "Save"
+      },
+      "defaultTeam": "This is the business unit's default team: its members are the business unit's users, and can't be changed here."
+    }
+  },
+  "ppac": {
+    "name": "Power Platform admin center",
+    "path": [
+      "Manage",
+      "Environments",
+      "Contoso (simulated)",
+      "Settings",
+      "Users + permissions"
+    ],
+    "source": "Labels from Learn, Create or edit business units (ms.date 2025-05-21) and Teams in Dataverse (ms.date 2025-07-15), not yet checked in the admin center. Learn doesn't name the button that creates a team; the training uses Save.",
+    "items": [
+      {
+        "label": "Business units",
+        "page": "business-units"
+      },
+      {
+        "label": "Teams",
+        "page": "teams"
+      }
+    ],
+    "learn": {
+      "business-units": "https://learn.microsoft.com/en-us/power-platform/admin/create-edit-business-units",
+      "teams": "https://learn.microsoft.com/en-us/power-platform/admin/manage-teams"
+    }
+  }
+}

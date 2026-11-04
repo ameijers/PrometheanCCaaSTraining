@@ -1,0 +1,26 @@
+{
+  "id": "build-2-add-warranty-ivr-option-and-expand-sales-mw1xdjd9",
+  "kind": "build",
+  "level": 2,
+  "title": "Add Warranty IVR option and expand Sales queue",
+  "story": [
+    "Marta, the support manager, wants a new IVR choice on Customer Service – Voice. Callers who choose \"Warranty\" should go to a new voice queue called Warranty. That queue must have 4 people to start.",
+    "Sam, the sales manager, says Sales is short staffed. He asks that the Sales queue has at least 5 members so they can handle more calls."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "goals": [
+    {
+      "type": "choice-queue",
+      "workstream": "Customer Service – Voice",
+      "choice": "Warranty",
+      "queue": "Warranty",
+      "members": 4
+    },
+    {
+      "type": "members",
+      "queue": "Sales",
+      "atLeast": 5
+    }
+  ]
+}

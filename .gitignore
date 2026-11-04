@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+*.log
+.env
+local.settings.json
+walkthrough/
+
+# Reference screenshots of Microsoft's admin center: for comparison only, never committed
+reference/admin-center/*
+!reference/admin-center/README.md
+backend/dist/
+backend/.cache/
+backend/.data/
+api/dist/
+api/node_modules/

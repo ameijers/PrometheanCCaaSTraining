@@ -1,0 +1,512 @@
+{
+  "about": "Scenarios that ship with the training, so a class can run without AI (manual 8.4). Each passes the same checks as an AI-written one (src/scenarios/validate.ts, tests/scenarios/readyMade.test.ts).",
+  "scenarios": [
+    {
+      "id": "fix-1-monday-morning",
+      "kind": "fix",
+      "level": 1,
+      "title": "Monday morning, and nobody answers",
+      "story": [
+        "Contoso's team lead for billing rings you at 09:15: customers say they're waiting forever in the billing line, and nobody ever picks up.",
+        "The sales manager adds that callers who skip the sales menu seem to vanish. Over the weekend someone cleaned up old queues and users. Find what broke and fix it in the admin center."
+      ],
+      "faults": [
+        {
+          "type": "no-members",
+          "queue": "Billing"
+        },
+        {
+          "type": "fallback-queue-off",
+          "workstream": "Retail Sales – Voice"
+        }
+      ],
+      "source": "ready-made"
+    },
+    {
+      "id": "fix-2-after-the-reorganisation",
+      "kind": "fix",
+      "level": 2,
+      "title": "After the reorganisation",
+      "story": [
+        "Contoso merged two service teams last week. The project left a list of changes, and nobody checked them afterwards.",
+        "Returns calls aren't reaching anyone, order status calls ring into an empty queue, and the technical support line loses callers who press a key the menu doesn't know. Find each problem and put it right."
+      ],
+      "faults": [
+        {
+          "type": "rule-queue-off",
+          "workstream": "Customer Service – Voice",
+          "rule": "Returns"
+        },
+        {
+          "type": "no-members",
+          "queue": "Order Desk"
+        },
+        {
+          "type": "fallback-queue-off",
+          "workstream": "Technical Support – Voice"
+        }
+      ],
+      "source": "ready-made"
+    },
+    {
+      "id": "route-1-first-day",
+      "kind": "route",
+      "level": 1,
+      "title": "First day on the switchboard",
+      "story": [
+        "You've just joined Contoso's contact center team. Before you change anything, your lead wants you to know where calls end up today.",
+        "For each caller, predict where the call goes. Look around the admin center and the Diagram first: they show the phone lines, the menus and the queues."
+      ],
+      "questions": [
+        {
+          "id": "q1",
+          "caller": "Hello, I've got a question about the last invoice you sent me.",
+          "dial": "+44 20 7946 0102",
+          "choice": "Billing",
+          "answer": {
+            "queue": "Billing",
+            "outcome": "Agent"
+          }
+        },
+        {
+          "id": "q2",
+          "caller": "Hi, I ordered a desk last week and I'd like to know when it arrives.",
+          "dial": "+44 20 7946 0100",
+          "choice": "Status",
+          "answer": {
+            "queue": "Order Desk",
+            "outcome": "Agent"
+          }
+        },
+        {
+          "id": "q3",
+          "caller": "Good morning, I'm calling from one of your partner companies.",
+          "dial": "+44 20 7946 0108",
+          "answer": {
+            "queue": "Overflow",
+            "outcome": "Agent"
+          }
+        },
+        {
+          "id": "q4",
+          "caller": "My laptop won't start since the update this morning.",
+          "dial": "+44 20 7946 0105",
+          "choice": "1",
+          "answer": {
+            "queue": "Tier 1 Support",
+            "outcome": "Agent"
+          }
+        }
+      ],
+      "source": "ready-made"
+    },
+    {
+      "id": "route-2-the-menu",
+      "kind": "route",
+      "level": 2,
+      "title": "What the menu does with a choice",
+      "story": [
+        "Contoso's IVR menus send the caller's choice to the workstream as a context variable, and route-to-queue rules compare it with a value.",
+        "Some callers choose something no rule checks, and some lines have no menu at all. Predict where each call goes."
+      ],
+      "questions": [
+        {
+          "id": "q1",
+          "caller": "I'd like to complain about the delivery driver.",
+          "dial": "+44 20 7946 0103",
+          "choice": "Complaint",
+          "answer": {
+            "queue": "Escalations",
+            "outcome": "Agent"
+          }
+        },
+        {
+          "id": "q2",
+          "caller": "My printer needs a repair.",
+          "dial": "+44 20 7946 0102",
+          "choice": "Repairs",
+          "answer": {
+            "queue": "Overflow",
+            "outcome": "Agent"
+          }
+        },
+        {
+          "id": "q3",
+          "caller": "Goedemiddag, ik wil graag iemand spreken die Nederlands spreekt.",
+          "dial": "+44 20 7946 0107",
+          "answer": {
+            "queue": "Overflow",
+            "outcome": "Agent"
+          }
+        },
+        {
+          "id": "q4",
+          "caller": "Our server problem is still there after Tier 1 looked at it.",
+          "dial": "+44 20 7946 0106",
+          "choice": "2",
+          "answer": {
+            "queue": "Tier 2 Support",
+            "outcome": "Agent"
+          }
+        },
+        {
+          "id": "q5",
+          "caller": "The headset I bought doesn't connect to my computer.",
+          "dial": "+44 20 7946 0104",
+          "choice": "Tech",
+          "answer": {
+            "queue": "Tier 1 Support",
+            "outcome": "Agent"
+          }
+        }
+      ],
+      "source": "ready-made"
+    },
+    {
+      "id": "route-3-late-and-long",
+      "kind": "route",
+      "level": 3,
+      "title": "Late calls and long waits",
+      "story": [
+        "Some of Contoso's queues keep office hours, and their overflow rules decide what happens outside them or when the wait gets long.",
+        "Predict where each call goes. The time of the call and the wait matter now: check each queue's operating hours and overflow rules."
+      ],
+      "questions": [
+        {
+          "id": "q1",
+          "caller": "Hi, I'd like to order three more chairs, same as last time.",
+          "dial": "+44 20 7946 0100",
+          "choice": "Sales",
+          "at": {
+            "day": 2,
+            "time": "22:00"
+          },
+          "answer": {
+            "queue": "Sales",
+            "outcome": "Voicemail"
+          }
+        },
+        {
+          "id": "q2",
+          "caller": "I have a question about a charge on my bill.",
+          "dial": "+44 20 7946 0102",
+          "choice": "Billing",
+          "at": {
+            "day": 6,
+            "time": "11:00"
+          },
+          "answer": {
+            "queue": "Billing",
+            "outcome": "Voicemail"
+          }
+        },
+        {
+          "id": "q3",
+          "caller": "I'd like to place an order, please.",
+          "dial": "+44 20 7946 0101",
+          "choice": "Sales",
+          "at": {
+            "day": 1,
+            "time": "12:00"
+          },
+          "queue": {
+            "estimatedWaitMinutes": 20
+          },
+          "answer": {
+            "queue": "Sales",
+            "outcome": "Callback"
+          }
+        },
+        {
+          "id": "q4",
+          "caller": "My account is locked and I can't get in.",
+          "dial": "+44 20 7946 0105",
+          "choice": "1",
+          "at": {
+            "day": 3,
+            "time": "23:00"
+          },
+          "queue": {
+            "waitedSeconds": 420
+          },
+          "answer": {
+            "queue": "Tier 2 Support",
+            "outcome": "Agent"
+          }
+        },
+        {
+          "id": "q5",
+          "caller": "I want to send back a lamp that arrived broken.",
+          "dial": "+44 20 7946 0103",
+          "choice": "Returns",
+          "at": {
+            "day": 0,
+            "time": "20:00"
+          },
+          "answer": {
+            "queue": "Returns",
+            "outcome": "Agent"
+          }
+        }
+      ],
+      "source": "ready-made"
+    },
+    {
+      "id": "build-1-safety-nets",
+      "kind": "build",
+      "level": 1,
+      "title": "More hands and a better safety net",
+      "story": [
+        "Contoso's partner programme is growing, and the two people on the Partner Desk can't keep up.",
+        "Ruben, who runs the partner programme, also noticed that Dutch callers end up in the general Overflow queue. He'd rather they reach the Dutch Desk, even when nobody routes them there. Build what he asks for."
+      ],
+      "goals": [
+        {
+          "type": "members",
+          "queue": "Partner Desk",
+          "atLeast": 4
+        },
+        {
+          "type": "fallback",
+          "workstream": "Dutch Desk – Voice",
+          "queue": "Dutch Desk"
+        }
+      ],
+      "source": "ready-made"
+    },
+    {
+      "id": "build-2-warranty",
+      "kind": "build",
+      "level": 2,
+      "title": "A menu choice for warranty claims",
+      "story": [
+        "From next week the customer service IVR asks callers about warranty claims. When a caller picks that option, the IVR sends the value Warranty.",
+        "Contoso wants those calls in a queue of their own, with a small team. Build the queue, its team and the routing."
+      ],
+      "goals": [
+        {
+          "type": "choice-queue",
+          "workstream": "Customer Service – Voice",
+          "choice": "Warranty",
+          "queue": "Warranty",
+          "members": 2
+        }
+      ],
+      "source": "ready-made"
+    },
+    {
+      "id": "build-3-evenings",
+      "kind": "build",
+      "level": 3,
+      "title": "Evenings and busy mornings",
+      "story": [
+        "The returns team only works office hours, but its queue doesn't know that: callers wait all night for nobody.",
+        "Contoso wants Returns to keep business hours and send evening callers to voicemail. And when Billing gets busy, callers facing a long wait should be offered a callback instead."
+      ],
+      "goals": [
+        {
+          "type": "operation-hours",
+          "queue": "Returns",
+          "hours": "Business hours"
+        },
+        {
+          "type": "after-hours",
+          "queue": "Returns",
+          "action": "Voicemail"
+        },
+        {
+          "type": "long-wait",
+          "queue": "Billing",
+          "minutes": 10,
+          "action": "Direct callback"
+        }
+      ],
+      "source": "ready-made"
+    },
+    {
+      "id": "build-4-spread-the-work",
+      "kind": "build",
+      "level": 4,
+      "title": "Spread the work",
+      "story": [
+        "The billing team feels the same people get every call. Their lead wants calls handed out in turn instead.",
+        "Contoso also decided its representatives can handle two calls at once: one live and one on hold for a moment. Set that in their voice capacity profile."
+      ],
+      "goals": [
+        {
+          "type": "assignment-method",
+          "queue": "Billing",
+          "method": "Advanced round robin"
+        },
+        {
+          "type": "capacity",
+          "profile": "Default voice inbound",
+          "limit": 2
+        }
+      ],
+      "source": "ready-made"
+    },
+    {
+      "id": "build-5-spare-parts-line",
+      "kind": "build",
+      "level": 5,
+      "title": "A new line for spare parts",
+      "story": [
+        "Contoso starts selling spare parts by phone. It wants a line of its own for that, answered by the order desk.",
+        "The order desk needs more people for it too. Set up the new line from scratch: a workstream, a phone number, and enough people in the queue."
+      ],
+      "goals": [
+        {
+          "type": "new-line",
+          "workstream": "Spare Parts – Voice",
+          "queue": "Order Desk"
+        },
+        {
+          "type": "members",
+          "queue": "Order Desk",
+          "atLeast": 9
+        }
+      ],
+      "source": "ready-made"
+    },
+    {
+      "id": "build-5-parts-onboarding",
+      "kind": "build",
+      "level": 5,
+      "title": "A home for the new parts team",
+      "story": [
+        "Contoso is starting a spare parts business of its own, with its own people. Hanna, who leads it, wants it to be its own part of the organization, under Contoso.",
+        "Her first three people will work together as the Parts Support team. Set up the business unit and the team, with the three of them in it."
+      ],
+      "goals": [
+        {
+          "type": "business-unit",
+          "unit": "Contoso Parts",
+          "parent": "Contoso"
+        },
+        {
+          "type": "team",
+          "team": "Parts Support",
+          "unit": "Contoso Parts",
+          "members": 3
+        }
+      ],
+      "source": "ready-made"
+    },
+    {
+      "id": "interview-2-warranty",
+      "kind": "interview",
+      "level": 2,
+      "title": "What does the service manager need?",
+      "story": [
+        "Priya manages customer service at Contoso. She asked for a meeting about \"the new warranty thing\" and didn't say more.",
+        "Ask her questions until you know what she needs, then build it. Not every question you can ask matters."
+      ],
+      "goals": [
+        {
+          "type": "choice-queue",
+          "workstream": "Customer Service – Voice",
+          "choice": "Warranty",
+          "queue": "Warranty Claims",
+          "members": 3
+        },
+        {
+          "type": "members",
+          "queue": "Escalations",
+          "atLeast": 9
+        }
+      ],
+      "interview": {
+        "persona": "Priya, the customer service manager",
+        "opening": "Thanks for making time. We're starting warranty claims by phone, and I'm not sure what the contact center needs for that.",
+        "topics": [
+          {
+            "ask": "How will callers tell you they're calling about a warranty?",
+            "answer": "The IVR team added an option to the customer service menu. When someone picks it, the IVR sends the value Warranty.",
+            "goal": 0
+          },
+          {
+            "ask": "Who should answer the warranty calls?",
+            "answer": "A separate queue, please. Call it Warranty Claims, with three people in it to start.",
+            "goal": 0
+          },
+          {
+            "ask": "Is anything else not working well at the moment?",
+            "answer": "Complaints. The Escalations queue is swamped. I'd like at least nine people in it.",
+            "goal": 1
+          }
+        ],
+        "extras": [
+          {
+            "ask": "When do you want to start?",
+            "answer": "As soon as it works. Next week would be great."
+          },
+          {
+            "ask": "Do warranty callers need a different greeting?",
+            "answer": "No, the IVR team takes care of what callers hear."
+          }
+        ]
+      },
+      "source": "ready-made"
+    },
+    {
+      "id": "interview-4-busy-support",
+      "kind": "interview",
+      "level": 4,
+      "title": "Why does Tier 1 feel overloaded?",
+      "story": [
+        "Lucas leads technical support. His team says the work isn't shared fairly and that they could do more.",
+        "Find out what he wants changed, then set it up. He knows his team, not the admin center, so ask about what he sees."
+      ],
+      "goals": [
+        {
+          "type": "assignment-method",
+          "queue": "Tier 1 Support",
+          "method": "Highest capacity"
+        },
+        {
+          "type": "capacity",
+          "profile": "Default voice inbound",
+          "limit": 2
+        },
+        {
+          "type": "members",
+          "queue": "Tier 1 Support",
+          "atLeast": 8
+        }
+      ],
+      "interview": {
+        "persona": "Lucas, the technical support lead",
+        "opening": "My team is busy, but some of them are busier than others. And I think we could take more calls than we do.",
+        "topics": [
+          {
+            "ask": "How should calls be shared out in your team?",
+            "answer": "Whoever has the most room left should get the next call. That's fairest for us.",
+            "goal": 0
+          },
+          {
+            "ask": "How many calls can one person handle at a time?",
+            "answer": "Two. One live and one they've just put on hold.",
+            "goal": 1
+          },
+          {
+            "ask": "Is the team big enough?",
+            "answer": "Not for Tier 1. I want at least eight people in that queue.",
+            "goal": 2
+          }
+        ],
+        "extras": [
+          {
+            "ask": "Which calls come to Tier 1?",
+            "answer": "The first-line technical questions. The IVR sends them to us already."
+          },
+          {
+            "ask": "Does Tier 2 need changes too?",
+            "answer": "Not now, they're fine."
+          }
+        ]
+      },
+      "source": "ready-made"
+    }
+  ]
+}

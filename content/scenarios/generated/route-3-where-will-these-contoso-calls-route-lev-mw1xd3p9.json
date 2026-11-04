@@ -1,0 +1,77 @@
+{
+  "id": "route-3-where-will-these-contoso-calls-route-lev-mw1xd3p9",
+  "kind": "route",
+  "level": 3,
+  "title": "Where will these Contoso calls route? (Level 3 - hours & overflow)",
+  "story": [
+    "Contoso has several phone lines and IVRs. Decide where each call ends and the final outcome.",
+    "Look at the day, time and wait info. Predict the queue and whether the caller reaches an agent, goes to voicemail, gets a callback, or is transferred."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "questions": [
+    {
+      "id": "q1",
+      "caller": "Hi, I want to place an order.",
+      "dial": "+44 20 7946 0100",
+      "choice": "Sales",
+      "at": {
+        "day": 1,
+        "time": "10:00"
+      },
+      "queue": {
+        "estimatedWaitMinutes": 20
+      },
+      "answer": {
+        "queue": "Sales",
+        "outcome": "Callback"
+      }
+    },
+    {
+      "id": "q2",
+      "caller": "I have a question about a bill.",
+      "dial": "+44 20 7946 0102",
+      "choice": "Billing",
+      "at": {
+        "day": 6,
+        "time": "11:00"
+      },
+      "answer": {
+        "queue": "Billing",
+        "outcome": "Voicemail"
+      }
+    },
+    {
+      "id": "q3",
+      "caller": "My internet is down and I need help.",
+      "dial": "+44 20 7946 0105",
+      "choice": "1",
+      "at": {
+        "day": 3,
+        "time": "14:30"
+      },
+      "queue": {
+        "estimatedWaitMinutes": 1,
+        "waitedSeconds": 320
+      },
+      "answer": {
+        "queue": "Tier 2 Support",
+        "outcome": "Agent"
+      }
+    },
+    {
+      "id": "q4",
+      "caller": "I want to place an order but missed the office hours.",
+      "dial": "+44 20 7946 0101",
+      "choice": "Sales",
+      "at": {
+        "day": 0,
+        "time": "12:00"
+      },
+      "answer": {
+        "queue": "Sales",
+        "outcome": "Voicemail"
+      }
+    }
+  ]
+}

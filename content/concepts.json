@@ -1,0 +1,259 @@
+{
+  "about": "Every concept the training explains: a short summary in our own words, and a passage quoted word for word from Microsoft Learn with its link and the article's own date (ms.date). `kind` links a concept to a shape kind of the Environment Diagram. The backend (npm run backend) checks that each quote is still in its article and whether the article's date moved; npm run learn:review lists what needs a look.",
+  "concepts": [
+    {
+      "id": "workstream",
+      "title": "Workstream",
+      "summary": "A workstream takes in work from its channels (here: calls to a phone number) and decides where it goes. Its routing rules pick a queue; its fallback queue catches the rest.",
+      "learn": {
+        "title": "Create and manage workstreams",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/create-workstreams",
+        "date": "2026-05-08",
+        "checkedOn": "2026-11-02",
+        "quote": "A workstream is a container to enrich, route, and assign work items, and can be associated with a channel, such as live chat, voice, or case."
+      },
+      "kind": "workstream"
+    },
+    {
+      "id": "fallback-queue",
+      "title": "Fallback queue",
+      "summary": "Every workstream has a fallback queue. A call that no route-to-queue rule picks up ends up there, so it's never lost, but it may not reach the right people.",
+      "learn": {
+        "title": "Create and manage queues for unified routing",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/queues-omnichannel#how-fallback-queues-work",
+        "date": "2026-07-22",
+        "checkedOn": "2026-11-02",
+        "quote": "To efficiently manage the work items, you can configure a fallback queue per workstream that acts as a safety net. … work items are routed to the fallback queues in the following scenarios: … Work item doesn't match any route-to-queue rules."
+      }
+    },
+    {
+      "id": "queue",
+      "title": "Queue",
+      "summary": "A queue holds work until a representative takes it. Representatives are members of queues, and the queue's assignment method decides who gets the next call.",
+      "learn": {
+        "title": "Create and manage queues for unified routing",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/queues-omnichannel",
+        "date": "2026-07-22",
+        "checkedOn": "2026-11-02",
+        "quote": "Queues are used to collect and distribute workload among customer service representatives (service representatives or representatives). Workload includes records such as cases, and conversations such as chat or SMS. Service representatives are added as members to the queues and the workload is distributed among them based on assignment methods."
+      },
+      "kind": "queue"
+    },
+    {
+      "id": "queue-type",
+      "title": "Queue type",
+      "summary": "A queue is for one kind of work: messaging, records or voice. A voice workstream can only route calls to voice queues.",
+      "learn": {
+        "title": "Create and manage queues for unified routing",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/queues-omnichannel",
+        "date": "2026-07-22",
+        "checkedOn": "2026-11-02",
+        "quote": "Voice: To route calls made to support phone numbers listed on the customer portal. The queue types allow issues to be routed correctly and help avoid cross-queue assignments."
+      }
+    },
+    {
+      "id": "create-queue",
+      "title": "Creating a queue",
+      "summary": "New queues are made under Advanced queues. You give the queue a name, a type and a priority.",
+      "learn": {
+        "title": "Create and manage queues for unified routing",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/queues-omnichannel#create-a-queue-for-unified-routing",
+        "date": "2026-07-22",
+        "checkedOn": "2026-11-02",
+        "quote": "In the site map of Copilot Service admin center, select Queues in Customer support. On the Queues page, select Manage for Advanced queues. On the Queues page, do the following steps: Select New. In the Create a queue dialog, enter the following details: Name: A name for the queue. Type: Select Messaging, Record, or Voice. Queue priority: A number to prioritize the queue."
+      }
+    },
+    {
+      "id": "queue-users",
+      "title": "Queue members",
+      "summary": "Only members of a queue can get its calls. A queue without members holds calls that nobody can answer.",
+      "learn": {
+        "title": "Create and manage queues for unified routing",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/queues-omnichannel#create-a-queue-for-unified-routing",
+        "date": "2026-07-22",
+        "checkedOn": "2026-11-02",
+        "quote": "Select Add users, and in the flyout menu, select the users who should be part of the queue, and then select Add. The users are added to the queue."
+      }
+    },
+    {
+      "id": "assignment-method",
+      "title": "Assignment method",
+      "summary": "The assignment method decides which member of the queue gets the next call.",
+      "learn": {
+        "title": "Create and manage queues for unified routing",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/queues-omnichannel#create-a-queue-for-unified-routing",
+        "date": "2026-07-22",
+        "checkedOn": "2026-11-02",
+        "quote": "Highest capacity: Assigns a work item to a service representative with the highest available capacity. … Advanced round robin: Assigns a work item to the representative who matches the criteria for skills, presence, and capacity. … Least active: Assigns a work item to the representative who has been least active among all those who match skills, presence, and capacity."
+      }
+    },
+    {
+      "id": "route-to-queue",
+      "title": "Route-to-queue rules",
+      "summary": "Route-to-queue rules say: if this is true about the call, send it to that queue. Here the condition is the caller's choice in the IVR, stored in a context variable.",
+      "learn": {
+        "title": "Configure route-to-queue rules",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/configure-route-to-queue-rules",
+        "date": "2026-05-08",
+        "checkedOn": "2026-11-02",
+        "quote": "Queue routing rules send the work item to the right queue. The rules are written in the format of, \"If defined condition satisfies, then route the work item to the defined queue.\" If no rules are defined or no rules match, then the incoming work item is routed to the fallback queue of the respective workstream."
+      },
+      "kind": "rule"
+    },
+    {
+      "id": "create-rule",
+      "title": "Creating a route-to-queue rule",
+      "summary": "Rules are added on the workstream's page, under Routing rules. Each rule has a name, conditions and the queue to route to.",
+      "learn": {
+        "title": "Configure route-to-queue rules",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/configure-route-to-queue-rules#configure-rules-in-route-to-queue-ruleset",
+        "date": "2026-05-08",
+        "checkedOn": "2026-11-02",
+        "quote": "In Copilot Service admin center, navigate to the Workstreams page, and then select a workstream. In the Routing rules section, select Create ruleset next to Route to queues, and then select Create Rule in Decision list. In the Create route to queue rule dialog, enter a name in Rule Name. … In Conditions, define the set of conditions. … In Route to queues, select the queue to which the work items are routed if the conditions are met."
+      }
+    },
+    {
+      "id": "phone-number",
+      "kind": "phone",
+      "title": "Phone number",
+      "summary": "A phone number customers call. It's put on a voice channel, and the channel's workstream decides where the call goes. In the training, numbers are simulated and come from ranges reserved for fiction.",
+      "learn": {
+        "title": "Manage phone numbers",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/voice-channel-manage-phone-numbers",
+        "date": "2026-06-17",
+        "checkedOn": "2026-11-03",
+        "quote": "As an administrator, you can purchase phone numbers and calling plans, decide whether you want to avail calling and SMS services, and whether you want to set up inbound and outbound calling options for your business."
+      }
+    },
+    {
+      "id": "voice-channel",
+      "kind": "channel",
+      "title": "Voice channel",
+      "summary": "The voice channel connects phone numbers to a voice workstream, with settings such as language, hold music and recording.",
+      "learn": {
+        "title": "Set up inbound calling for the voice channel",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/voice-channel-inbound-calling",
+        "date": "2026-03-23",
+        "checkedOn": "2026-11-03",
+        "quote": "Configure inbound calling to set up the voice channel in Dynamics 365. You can enable your service representatives to communicate with customers on the phone to resolve issues using the voice channel."
+      }
+    },
+    {
+      "id": "ai-agent",
+      "kind": "bot",
+      "title": "AI agent (IVR)",
+      "summary": "An AI agent, for example one built in Copilot Studio, answers calls on a workstream first. As an IVR it asks the caller questions and stores the answers in context variables, which routing rules can use.",
+      "learn": {
+        "title": "Create and manage workstreams",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/create-workstreams",
+        "date": "2026-05-08",
+        "checkedOn": "2026-11-03",
+        "quote": "When a work item needs assignment, the classification rules run, and the work distribution system checks and routes the work item to the agent if the selected workstream has an agent. After an agent is added to the workstream, the incoming work item is first routed to the selected agent at runtime."
+      }
+    },
+    {
+      "id": "context-variable",
+      "kind": "variable",
+      "title": "Context variable",
+      "summary": "A context variable holds a value about the conversation, such as the caller's menu choice. Routing rules can check it.",
+      "learn": {
+        "title": "Manage context variables",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/manage-context-variables",
+        "date": "2026-05-08",
+        "checkedOn": "2026-11-03",
+        "quote": "Context variables enrich conversations with pre-conversation data, channel data, and custom context data. These attributes can then be used to define routing rules to route conversations to different queues."
+      }
+    },
+    {
+      "id": "operating-hours",
+      "kind": "hours",
+      "title": "Operating hours",
+      "summary": "Operating hours say when a queue is open. Outside them, the queue's overflow settings decide what happens to a call, such as voicemail.",
+      "learn": {
+        "title": "Create and manage operating hours",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/create-operating-hours",
+        "date": "2026-03-18",
+        "checkedOn": "2026-11-03",
+        "quote": "Operating hours define the hours when your organization's customer support team is active and available to serve customers."
+      }
+    },
+    {
+      "id": "overflow",
+      "kind": "overflow",
+      "title": "Overflow",
+      "summary": "Overflow handling says what happens when a queue is too busy or closed: for example voicemail, a callback, or a transfer to another queue.",
+      "learn": {
+        "title": "Manage overflow of work items in queues",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/manage-overflow",
+        "date": "2026-10-30",
+        "checkedOn": "2026-11-03",
+        "quote": "When a new work item arrives, unified routing directs it to the representative who is best suited to work on it. But what happens if all the service representatives who could work on it are already at maximum capacity? And how do you handle work items that arrive when your call center is closed? Overflow handling in Customer Service helps you manage both surge conditions and after-hours calls."
+      }
+    },
+    {
+      "id": "representative",
+      "kind": "agent",
+      "title": "Customer service representative",
+      "summary": "A person who takes calls. Representatives get work from the queues they're members of, within their capacity and skills.",
+      "learn": {
+        "title": "Create and manage users and user profiles",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/users-user-profiles",
+        "date": "2026-10-23",
+        "checkedOn": "2026-11-03",
+        "quote": "Use the information in this article to manage your service representatives in Customer Service. … You can manage the following settings for the users in bulk: … Skills … Queues … Capacity profiles"
+      }
+    },
+    {
+      "id": "capacity-profile",
+      "kind": "capacity",
+      "title": "Capacity profile",
+      "summary": "A capacity profile says how much work of a kind a representative can take at the same time, for example one call.",
+      "learn": {
+        "title": "Create and manage capacity profiles in Dynamics 365 Customer Service and Dynamics 365 Contact Center",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/capacity-profiles",
+        "date": "2026-02-03",
+        "checkedOn": "2026-11-03",
+        "quote": "Create capacity profiles and assign them to your customer service representatives (service representative or representative) to define the types and amount of work they can take."
+      }
+    },
+    {
+      "id": "skill",
+      "kind": "skill",
+      "title": "Skill",
+      "summary": "Skills, such as a language or a product, let routing give work to the representative who fits it best.",
+      "learn": {
+        "title": "Skill-based routing in Dynamics 365 Contact Center",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/overview-skill-work-distribution",
+        "date": "2026-03-18",
+        "checkedOn": "2026-11-03",
+        "quote": "Skill-based routing lets your customer service center distribute work items (conversations) to the representative who is most qualified to solve the issue."
+      }
+    },
+    {
+      "id": "team",
+      "kind": "team",
+      "title": "Team",
+      "summary": "A team groups users, for example a shift. Teams can own records and carry security roles.",
+      "learn": {
+        "title": "Teams in Dataverse",
+        "url": "https://learn.microsoft.com/en-us/power-platform/admin/manage-teams",
+        "date": "2025-07-15",
+        "checkedOn": "2026-11-03",
+        "quote": "Although a team belongs to one business unit, it can include users from other business units. You can associate a user with more than one team."
+      }
+    },
+    {
+      "id": "business-unit",
+      "kind": "businessunit",
+      "title": "Business unit",
+      "summary": "Business units split an organization into parts, for example sales and support. Together with security roles they decide what data people can see.",
+      "learn": {
+        "title": "Create or edit business units",
+        "url": "https://learn.microsoft.com/en-us/power-platform/admin/create-edit-business-units",
+        "date": "2025-05-21",
+        "checkedOn": "2026-11-03",
+        "quote": "A business unit is a logical grouping of related business activities."
+      }
+    }
+  ]
+}

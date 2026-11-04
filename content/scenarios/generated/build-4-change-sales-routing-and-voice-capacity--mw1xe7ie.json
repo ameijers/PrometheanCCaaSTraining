@@ -1,0 +1,30 @@
+{
+  "id": "build-4-change-sales-routing-and-voice-capacity--mw1xe7ie",
+  "kind": "build",
+  "level": 4,
+  "title": "Change Sales routing and voice capacity, add Partner Desk member",
+  "story": [
+    "Jo is the sales manager. She wants calls to go to agents with the most free capacity first.",
+    "Emma in ops asks to raise the Default voice inbound limit so agents can handle more simultaneous work items.",
+    "Liam says Partner Desk needs one more person to help partners during busy times."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "goals": [
+    {
+      "type": "assignment-method",
+      "queue": "Sales",
+      "method": "Highest capacity"
+    },
+    {
+      "type": "capacity",
+      "profile": "Default voice inbound",
+      "limit": 3
+    },
+    {
+      "type": "members",
+      "queue": "Partner Desk",
+      "atLeast": 3
+    }
+  ]
+}
