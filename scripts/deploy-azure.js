@@ -32,5 +32,5 @@ run("Build the training", "npx webpack");
 run("Build the backend", "npx webpack --config webpack.backend.js");
 // The Functions app needs its packages next to it (api/package.json).
 run("Install the backend's packages", "npm install --omit=dev --no-audit --no-fund", path.join(root, "api"));
-run("Deploy", "npx --yes @azure/static-web-apps-cli@2.1.0 deploy ./dist --api-location ./api --env production");
+run("Deploy", "npx --yes @azure/static-web-apps-cli@2.1.0 deploy ./dist --api-location ./api --api-language node --api-version 22 --env production");
 console.log("\nDeployed. Open the site's address (Azure portal > the static web app > Overview > URL).");
