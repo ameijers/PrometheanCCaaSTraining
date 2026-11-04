@@ -1,0 +1,24 @@
+{
+  "id": "build-4-change-sales-assignment-method-and-raise-mw2bxdvq",
+  "kind": "build",
+  "level": 4,
+  "title": "Change Sales assignment method and raise voice limit",
+  "story": [
+    "James, the Contoso sales manager, says calls are not shared fairly in the Sales queue. He wants calls given by capacity so busier agents get fewer new calls.",
+    "He also asks to increase the Default voice inbound limit so agents can handle more than one voice work item during peak times. This should help lower wait times and speed up sales handling."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "goals": [
+    {
+      "type": "assignment-method",
+      "queue": "Sales",
+      "method": "Highest capacity"
+    },
+    {
+      "type": "capacity",
+      "profile": "Default voice inbound",
+      "limit": 2
+    }
+  ]
+}

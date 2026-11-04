@@ -1,0 +1,33 @@
+{
+  "id": "build-4-sales-require-stronger-agents-change-met-mw2byscg",
+  "kind": "build",
+  "level": 4,
+  "title": "Sales: require stronger agents, change method and raise voice limit",
+  "story": [
+    "Anna, the Sales manager, says callers who pick Sales from the Contoso Sales IVR must reach people with stronger selling skills. She wants agents matched only when they meet at least Intermediate level in the Sales skill. There must be at least two team members who meet that level.",
+    "She also asks for a fairer way to hand out Sales calls so agents with more free capacity get them. Finally, she wants the voice system to allow more simultaneous inbound work during peak times so calls do not get blocked."
+  ],
+  "source": "ai",
+  "createdOn": "2026-11-04",
+  "goals": [
+    {
+      "type": "assignment-method",
+      "queue": "Sales",
+      "method": "Highest capacity"
+    },
+    {
+      "type": "capacity",
+      "profile": "Default voice inbound",
+      "limit": 3
+    },
+    {
+      "type": "skills",
+      "workstream": "Retail Sales – Voice",
+      "choice": "Sales",
+      "skill": "Sales",
+      "rating": "Intermediate",
+      "queue": "Sales",
+      "members": 2
+    }
+  ]
+}
