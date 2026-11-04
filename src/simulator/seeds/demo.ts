@@ -27,6 +27,9 @@ export function forTraining(raw: RawEnvironment): RawEnvironment {
   const numbers = [...new Set(copy.phoneNumbers.map((p) => p.msdyn_phonenumber as string))];
   const swap = new Map(numbers.map((n, i) => [n, `${LONDON_DRAMA}${String(100 + i).padStart(3, "0")}`]));
   copy.phoneNumbers.forEach((p) => { p.msdyn_phonenumber = swap.get(p.msdyn_phonenumber); });
+  // A voice workstream without a direction is inbound (0), as live; the outbound profile keeps its 1.
+  // Visual Routing Tester filters on msdyn_direction eq 0.
+  copy.workstreams.forEach((w) => { if (w.msdyn_streamsource === VOICE_STREAM) w.msdyn_direction ??= 0; });
   return copy;
 }
 
@@ -53,9 +56,9 @@ export function seedFromRaw(raw: RawEnvironment): Rows {
   add("msdyn_ocphonenumber", raw.phoneNumbers);
   add("msdyn_ocvoicechannelsetting", raw.channels);
   // Visual Routing Tester and Agent Readiness Checker take inbound voice workstreams as
-  // msdyn_enablevoicev2 = true and msdyn_direction = 0 (Inbound).
+  // msdyn_enablevoicev2 = true and msdyn_direction = 0 (Inbound). The outbound profile keeps its direction (1).
   add("msdyn_liveworkstream", raw.workstreams.map((w) => ({
-    ...w, statecode: 0, ...(w.msdyn_streamsource === VOICE_STREAM ? { msdyn_enablevoicev2: true, msdyn_direction: 0 } : { msdyn_enablevoicev2: false })
+    ...w, statecode: 0, ...(w.msdyn_streamsource === VOICE_STREAM ? { msdyn_enablevoicev2: true, msdyn_direction: w.msdyn_direction ?? 0 } : { msdyn_enablevoicev2: false })
   })));
   add("msdyn_routingconfiguration", raw.routingConfigurations.map((c) => ({ msdyn_name: "Routing configuration", ...c })));
   add("msdyn_routingconfigurationstep", raw.routingSteps.map((s, i) => ({ msdyn_routingconfigurationstepid: seedId("5a", i + 1), msdyn_name: "Route to queue", msdyn_steporder: 1, ...s })));

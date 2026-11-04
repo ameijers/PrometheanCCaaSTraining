@@ -6,8 +6,7 @@ import { buildGraph } from "@toolbox/environment-3d-explorer/src/graph";
 import { findIssues, Issue } from "@toolbox/environment-3d-explorer/src/health";
 import { Graph } from "@toolbox/environment-3d-explorer/src/model";
 import { CallResult, describeTime, endingOf, placeCall } from "../calls/engine";
-import { cleanId, Store } from "../simulator/store";
-import { isOutbound } from "../admin/actions";
+import { Store } from "../simulator/store";
 import { Answer, Fault, Question } from "./scenario";
 import { Environment } from "./world";
 
@@ -28,17 +27,10 @@ export function issueOf(f: Fault): { check: string; kind: string; name: string }
 
 export interface Found { issue: Issue; kind: string; name: string }
 
-// An outbound profile is stored as an outbound workstream (profile-builder/src/plan.ts). The Toolbox's
-// health checks don't read a workstream's direction, so they'd report it as routing nowhere; calls out don't
-// route, so with a store the training leaves those checks out for outbound profiles.
-const NOT_FOR_OUTBOUND = new Set(["routes-nowhere", "no-rules", "no-channel"]);
-
-export async function healthIssues(store?: Store): Promise<{ graph: Graph; found: Found[] }> {
+export async function healthIssues(): Promise<{ graph: Graph; found: Found[] }> {
   const graph = buildGraph(await loadRaw());
   const byKey = new Map(graph.nodes.map((n) => [n.key, n]));
-  const outbound = (key: string) => { const id = byKey.get(key)?.recordId; return !!store && byKey.get(key)?.kind === "workstream" && isOutbound(store, id ? cleanId(id) : undefined); };
-  const issues = findIssues(graph).filter((issue) => !(NOT_FOR_OUTBOUND.has(issue.check) && outbound(issue.key)));
-  return { graph, found: issues.map((issue) => ({ issue, kind: byKey.get(issue.key)?.kind ?? "", name: byKey.get(issue.key)?.name ?? "" })) };
+  return { graph, found: findIssues(graph).map((issue) => ({ issue, kind: byKey.get(issue.key)?.kind ?? "", name: byKey.get(issue.key)?.name ?? "" })) };
 }
 
 const matches = (found: Found, f: Fault) => { const want = issueOf(f); return found.issue.check === want.check && found.kind === want.kind && found.name === want.name; };
@@ -71,8 +63,8 @@ export interface FixGrade {
   done: boolean;
 }
 
-export async function gradeFix(faults: Fault[], store?: Store): Promise<FixGrade> {
-  const { found } = await healthIssues(store);
+export async function gradeFix(faults: Fault[]): Promise<FixGrade> {
+  const { found } = await healthIssues();
   const graded = faults.map((fault) => ({ fault, fixed: !found.some((x) => matches(x, fault)) }));
   const newProblems = found.filter((x) => x.issue.severity === "problem" && !faults.some((f) => matches(x, f))).map((x) => x.issue);
   return { faults: graded, newProblems, done: graded.every((g) => g.fixed) && !newProblems.length };

@@ -26,7 +26,7 @@ describe("routing model", () => {
   });
 
   it("has every inbound voice workstream with its rules and fallback queue", () => {
-    const voice = raw.workstreams.filter((w) => w.msdyn_streamsource === VOICE_STREAM);
+    const voice = raw.workstreams.filter((w) => w.msdyn_streamsource === VOICE_STREAM && !w.msdyn_direction);
     expect(model.workstreams.map((w) => w.name).sort()).toEqual(voice.map((w) => w.msdyn_name).sort());
     for (const ws of model.workstreams) {
       expect(ws.fallbackQueueId).toBe(queueByName.get("Overflow"));
