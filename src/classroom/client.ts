@@ -15,6 +15,9 @@ export interface ClassView extends ClassInfo { openUntil?: string; closed: boole
 // A class in the signed-in trainer's list.
 export interface ClassSummary extends ClassView { createdOn: string; learners: number }
 export interface CheckProgress { title: string; passed: boolean }
+export interface Member { learnerId: string; name: string; joinedOn: string; rejoinCode?: string }
+// Joining or rejoining answers who the learner is in the class, and which of its exercises they finished.
+export interface Joined extends ClassInfo { you: { learnerId: string; name: string; rejoinCode: string; done: string[] } }
 export interface Progress { learnerId: string; name: string; scenarioId: string; title: string; checks: CheckProgress[]; done: boolean; hints: number; updatedOn: string }
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
@@ -41,6 +44,13 @@ export const trainerConfig = () => call<{ passcodeRequired: boolean }>("/trainer
 export const createClass = (name: string, scenarios: string[], extra: { openUntil?: string; passcode?: string } = {}) =>
   post<{ code: string; trainerKey: string }>("/classes", { name, scenarios, ...extra });
 export const getClass = (code: string) => call<ClassInfo>(`/classes/${enc(code)}`);
+// Joining tells the class, so the trainer sees the learner before they start.
+export const joinClass = (code: string, name: string) => post<Joined>(`/classes/${enc(code)}/join`, { learnerId: learnerId(), name });
+// The same learner in another browser, with their personal code.
+export const rejoinClass = (code: string, rejoinCode: string) => post<Joined>(`/classes/${enc(code)}/rejoin`, { rejoinCode: rejoinCode.trim().toUpperCase() });
+// The learner's work on a class exercise (packed by work.ts).
+export const saveWork = (code: string, scenarioId: string, data: string) => post<{ saved: boolean }>(`/classes/${enc(code)}/work`, { scenarioId, data });
+export const loadWork = (code: string, scenarioId: string) => call<{ work: { data: string; savedOn: string } | null }>(`/classes/${enc(code)}/work/${encodeURIComponent(scenarioId)}`);
 export const reportProgress = (code: string, p: Omit<Progress, "learnerId" | "updatedOn">) =>
   post<{ saved: boolean }>(`/classes/${enc(code)}/progress`, { ...p, learnerId: learnerId() });
 
@@ -52,7 +62,7 @@ export const claimClass = (code: string, key: string) => post<ClassView>("/manag
 
 // Reading and changing one class: with its key, or, without one, as the signed-in owner.
 export const classProgress = (code: string, key?: string) =>
-  call<{ class: ClassView; progress: Progress[] }>(key ? `/classes/${enc(code)}/progress?key=${encodeURIComponent(key)}` : `/manage/classes/${enc(code)}`);
+  call<{ class: ClassView; members?: Member[]; progress: Progress[] }>(key ? `/classes/${enc(code)}/progress?key=${encodeURIComponent(key)}` : `/manage/classes/${enc(code)}`);
 const manage = <T>(code: string, key: string | undefined, action: string, body: object) =>
   key ? post<T>(`/classes/${enc(code)}/${action}`, { key, ...body }) : post<T>(`/manage/classes/${enc(code)}/${action}`, body);
 export const updateClass = (code: string, key: string | undefined, changes: { openUntil?: string; closed?: boolean }) => manage<ClassView>(code, key, "settings", changes);

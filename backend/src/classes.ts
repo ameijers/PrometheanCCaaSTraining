@@ -13,6 +13,10 @@ import { AiError } from "./ai/provider";
 //
 // A trainer who signs in (docs/classroom.md) owns the classes they create, or add with their trainer link,
 // and manages them without the key. Only the Static Web Apps user id is kept with the class, no name or email.
+//
+// A learner who joins gets a personal code. With it they carry on in another browser as the same learner:
+// the browser takes over their learner id. Their work on the class's exercises (the environment, answers and
+// hints, compressed by the browser) is kept here too, so any browser carries on where they left off.
 
 export interface ClassRecord {
   code: string; name: string; scenarios: string[]; trainerKey: string; createdOn: string;
@@ -31,6 +35,14 @@ export interface ClassSummary extends ClassView { createdOn: string; learners: n
 // What the trainer's page shows about the class.
 export interface ClassView { code: string; name: string; scenarios: string[]; openUntil?: string; closed: boolean; open: boolean }
 export interface CheckProgress { title: string; passed: boolean }
+// Someone who joined the class, whether or not they've started an exercise.
+export interface Member { learnerId: string; name: string; joinedOn: string; rejoinCode?: string }
+// What a learner gets back when they join or rejoin: who they are in the class, and what they finished.
+export interface Joined { code: string; name: string; scenarios: string[]; you: { learnerId: string; name: string; rejoinCode: string; done: string[] } }
+// A learner's saved work on one exercise: gzip-compressed JSON, in Base64, as the browser sent it.
+export interface Work { data: string; savedOn: string }
+const WORK_MAX = 30_000; // characters: Table Storage keeps up to 64 KiB of text in one column
+const BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
 export interface Progress {
   learnerId: string; name: string; scenarioId: string; title: string;
   checks: CheckProgress[]; done: boolean; hints: number; updatedOn: string;
@@ -90,6 +102,75 @@ export class Classes {
     return { code: c.code, name: c.name, scenarios: c.scenarios };
   }
 
+  // A learner joins: the trainer sees them straight away, before they start an exercise. Joining again
+  // (each time the page opens) keeps the same personal code.
+  async join(code: string, body: any): Promise<Joined> {
+    const c = await this.find(code);
+    if (!isLearnerId(body?.learnerId)) throw new AiError("Not a valid learner.", 400);
+    this.mustBeOpen(c);
+    if (c.removed?.includes(body.learnerId)) throw new AiError("Your trainer removed you from this class.", 403);
+    return this.joined(c, await this.remember(c.code, body.learnerId, text(body?.name, "Your name", 40)));
+  }
+
+  // The same learner in another browser, with their personal code: the browser takes over their learner id.
+  async rejoin(code: string, rejoinCode: unknown): Promise<Joined> {
+    const c = await this.find(code);
+    this.mustBeOpen(c);
+    const clean = String(rejoinCode ?? "").trim().toUpperCase();
+    const index = /^[A-Z2-9]{6}$/.test(clean) ? await this.store.get<{ learnerId: string }>(`rejoin:${c.code}`, clean) : undefined;
+    const member = index && await this.store.get<Member>(`members:${c.code}`, index.learnerId);
+    if (!member) throw new AiError(`That isn't a personal code in the class ${c.name}. It's under Class in the header of the browser you joined with; your trainer can see it too.`, 404);
+    if (c.removed?.includes(member.learnerId)) throw new AiError("Your trainer removed you from this class.", 403);
+    return this.joined(c, member);
+  }
+
+  private async joined(c: ClassRecord, m: Member): Promise<Joined> {
+    const done = (await this.store.list<Progress>(`progress:${c.code}`)).map((r) => r.value).filter((p) => p.learnerId === m.learnerId && p.done).map((p) => p.scenarioId);
+    return { code: c.code, name: c.name, scenarios: c.scenarios, you: { learnerId: m.learnerId, name: m.name, rejoinCode: m.rejoinCode!, done } };
+  }
+
+  // Records the learner, with a personal code that's unique in the class.
+  private async remember(code: string, learnerId: string, name: string): Promise<Member> {
+    const known = await this.store.get<Member>(`members:${code}`, learnerId);
+    if (known?.name === name && known.rejoinCode) return known;
+    let rejoinCode = known?.rejoinCode;
+    if (!rejoinCode) {
+      do rejoinCode = newCode(); while (await this.store.get(`rejoin:${code}`, rejoinCode));
+      await this.store.put(`rejoin:${code}`, rejoinCode, { learnerId });
+    }
+    const member: Member = { learnerId, name, joinedOn: known?.joinedOn ?? new Date().toISOString(), rejoinCode };
+    await this.store.put(`members:${code}`, learnerId, member);
+    return member;
+  }
+
+  // The learner's work on one of the class's exercises: saved as it changes, read in any browser.
+  async saveWork(code: string, learnerId: unknown, scenarioId: unknown, data: unknown): Promise<void> {
+    const { c, id } = await this.asMember(code, learnerId);
+    this.mustBeOpen(c);
+    const sid = this.classExercise(c, scenarioId);
+    if (typeof data !== "string" || data.length > WORK_MAX || !BASE64.test(data)) throw new AiError("The saved work is too large or not readable, so it's kept in this browser only.", 400);
+    await this.store.put(`work:${c.code}`, `${id}:${sid}`, { data, savedOn: new Date().toISOString() } satisfies Work);
+  }
+
+  async work(code: string, learnerId: unknown, scenarioId: unknown): Promise<{ work: Work | null }> {
+    const { c, id } = await this.asMember(code, learnerId);
+    return { work: (await this.store.get<Work>(`work:${c.code}`, `${id}:${this.classExercise(c, scenarioId)}`)) ?? null };
+  }
+
+  private async asMember(code: string, learnerId: unknown): Promise<{ c: ClassRecord; id: string }> {
+    const c = await this.find(code);
+    if (!isLearnerId(learnerId)) throw new AiError("Not a valid learner.", 400);
+    if (c.removed?.includes(learnerId)) throw new AiError("Your trainer removed you from this class.", 403);
+    if (!(await this.store.get<Member>(`members:${c.code}`, learnerId))) throw new AiError("Join the class first.", 403);
+    return { c, id: learnerId };
+  }
+
+  private classExercise(c: ClassRecord, scenarioId: unknown): string {
+    const id = String(scenarioId ?? "");
+    if (!c.scenarios.includes(id)) throw new AiError("That exercise isn't part of the class.", 400);
+    return id;
+  }
+
   async report(code: string, body: any): Promise<void> {
     const c = await this.find(code);
     if (!isLearnerId(body?.learnerId)) throw new AiError("Not a valid learner.", 400);
@@ -103,12 +184,18 @@ export class Classes {
       checks, done: body?.done === true, hints: Math.max(0, Math.min(99, Number(body?.hints) || 0)), updatedOn: new Date().toISOString()
     };
     await this.store.put(`progress:${c.code}`, `${p.learnerId}:${scenarioId}`, p);
+    // Learners who joined before joining was recorded show up once they report.
+    await this.remember(c.code, p.learnerId, p.name);
   }
 
-  async progress(code: string, who: Who): Promise<{ class: ClassView; progress: Progress[] }> {
+  async progress(code: string, who: Who): Promise<{ class: ClassView; members: Member[]; progress: Progress[] }> {
     const c = await this.asTrainer(code, who);
     const rows = await this.store.list<Progress>(`progress:${c.code}`);
-    return { class: view(c), progress: rows.map((r) => r.value).sort((a, b) => a.name.localeCompare(b.name)) };
+    return { class: view(c), members: await this.members(c.code), progress: rows.map((r) => r.value).sort((a, b) => a.name.localeCompare(b.name)) };
+  }
+
+  private async members(code: string): Promise<Member[]> {
+    return (await this.store.list<Member>(`members:${code}`)).map((r) => r.value).sort((a, b) => a.name.localeCompare(b.name));
   }
 
   // The trainer's changes: an end date (empty removes it), and closing or reopening the class.
@@ -130,6 +217,10 @@ export class Classes {
     for (const row of await this.store.list<Progress>(`progress:${c.code}`)) {
       if (row.value.learnerId === learnerId) await this.store.remove(`progress:${c.code}`, row.key);
     }
+    const member = await this.store.get<Member>(`members:${c.code}`, learnerId);
+    if (member?.rejoinCode) await this.store.remove(`rejoin:${c.code}`, member.rejoinCode);
+    await this.store.remove(`members:${c.code}`, learnerId);
+    for (const row of await this.store.list<Work>(`work:${c.code}`)) if (row.key.startsWith(`${learnerId}:`)) await this.store.remove(`work:${c.code}`, row.key);
     c.removed = [...new Set([...(c.removed ?? []), learnerId])];
     await this.store.put("class", c.code, c);
   }
@@ -138,6 +229,7 @@ export class Classes {
   async delete(code: string, who: Who): Promise<void> {
     const c = await this.asTrainer(code, who);
     for (const row of await this.store.list<Progress>(`progress:${c.code}`)) await this.store.remove(`progress:${c.code}`, row.key);
+    for (const part of ["members", "rejoin", "work"]) for (const row of await this.store.list(`${part}:${c.code}`)) await this.store.remove(`${part}:${c.code}`, row.key);
     await this.store.remove("class", c.code);
   }
 
@@ -146,7 +238,7 @@ export class Classes {
     const mine = (await this.store.list<ClassRecord>("class")).map((r) => r.value).filter((c) => c.owner === owner);
     return Promise.all(mine.sort((a, b) => b.createdOn.localeCompare(a.createdOn)).map(async (c) => ({
       ...view(c), createdOn: c.createdOn,
-      learners: new Set((await this.store.list<Progress>(`progress:${c.code}`)).map((r) => r.value.learnerId)).size
+      learners: (await this.members(c.code)).length
     })));
   }
 
