@@ -4,6 +4,7 @@
     "exclude": ["/tools/*", "/shell/*", "/*.{js,css,png,svg,ico,json,txt,map}"]
   },
   "routes": [
+    { "route": "/api/manage/*", "allowedRoles": ["trainer"] },
     { "route": "/api/*", "allowedRoles": ["anonymous"] },
     { "route": "/index.html", "headers": { "Cache-Control": "no-cache" } }
   ],

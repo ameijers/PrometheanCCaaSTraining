@@ -8,7 +8,7 @@ import { UsageLimits } from "./ai/limits";
 import { AiError, AiProvider } from "./ai/provider";
 import { answerAsCustomer, Attempt, MAX_ATTEMPTS, writeCaller, writeHint, writeScenarioAttempt } from "./ai/scenarios";
 import { ArticleCache } from "./cache";
-import { Classes, isLearnerId, sameSecret } from "./classes";
+import { Classes, isLearnerId, sameSecret, Who } from "./classes";
 import { KvStore } from "./kv";
 import { Concept, ConceptStatus, statusOf } from "./learn";
 import { Settings } from "./settings";
@@ -36,6 +36,14 @@ import conceptsJson from "../../content/concepts.json";
 //   POST /classes/<code>/settings     { key, openUntil?, closed? }: the trainer sets an end date, or closes or reopens it
 //   POST /classes/<code>/remove       { key, learnerId }: the trainer removes a learner and their progress
 //   POST /classes/<code>/delete       { key }: the trainer deletes the class and all its progress
+//   GET  /me                          who is signed in, and whether they're a trainer
+// For a signed-in trainer (role "trainer"; Static Web Apps also only lets that role through, see
+// public/staticwebapp.config.json), the same without the key, for the classes they own:
+//   GET  /manage/classes              their classes
+//   POST /manage/classes              { name, scenarios, openUntil? }: create a class they own
+//   POST /manage/claim                { code, key }: add a class made with a trainer link to their list
+//   GET  /manage/classes/<code>       the class's progress
+//   POST /manage/classes/<code>/(settings|remove|delete)   as above, without the key
 // POSTs are only taken from the training's own pages. AI requests carry the learner's random id
 // (header X-Learner), for the per-learner limit.
 
@@ -45,7 +53,24 @@ export interface ApiRequest {
   query: URLSearchParams;
   origin?: string;
   learner?: string;
+  // Who signed in, as Static Web Apps says (the x-ms-client-principal header), if anyone.
+  user?: User;
   body(limit?: number): Promise<any>;
+}
+
+export interface User { id: string; name: string; roles: string[] }
+export const TRAINER_ROLE = "trainer";
+
+// Reads Static Web Apps' client principal: Base64 JSON with userId, userDetails and userRoles.
+export function readPrincipal(header: string | null | undefined): User | undefined {
+  if (!header) return undefined;
+  try {
+    const p = JSON.parse(Buffer.from(header, "base64").toString("utf8"));
+    if (typeof p?.userId !== "string" || !/^[\w-]{1,100}$/.test(p.userId)) return undefined;
+    return { id: p.userId, name: String(p.userDetails ?? "").slice(0, 200), roles: Array.isArray(p.userRoles) ? p.userRoles.map(String) : [] };
+  } catch {
+    return undefined;
+  }
 }
 
 export interface ApiResponse { status: number; body?: unknown }
@@ -63,6 +88,7 @@ export interface ApiOptions {
 }
 
 const CLASSES_PER_DAY = 10;
+const TRAINER_CLASSES_PER_DAY = 30;
 
 const concepts = (): Concept[] => (conceptsJson as { concepts: Concept[] }).concepts;
 
@@ -96,6 +122,29 @@ export function createApi(o: ApiOptions) {
     return [...written, ...shipped.filter((s) => !written.some((w) => w.id === s.id))].sort((a, b) => String(b.createdOn).localeCompare(String(a.createdOn)));
   };
 
+  // A few classes a day, counted per browser, or per trainer when signed in.
+  const countClass = async (who: string, max: number) => {
+    const key = `${new Date().toISOString().slice(0, 10)}:classes:${who}`;
+    const made = (await o.store.get<number>("usage", key)) ?? 0;
+    if (made >= max) throw new AiError(`You've created ${max} classes today. Try again tomorrow.`, 429);
+    return () => o.store.put("usage", key, made + 1);
+  };
+
+  const trainer = (r: ApiRequest): User => {
+    if (!r.user) throw new AiError("Sign in as a trainer first.", 401);
+    if (!r.user.roles.includes(TRAINER_ROLE)) throw new AiError("You're signed in, but not as a trainer. Ask whoever runs the training for a trainer invitation.", 403);
+    return r.user;
+  };
+
+  // The trainer's changes to a class: with its key, or as its owner.
+  const manageClass = async (code: string, action: string, who: Who, body: any): Promise<ApiResponse> => {
+    const ok = (b: unknown): ApiResponse => ({ status: 200, body: b });
+    if (action === "settings") return ok(await classes.update(code, who, { ...("openUntil" in (body ?? {}) ? { openUntil: body.openUntil } : {}), closed: body?.closed }));
+    if (action === "remove") { await classes.removeLearner(code, who, body?.learnerId); return ok({ removed: true }); }
+    await classes.delete(code, who);
+    return ok({ deleted: true });
+  };
+
   async function route(r: ApiRequest): Promise<ApiResponse> {
     const ok = (body: unknown): ApiResponse => ({ status: 200, body });
     const p = r.path.replace(/\/+$/, "") || "/";
@@ -113,10 +162,14 @@ export function createApi(o: ApiOptions) {
       }
       if (p === "/ai/scenarios") return ok({ scenarios: await scenarios() });
       if (p === "/trainer") return ok({ passcodeRequired: !!o.settings.trainerPasscode });
+      if (p === "/me") return ok(r.user ? { signedIn: true, name: r.user.name, trainer: r.user.roles.includes(TRAINER_ROLE) } : { signedIn: false, trainer: false });
+      if (p === "/manage/classes") return ok({ classes: await classes.ownedBy(trainer(r).id) });
+      const mine = p.match(/^\/manage\/classes\/(\w+)$/);
+      if (mine) return ok(await classes.progress(mine[1], { owner: trainer(r).id }));
       const cls = p.match(/^\/classes\/(\w+)$/);
       if (cls) return ok(await classes.get(cls[1]));
       const prog = p.match(/^\/classes\/(\w+)\/progress$/);
-      if (prog) return ok(await classes.progress(prog[1], r.query.get("key")));
+      if (prog) return ok(await classes.progress(prog[1], { key: r.query.get("key") }));
     }
     if (r.method === "POST") {
       if (p === "/ai/scenario") {
@@ -153,23 +206,32 @@ export function createApi(o: ApiOptions) {
         if (!isLearnerId(r.learner)) throw new AiError("The training didn't say who's asking.", 400);
         const { name, scenarios: list, openUntil, passcode } = await r.body();
         if (o.settings.trainerPasscode && !sameSecret(passcode, o.settings.trainerPasscode)) throw new AiError("That isn't the trainer passcode. Ask whoever runs the training for it.", 403);
-        const key = `${new Date().toISOString().slice(0, 10)}:classes:${r.learner}`;
-        const made = (await o.store.get<number>("usage", key)) ?? 0;
-        if (made >= CLASSES_PER_DAY) throw new AiError(`You've created ${CLASSES_PER_DAY} classes today. Try again tomorrow.`, 429);
+        const counted = await countClass(r.learner, CLASSES_PER_DAY);
         const created = await classes.create(name, list, openUntil);
-        await o.store.put("usage", key, made + 1);
+        await counted();
         return ok(created);
       }
+      if (p === "/manage/classes") {
+        const me = trainer(r);
+        const { name, scenarios: list, openUntil } = await r.body();
+        const counted = await countClass(me.id, TRAINER_CLASSES_PER_DAY);
+        const created = await classes.create(name, list, openUntil, me.id);
+        await counted();
+        return ok(created);
+      }
+      if (p === "/manage/claim") {
+        const me = trainer(r);
+        const { code, key } = await r.body();
+        return ok(await classes.claim(String(code ?? ""), key, me.id));
+      }
+      const mineAction = p.match(/^\/manage\/classes\/(\w+)\/(settings|remove|delete)$/);
+      if (mineAction) return manageClass(mineAction[1], mineAction[2], { owner: trainer(r).id }, await r.body());
       const prog = p.match(/^\/classes\/(\w+)\/progress$/);
       if (prog) { await classes.report(prog[1], await r.body(50_000)); return ok({ saved: true }); }
       const manage = p.match(/^\/classes\/(\w+)\/(settings|remove|delete)$/);
       if (manage) {
-        const [, code, action] = manage;
         const body = await r.body();
-        if (action === "settings") return ok(await classes.update(code, body?.key, { ...("openUntil" in (body ?? {}) ? { openUntil: body.openUntil } : {}), closed: body?.closed }));
-        if (action === "remove") { await classes.removeLearner(code, body?.key, body?.learnerId); return ok({ removed: true }); }
-        await classes.delete(code, body?.key);
-        return ok({ deleted: true });
+        return manageClass(manage[1], manage[2], { key: body?.key }, body);
       }
     }
     return { status: 404, body: { error: "Not found." } };

@@ -1,8 +1,9 @@
 // Copyright (c) 2026 Alexander Meijers
 // SPDX-License-Identifier: MIT
 
-// Plays a class in a real browser (phase 8): a trainer creates a class, a learner (in a separate browser
-// profile) joins with the code, works on an exercise, and the trainer sees the progress. Then the guided
+// Plays a class in a real browser (phase 8): a trainer signs in (on this computer, a stand-in for the
+// Microsoft sign-in), creates a class from Your classes, a learner (in a separate browser profile) joins with
+// the code, works on an exercise, and the trainer sees the progress and manages the class. Then the guided
 // tour. Needs the build served (npm run serve) and the backend running (npm run backend).
 //   node scripts/classroom.js <screenshot folder> [port]
 
@@ -19,7 +20,7 @@ async function main() {
   const open = async (context) => {
     const page = await context.newPage();
     await page.setViewport({ width: 1440, height: 900 });
-    page.on("dialog", (d) => d.accept());
+    page.on("dialog", (d) => d.accept(d.type() === "prompt" ? d.defaultValue() : undefined));
     page.on("pageerror", (e) => errors.push(e.message));
     return page;
   };
@@ -43,8 +44,11 @@ async function main() {
     // The trainer creates a class with two exercises.
     const trainer = current = await open(browser.defaultBrowserContext());
     await trainer.goto(`http://localhost:${port}/?seed=1`, { waitUntil: "networkidle0" });
-    await click(trainer, ".training-env button", "Choose an exercise");
-    await click(trainer, "[role=dialog] button", "For trainers: create a class");
+    await click(trainer, ".training-env button", "Trainer sign-in"); // the name prompt is accepted as it is
+    await trainer.waitForNavigation({ waitUntil: "networkidle0" });
+    await waitText(trainer, ".lesson-title", "Your classes");
+    await shot(trainer, "trainer-your-classes");
+    await click(trainer, ".trainer button", "Create a class");
     await trainer.waitForSelector(".trainer input");
     await trainer.type(".trainer input", "Contoso onboarding, November");
     for (const title of ["First day on the switchboard", "Monday morning, and nobody answers"]) {
@@ -116,10 +120,17 @@ async function main() {
     await learner.click(".tour-controls button[aria-label='Next step']");
     await shot(learner, "tour-admin-center");
 
-    // The trainer deletes the class: its code stops working.
+    // The trainer's list shows the class; they open it again and delete it: its code stops working.
     current = trainer;
+    await click(trainer, ".trainer-head button", "All your classes");
+    await waitText(trainer, ".trainer-list", code);
+    await shot(trainer, "trainer-class-list");
+    await trainer.click(".trainer-list button[aria-label^='Open']");
     await click(trainer, ".trainer-manage button", "Delete the class");
-    await waitText(trainer, ".lesson-title", "Create a class");
+    await waitText(trainer, ".lesson-title", "Your classes");
+    await click(trainer, ".trainer-head button", "Sign out");
+    await trainer.waitForNavigation({ waitUntil: "networkidle0" });
+    await waitText(trainer, ".training-env button", "Trainer sign-in");
     console.log(`class ${code} deleted`);
   } catch (e) {
     if (current) await current.screenshot({ path: path.join(out, "failure.png") });

@@ -4,7 +4,7 @@
 import * as os from "os";
 import * as path from "path";
 import { app, HttpRequest, HttpResponseInit } from "@azure/functions";
-import { createApi } from "./api";
+import { createApi, readPrincipal } from "./api";
 import { FileStore, KvStore } from "./kv";
 import { settings } from "./settings";
 import { TableStore } from "./tableStore";
@@ -48,6 +48,8 @@ app.http("api", {
       query: request.query,
       origin: request.headers.get("origin") ?? undefined,
       learner: request.headers.get("x-learner") ?? undefined,
+      // Static Web Apps adds who signed in to each API request (Microsoft Learn: Accessing user information).
+      user: readPrincipal(request.headers.get("x-ms-client-principal")),
       body: async (limit = 10_000) => {
         const text = await request.text();
         if (text.length > limit) throw new AiError("The request is too large.", 413);

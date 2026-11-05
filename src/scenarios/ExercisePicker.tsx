@@ -110,7 +110,7 @@ export function ExercisePicker({ open, current, onClose, onLesson, onScenario, c
             </p>
           </DialogContent>
           <DialogActions>
-            <Button appearance="subtle" disabled={!!writing} onClick={onTrainer}>For trainers: create a class</Button>
+            <Button appearance="subtle" disabled={!!writing} onClick={onTrainer}>For trainers</Button>
             <Button disabled={!!writing} onClick={onClose}>Close</Button>
           </DialogActions>
         </DialogBody>

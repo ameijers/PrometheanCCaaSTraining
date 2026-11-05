@@ -5,7 +5,7 @@
 // classes with their codes and trainer keys, progress, who may write, and the AI's per-learner limit.
 import * as os from "os";
 import * as path from "path";
-import { ApiRequest, createApi } from "../../backend/src/api";
+import { ApiRequest, createApi, readPrincipal } from "../../backend/src/api";
 import { AiProvider } from "../../backend/src/ai/provider";
 import { MemoryStore } from "../../backend/src/kv";
 import { Settings } from "../../backend/src/settings";
@@ -133,6 +133,58 @@ describe("managing a class", () => {
     }
     expect((await a.handle(req("GET", `/classes/${code}`))).status).toBe(200);
   });
+});
+
+describe("a signed-in trainer", () => {
+  const a = createApi({ settings: { ...settings, trainerPasscode: "contoso-trainers" }, store: new MemoryStore(), cacheDir: path.join(os.tmpdir(), "learn-cache-test"), allowed: (o) => o === SITE });
+  const ann = { id: "ann-1", name: "ann@contoso.example", roles: ["anonymous", "authenticated", "trainer"] };
+  const bob = { id: "bob-2", name: "bob@contoso.example", roles: ["anonymous", "authenticated", "trainer"] };
+  const as = (user: typeof ann | undefined, method: string, p: string, body?: unknown) => a.handle(req(method, p, body, { user }));
+
+  test("says who is signed in, and whether they're a trainer", async () => {
+    expect((await as(undefined, "GET", "/me")).body).toEqual({ signedIn: false, trainer: false });
+    expect((await as(ann, "GET", "/me")).body).toEqual({ signedIn: true, name: "ann@contoso.example", trainer: true });
+    expect((await as({ ...ann, roles: ["anonymous", "authenticated"] }, "GET", "/me")).body).toMatchObject({ signedIn: true, trainer: false });
+  });
+
+  test("only a trainer gets the trainer's routes", async () => {
+    expect(await as(undefined, "GET", "/manage/classes")).toEqual({ status: 401, body: { error: "Sign in as a trainer first." } });
+    expect((await as({ ...ann, roles: ["authenticated"] }, "POST", "/manage/classes", { name: "A", scenarios: ["x"] })).status).toBe(403);
+  });
+
+  test("creates classes without the passcode, sees only their own, and manages them without the key", async () => {
+    const made = (await as(ann, "POST", "/manage/classes", { name: "Ann's class", scenarios: ["x"], openUntil: "2999-01-31" })).body as { code: string };
+    await as(bob, "POST", "/manage/classes", { name: "Bob's class", scenarios: ["x"] });
+    await a.handle(req("POST", `/classes/${made.code}/progress`, { learnerId: learner, name: "Sam", scenarioId: "x", title: "X", checks: [], done: false, hints: 0 }));
+    const list = ((await as(ann, "GET", "/manage/classes")).body as any).classes;
+    expect(list).toEqual([expect.objectContaining({ code: made.code, name: "Ann's class", openUntil: "2999-01-31", open: true, learners: 1 })]);
+    expect(((await as(ann, "GET", `/manage/classes/${made.code}`)).body as any).progress).toHaveLength(1);
+    expect((await as(bob, "GET", `/manage/classes/${made.code}`)).body).toEqual({ error: "This class isn't in your list. Add it with its trainer link." });
+    expect((await as(bob, "POST", `/manage/classes/${made.code}/delete`)).status).toBe(403);
+    expect((await as(ann, "POST", `/manage/classes/${made.code}/settings`, { closed: true })).body).toMatchObject({ closed: true });
+    expect((await as(ann, "POST", `/manage/classes/${made.code}/remove`, { learnerId: learner })).body).toEqual({ removed: true });
+    expect((await as(ann, "POST", `/manage/classes/${made.code}/delete`)).body).toEqual({ deleted: true });
+    expect(((await as(ann, "GET", "/manage/classes")).body as any).classes).toEqual([]);
+  });
+
+  test("adds a class made with a trainer link to their list, once", async () => {
+    const { code, trainerKey } = (await as(undefined, "POST", "/classes", { name: "Old class", scenarios: ["x"], passcode: "contoso-trainers" })).body as { code: string; trainerKey: string };
+    expect((await as(ann, "POST", "/manage/claim", { code, key: "0".repeat(32) })).status).toBe(403);
+    expect((await as(ann, "POST", "/manage/claim", { code, key: trainerKey })).body).toMatchObject({ code, name: "Old class" });
+    expect(((await as(ann, "GET", "/manage/classes")).body as any).classes.map((c: any) => c.code)).toContain(code);
+    expect((await as(bob, "POST", "/manage/claim", { code, key: trainerKey })).body).toEqual({ error: "Another trainer already has this class in their list." });
+    // The trainer link still works.
+    expect((await a.handle(req("GET", `/classes/${code}/progress?key=${trainerKey}`))).status).toBe(200);
+  });
+});
+
+test("Static Web Apps' client principal is read, and anything else is ignored", () => {
+  const encode = (o: unknown) => Buffer.from(JSON.stringify(o)).toString("base64");
+  expect(readPrincipal(encode({ identityProvider: "aad", userId: "abc123", userDetails: "ann@contoso.example", userRoles: ["anonymous", "authenticated", "trainer"] })))
+    .toEqual({ id: "abc123", name: "ann@contoso.example", roles: ["anonymous", "authenticated", "trainer"] });
+  expect(readPrincipal(undefined)).toBeUndefined();
+  expect(readPrincipal("not base64 json")).toBeUndefined();
+  expect(readPrincipal(encode({ userId: "a/b", userRoles: ["trainer"] }))).toBeUndefined();
 });
 
 test("AI requests need a learner id and stop at the learner's limit", async () => {

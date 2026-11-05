@@ -21,7 +21,8 @@ import { Store } from "../simulator/store";
 import { LessonTemplate, makeLesson, newSeed } from "../lessons/template";
 import templateJson from "../../content/lessons/new-menu-choice.json";
 import { ExercisePicker, READY_MADE } from "../scenarios/ExercisePicker";
-import { JoinDialog, TrainerView } from "../classroom/Classroom";
+import { JoinDialog, TrainerOpen, TrainerView } from "../classroom/Classroom";
+import { Me, me, signIn } from "../classroom/account";
 import { reportProgress } from "../classroom/client";
 import { finished, markFinished, Membership, membership, setMembership } from "../classroom/identity";
 import { aiScenarios } from "../scenarios/client";
@@ -72,7 +73,10 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
   const [member, setMember] = useState<Membership | undefined>(() => membership());
   const [classScenarios, setClassScenarios] = useState<string[]>([]);
   const [joining, setJoining] = useState<string | undefined>(() => params.get("class") ?? undefined);
-  const [trainer, setTrainer] = useState<{ code: string; key: string } | "new" | undefined>(() => (params.get("trainer") && params.get("key") ? { code: params.get("trainer")!, key: params.get("key")! } : undefined));
+  // The trainer's pages: ?trainer=home after signing in, or a trainer link ?trainer=CODE&key=KEY.
+  const [trainer, setTrainer] = useState<TrainerOpen | undefined>(() => (params.get("trainer") === "home" ? "home" : params.get("trainer") && params.get("key") ? { code: params.get("trainer")!, key: params.get("key")! } : undefined));
+  const [account, setAccount] = useState<Me | undefined>();
+  useEffect(() => { void me().then(setAccount); }, []);
   const [allScenarios, setAllScenarios] = useState<Scenario[]>(READY_MADE);
   const [finishedIds, setFinishedIds] = useState<string[]>(() => finished());
   useEffect(() => { void aiScenarios().then((ai) => setAllScenarios([...READY_MADE, ...ai])); }, []);
@@ -232,6 +236,9 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
             {member
               ? <button className="training-class" title="Leave the class" onClick={() => { if (window.confirm(`Leave the class ${member.className}? Your work here stays.`)) { setMembership(undefined); setMember(undefined); setClassScenarios([]); } }}>Class {member.code} · {member.name}</button>
               : <button onClick={() => setJoining("")}>Join a class</button>}
+            {account?.signedIn
+              ? <button className="training-trainer" title="Your classes" onClick={() => setTrainer("home")}>{account.trainer ? "Trainer" : "Signed in"} · {account.name}</button>
+              : <button className="training-trainer" title="For trainers: sign in to manage your classes" onClick={signIn}>Trainer sign-in</button>}
             <button onClick={() => tour.start()}>Tour</button>
             <button onClick={restart}>Start again</button>
             <button onClick={download}>Save my work</button>
@@ -270,10 +277,10 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
         </div>
         <LearnStrip conceptId={concept} />
         <ExercisePicker open={picking} current={run?.scenario.id ?? "lesson"} onClose={() => setPicking(false)} onLesson={startLesson} onScenario={startScenario}
-          classInfo={member ? { name: member.className, scenarios: classScenarios } : undefined} finishedIds={finishedIds} onTrainer={() => { setPicking(false); setTrainer("new"); }} />
+          classInfo={member ? { name: member.className, scenarios: classScenarios } : undefined} finishedIds={finishedIds} onTrainer={() => { setPicking(false); setTrainer("home"); }} />
         {joining !== undefined && <JoinDialog initialCode={joining} onClose={() => setJoining(undefined)}
           onJoined={(m, list) => { setMember(m); setClassScenarios(list); setJoining(undefined); setMessage(`You joined ${m.className}. Your exercises are at the top of Choose an exercise.`); setPicking(true); }} />}
-        {trainer && <TrainerView all={allScenarios} initial={trainer === "new" ? undefined : trainer} onClose={() => setTrainer(undefined)} />}
+        {trainer && <TrainerView all={allScenarios} initial={trainer} onClose={() => setTrainer(undefined)} />}
         <TourBar tour={tour} />
       </div>
       </FluentProvider>
