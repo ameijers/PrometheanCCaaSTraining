@@ -26,11 +26,12 @@ The browser finds the backend by itself: `http://localhost:7071` on this machine
 | `ANTHROPIC_API_KEY` and optionally `AI_MODEL` | for Claude (decision 15.3) |
 | or `AI_PROVIDER=azure-openai`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT` | for Azure OpenAI |
 | `AI_DAILY_LIMIT`, `AI_LEARNER_LIMIT` | optional; 40 and 15 by default |
-| `TRAINER_PASSCODE` | optional, recommended; creating a class then needs this passcode. Give it to your trainers only (docs/classroom.md) |
+| `TRAINER_PASSCODE` | optional, recommended; creating a class without signing in then needs this passcode (docs/classroom.md) |
 
    Without an AI key the training runs on its ready-made scenarios. Without a storage connection string the backend keeps classes in its temporary folder, which is lost when it restarts: fine for a look, not for a class.
 
-4. **GitHub secrets** of the repo: `AZURE_STATIC_WEB_APPS_API_TOKEN` (the deployment token), and `TOOLBOX_TOKEN` (read access to the Toolbox repo, if it's private, so the submodule can be checked out).
+4. **Trainers**: Role Management > Invite, role `trainer`, for each trainer, yourself first (docs/classroom.md, "Who is a trainer"). Sign-in uses Static Web Apps' built-in Microsoft sign-in: nothing to register, on any plan.
+5. **GitHub secrets** of the repo: `AZURE_STATIC_WEB_APPS_API_TOKEN` (the deployment token), and `TOOLBOX_TOKEN` (read access to the Toolbox repo, if it's private, so the submodule can be checked out).
 
 ## Deploying
 
@@ -52,7 +53,7 @@ npm run deploy:azure
 ## Not done here
 
 - A custom domain (Static Web Apps > Custom domains), if Promethean Academy wants one.
-- Sign-in with Entra ID (decision 15.5 chose class codes; Entra ID can come later).
+- Limiting sign-in to one organisation's Entra ID tenant: that needs a custom Entra ID registration, on the Standard plan. Not needed: only invited trainers get the trainer role.
 - Monitoring (Application Insights on the Functions).
 
 The steps above follow Microsoft Learn's "Configure Azure Static Web Apps" (ms.date 2024-05-24) and "Build configuration for Azure Static Web Apps" (ms.date 2024-11-04). Check them again when deploying: portal screens change.

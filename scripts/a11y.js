@@ -60,7 +60,7 @@ async function main() {
   await check("customer interview");
   await clickText(".training-env button", "Choose an exercise"); await wait(800);
   await clickText("[role=dialog] button", "For trainers"); await wait(800);
-  await check("trainer: create a class");
+  await check("trainer: sign in");
   await browser.close();
 
   const order = { critical: 0, serious: 1, moderate: 2, minor: 3 };

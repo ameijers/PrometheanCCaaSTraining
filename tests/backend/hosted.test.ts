@@ -34,9 +34,9 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 
-const call = (method: string, url: string, body?: unknown, origin?: string) => registered.options.handler({
+const call = (method: string, url: string, body?: unknown, origin?: string, extra: Record<string, string> = {}) => registered.options.handler({
   method, url, query: new URL(url).searchParams,
-  headers: new Headers({ "x-learner": "e".repeat(32), ...(origin ? { origin } : {}) }),
+  headers: new Headers({ "x-learner": "e".repeat(32), ...(origin ? { origin } : {}), ...extra }),
   text: async () => (body === undefined ? "" : JSON.stringify(body))
 });
 
@@ -51,6 +51,12 @@ test("/api/<path> reaches the handler, and a class lives in Table Storage", asyn
   const read = await call("GET", `https://training.example/api/classes/${created.jsonBody.code}`);
   expect(read.jsonBody).toEqual({ code: created.jsonBody.code, name: "Hosted class", scenarios: ["route-1-first-day"] });
   expect([...rows.values()].some((r) => r.partitionKey === "class" && r.rowKey === created.jsonBody.code)).toBe(true);
+});
+
+test("who signed in comes from Static Web Apps' header, not from the local stand-in", async () => {
+  const principal = Buffer.from(JSON.stringify({ identityProvider: "aad", userId: "u1", userDetails: "ann@contoso.example", userRoles: ["anonymous", "authenticated", "trainer"] })).toString("base64");
+  expect((await call("GET", "https://training.example/api/me", undefined, undefined, { "x-ms-client-principal": principal })).jsonBody).toEqual({ signedIn: true, name: "ann@contoso.example", trainer: true });
+  expect((await call("GET", "https://training.example/api/me", undefined, undefined, { "x-dev-principal": principal })).jsonBody).toEqual({ signedIn: false, trainer: false });
 });
 
 test("only the site's own pages may write, and bad JSON is refused", async () => {

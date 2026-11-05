@@ -4,21 +4,39 @@ Phase 8 (manual 10). How a trainer runs a class with the training, and what the 
 
 ## For a trainer
 
-1. Open **Choose an exercise** and select **For trainers: create a class**.
-2. Name the class, give it a **last day** if you like, and tick the exercises it does. If the training asks for a **trainer passcode**, enter the one you were given. Select **Create the class**.
+1. Select **Trainer sign-in** in the header and sign in with your Microsoft account. You land on **Your classes**: every class you created, with its code, status, number of exercises and learners. (**Choose an exercise** > **For trainers** gets you there too.)
+2. Select **Create a class**. Name it, give it a **last day** if you like, and tick the exercises it does. Select **Create the class**.
 3. Hand out the **class code** (six letters and digits), or the class link (`?class=CODE`).
-4. Keep **your own link** (`?trainer=CODE&key=KEY`) to yourself: with it you come back to the class's progress. It updates every 10 seconds. Hover over a cell to see each check.
+4. **Open** a class in your list to follow its progress. It updates every 10 seconds. Hover over a cell to see each check.
 5. Manage the class on the same page:
    - **Last day**: set, change or remove it. After that day learners can't join or send progress; you still see what they did.
    - **Close the class** stops joining and progress straight away; **Reopen the class** undoes it.
    - **Remove** next to a learner deletes their progress, and they can't send progress to this class again.
    - **Delete the class** deletes it and everyone's progress in it. The code stops working. This can't be undone.
 
-There are no trainer accounts: the trainer link is the only key to a class. Lose it and the class can't be managed or seen again, so keep it somewhere safe.
+A trainer sees and manages only their own classes. **Sign out** is at the top of the trainer's pages.
+
+### Without signing in: the trainer link
+
+Someone who isn't a trainer can still create a class: **For trainers** > **Create a class with a trainer link** (with the trainer passcode, if one is set). They get the class code and **their own link** (`?trainer=CODE&key=KEY`), the only way back to that class: lose it and the class can't be managed or seen again. A trainer can add such a class to their list: paste the link under **Add a class you made with a trainer link** in Your classes, or open the link while signed in and select **Add to your classes**. A class belongs to one trainer; the link keeps working too.
+
+## Who is a trainer
+
+Azure Static Web Apps signs people in with a Microsoft account (Entra ID) and gives them roles. A trainer is someone with the role **trainer**. To make someone a trainer (Microsoft Learn, "Custom authentication in Azure Static Web Apps", Manage roles):
+
+1. In the Azure portal, open the static web app. Under **Settings**, select **Role Management**, then **Invite**.
+2. Authorization provider: **Microsoft Entra ID**. Invitee details: their email address. Domain: the site's address. Role: `trainer`. Set how many hours the invitation stays valid (at most 168, seven days). Select **Generate**.
+3. Send them the invite link. They open it and sign in with that account; from then on they're a trainer.
+
+To stop someone being a trainer: Role Management, tick their row, **Delete**. It can take a few minutes everywhere. Their classes stay, but nobody can manage them through the list any more (their trainer links, if they kept them, still work). Invite yourself first.
+
+Anyone with a Microsoft account can sign in, but without the trainer role they only see "You're signed in, but not as a trainer". Learners never sign in.
+
+On this computer (`npm run backend`) there's no Static Web Apps: **Trainer sign-in** asks for a name and signs you in as a trainer with that name, on this computer only.
 
 ## Who may create classes
 
-Without a setting, anyone on the site may create a class (10 a day per browser). Set **`TRAINER_PASSCODE`** in the backend's settings (the static web app's app settings, or `backend/.env` locally) and creating a class needs that passcode. Give it to your trainers; change it to shut out someone who no longer should create classes (classes already made keep working).
+Signed-in trainers may create classes (30 a day each). Without signing in: anyone on the site may create a class with a trainer link (10 a day per browser), unless **`TRAINER_PASSCODE`** is set in the backend's settings (the static web app's app settings, or `backend/.env` locally): then that needs the passcode. Change it to shut out someone who no longer should create classes (classes already made keep working).
 
 ## For a learner
 
@@ -27,8 +45,9 @@ Without a setting, anyone on the site may create a class (10 a day per browser).
 ## What's kept (decision 15.5)
 
 - In the learner's browser: a random id, the class code and the display name, and which exercises they finished.
-- In the backend ([backend/src/classes.ts](../backend/src/classes.ts)): each class (name, exercises, the trainer's key) and each learner's progress per exercise: the display name, each check passed or not, done, and how many hints they used.
-- No accounts, no email addresses, nothing else about a learner. Locally the backend keeps it in `backend/.data/` (ignored by git); hosted, in Azure Table Storage (phase 9).
+- In the backend ([backend/src/classes.ts](../backend/src/classes.ts)): each class (name, exercises, the trainer's key, and the user id of the trainer who owns it) and each learner's progress per exercise: the display name, each check passed or not, done, and how many hints they used.
+- For trainers, only the user id Static Web Apps gives them (unique to this site). Their name or email comes with each request and is shown to them, but not kept. Static Web Apps itself keeps who has which role (Role Management).
+- No accounts for learners, no email addresses, nothing else about a learner. Locally the backend keeps it in `backend/.data/` (ignored by git); hosted, in Azure Table Storage (phase 9).
 
 ## The backend's routes
 
@@ -38,6 +57,8 @@ Without a setting, anyone on the site may create a class (10 a day per browser).
 - `POST /classes/<code>/progress`: a learner's progress on an exercise, while the class is open and the learner wasn't removed.
 - `GET /classes/<code>/progress?key=…`: the class's progress, only with the trainer's key.
 - `POST /classes/<code>/settings` { key, openUntil?, closed? }, `POST /classes/<code>/remove` { key, learnerId }, `POST /classes/<code>/delete` { key }: the trainer's changes.
+- `GET /me`: who is signed in, and whether they're a trainer.
+- For a signed-in trainer, without the key, for their own classes: `GET /manage/classes`, `POST /manage/classes` { name, scenarios, openUntil? }, `POST /manage/claim` { code, key }, `GET /manage/classes/<code>`, and `POST /manage/classes/<code>/(settings|remove|delete)`. Static Web Apps only lets the role trainer reach `/api/manage/*` ([public/staticwebapp.config.json](../public/staticwebapp.config.json)), and the backend checks the role again. It reads who signed in from the `x-ms-client-principal` header Static Web Apps adds.
 
 The AI routes take the learner's random id too (header `X-Learner`), for the per-learner AI limit (`AI_LEARNER_LIMIT`, 15 a day by default).
 
