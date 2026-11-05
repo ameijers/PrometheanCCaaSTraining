@@ -31,6 +31,10 @@ import conceptsJson from "../../content/concepts.json";
 //   GET  /trainer                     whether creating a class needs the trainer passcode
 //   POST /classes                     { name, scenarios, openUntil?, passcode? }: a trainer creates a class (manual 10)
 //   GET  /classes/<code>              the class's name and exercises, while it's open
+//   POST /classes/<code>/join         { learnerId, name }: a learner joins, while the class is open; answers their personal code
+//   POST /classes/<code>/rejoin       { rejoinCode }: the same learner in another browser; answers their learner id
+//   POST /classes/<code>/work         { scenarioId, data }: the learner's work on a class exercise (header X-Learner)
+//   GET  /classes/<code>/work/<id>    that work, for the learner (header X-Learner)
 //   POST /classes/<code>/progress     a learner's progress on an exercise, while the class is open
 //   GET  /classes/<code>/progress?key the class's progress, for its trainer
 //   POST /classes/<code>/settings     { key, openUntil?, closed? }: the trainer sets an end date, or closes or reopens it
@@ -170,6 +174,8 @@ export function createApi(o: ApiOptions) {
       if (cls) return ok(await classes.get(cls[1]));
       const prog = p.match(/^\/classes\/(\w+)\/progress$/);
       if (prog) return ok(await classes.progress(prog[1], { key: r.query.get("key") }));
+      const work = p.match(/^\/classes\/(\w+)\/work\/([\w-]+)$/);
+      if (work) return ok(await classes.work(work[1], r.learner, work[2]));
     }
     if (r.method === "POST") {
       if (p === "/ai/scenario") {
@@ -226,6 +232,16 @@ export function createApi(o: ApiOptions) {
       }
       const mineAction = p.match(/^\/manage\/classes\/(\w+)\/(settings|remove|delete)$/);
       if (mineAction) return manageClass(mineAction[1], mineAction[2], { owner: trainer(r).id }, await r.body());
+      const joined = p.match(/^\/classes\/(\w+)\/join$/);
+      if (joined) return ok(await classes.join(joined[1], await r.body()));
+      const rejoined = p.match(/^\/classes\/(\w+)\/rejoin$/);
+      if (rejoined) return ok(await classes.rejoin(rejoined[1], (await r.body())?.rejoinCode));
+      const saving = p.match(/^\/classes\/(\w+)\/work$/);
+      if (saving) {
+        const { scenarioId, data } = await r.body(40_000);
+        await classes.saveWork(saving[1], r.learner, scenarioId, data);
+        return ok({ saved: true });
+      }
       const prog = p.match(/^\/classes\/(\w+)\/progress$/);
       if (prog) { await classes.report(prog[1], await r.body(50_000)); return ok({ saved: true }); }
       const manage = p.match(/^\/classes\/(\w+)\/(settings|remove|delete)$/);

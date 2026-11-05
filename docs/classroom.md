@@ -7,7 +7,7 @@ Phase 8 (manual 10). How a trainer runs a class with the training, and what the 
 1. Select **Trainer sign-in** in the header and sign in with your Microsoft account. You land on **Your classes**: every class you created, with its code, status, number of exercises and learners. (**Choose an exercise** > **For trainers** gets you there too.)
 2. Select **Create a class**. Name it, give it a **last day** if you like, and tick the exercises it does. Select **Create the class**.
 3. Hand out the **class code** (six letters and digits), or the class link (`?class=CODE`).
-4. **Open** a class in your list to follow its progress. It updates every 10 seconds. Hover over a cell to see each check.
+4. **Open** a class in your list to follow it. Learners show up as soon as they join, then their progress as they work. It updates every 10 seconds. Hover over a cell to see each check.
 5. Manage the class on the same page:
    - **Last day**: set, change or remove it. After that day learners can't join or send progress; you still see what they did.
    - **Close the class** stops joining and progress straight away; **Reopen the class** undoes it.
@@ -40,12 +40,16 @@ Signed-in trainers may create classes (30 a day each). Without signing in: anyon
 
 ## For a learner
 
-**Join a class** in the header, or the class link. Enter the code and a name. The class's exercises come first in **Choose an exercise**. Progress is sent as you work. Finished exercises get a tick, in or out of a class.
+**Join a class** in the header, or the class link. Enter the code and a name. You get a **personal code** (six letters and digits): it's under **Class** in the header, and your trainer sees it next to your name. The class's exercises come first in **Choose an exercise**. Progress is sent as you work. Finished exercises get a tick, in or out of a class.
+
+**Another browser or computer:** Join a class, tick **I joined this class before, in another browser**, and enter the class code and your personal code. You carry on as the same learner: your ticks come back, and opening a class exercise carries on where you left off, from whichever browser you used last. **Start again** undoes it. Lost the personal code? Your trainer can see it.
+
+How it works: progress (what the trainer sees) and your work on the class's exercises (the environment, your answers and hints, compressed to about 10 KB) are kept by the training's backend, a few seconds after each change. The personal code gives a new browser your random learner id. Work outside the class's exercises, like the guided lesson, stays in the browser it was done in; **Save my work** downloads it as a file.
 
 ## What's kept (decision 15.5)
 
-- In the learner's browser: a random id, the class code and the display name, and which exercises they finished.
-- In the backend ([backend/src/classes.ts](../backend/src/classes.ts)): each class (name, exercises, the trainer's key, and the user id of the trainer who owns it) and each learner's progress per exercise: the display name, each check passed or not, done, and how many hints they used.
+- In the learner's browser: a random id, the class code, the display name and personal code, which exercises they finished, and the current session.
+- In the backend ([backend/src/classes.ts](../backend/src/classes.ts)): each class (name, exercises, the trainer's key, and the user id of the trainer who owns it) and each learner's progress per exercise: the display name, each check passed or not, done, and how many hints they used; each learner's personal code, and their work on the class's exercises (the simulated environment, their answers and hints, compressed). Removing a learner or deleting the class deletes these too.
 - For trainers, only the user id Static Web Apps gives them (unique to this site). Their name or email comes with each request and is shown to them, but not kept. Static Web Apps itself keeps who has which role (Role Management).
 - No accounts for learners, no email addresses, nothing else about a learner. Locally the backend keeps it in `backend/.data/` (ignored by git); hosted, in Azure Table Storage (phase 9).
 
@@ -54,6 +58,9 @@ Signed-in trainers may create classes (30 a day each). Without signing in: anyon
 - `GET /trainer`: whether creating a class needs the passcode.
 - `POST /classes` { name, scenarios, openUntil?, passcode? }: creates a class; answers the code and the trainer's key.
 - `GET /classes/<code>`: the class's name and exercises (no key), while it's open.
+- `POST /classes/<code>/join` { learnerId, name }: a learner joins (the trainer sees them straight away), while the class is open and the learner wasn't removed. Answers their personal code and what they finished.
+- `POST /classes/<code>/rejoin` { rejoinCode }: the same learner in another browser; answers their learner id, name and what they finished.
+- `POST /classes/<code>/work` { scenarioId, data } and `GET /classes/<code>/work/<scenarioId>`, with the learner's id in the header `X-Learner`: their work on one of the class's exercises (gzip-compressed JSON in Base64, at most 30,000 characters).
 - `POST /classes/<code>/progress`: a learner's progress on an exercise, while the class is open and the learner wasn't removed.
 - `GET /classes/<code>/progress?key=…`: the class's progress, only with the trainer's key.
 - `POST /classes/<code>/settings` { key, openUntil?, closed? }, `POST /classes/<code>/remove` { key, learnerId }, `POST /classes/<code>/delete` { key }: the trainer's changes.

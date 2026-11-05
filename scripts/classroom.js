@@ -66,10 +66,14 @@ async function main() {
     const learner = current = await open(learnerContext);
     await learner.goto(`http://localhost:${port}/?class=${code}`, { waitUntil: "networkidle0" });
     await learner.waitForSelector("[role=dialog] input");
-    const inputs = await learner.$$("[role=dialog] input");
+    const inputs = await learner.$$("[role=dialog] input:not([type=checkbox])");
     await inputs[1].type("Sam");
     await shot(learner, "learner-join");
     await click(learner, "[role=dialog] button", "Join");
+    current = trainer;
+    await waitText(trainer, ".trainer-table", "Sam", 15000); // the trainer sees Sam as soon as they join
+    await shot(trainer, "trainer-sees-join");
+    current = learner;
     await waitText(learner, ".picker-class", "First day on the switchboard");
     await shot(learner, "learner-class-exercises");
     await click(learner, ".picker-class .picker-item span", "First day on the switchboard");
@@ -85,7 +89,27 @@ async function main() {
       await learner.waitForFunction((j) => /done|missed/.test(document.querySelectorAll(".lesson-tasks > li")[j].className), { timeout: 10000 }, i);
     }
     await learner.waitForSelector(".lesson-finished");
-    await new Promise((r) => setTimeout(r, 2500)); // progress is sent 1.5 seconds after the last change
+    await new Promise((r) => setTimeout(r, 4500)); // progress is sent 1.5 seconds after the last change, work 3 seconds
+
+    // Sam carries on in another browser with their personal code: the finished exercise comes with them.
+    const personal = await learner.evaluate(() => JSON.parse(localStorage.getItem("ccaas-training-class")).rejoinCode);
+    console.log(`personal code ${personal}`);
+    const laptop = current = await open(await browser.createBrowserContext());
+    await laptop.goto(`http://localhost:${port}/?class=${code}`, { waitUntil: "networkidle0" });
+    await laptop.waitForSelector("[role=dialog] input");
+    await laptop.evaluate(() => [...document.querySelectorAll("[role=dialog] label")].find((l) => l.textContent.includes("I joined this class before")).click());
+    await laptop.waitForFunction(() => [...document.querySelectorAll("[role=dialog] label")].some((l) => l.textContent.includes("Your personal code")));
+    await (await laptop.$$("[role=dialog] input:not([type=checkbox])"))[1].type(personal);
+    await shot(laptop, "learner-rejoin");
+    await click(laptop, "[role=dialog] button", "Carry on");
+    await waitText(laptop, ".training-message", "Welcome back");
+    await shot(laptop, "learner-rejoined-ticks");
+    await laptop.evaluate(() => [...document.querySelectorAll(".picker-class .picker-item span")].find((e) => e.textContent.includes("First day on the switchboard")).click());
+    await waitText(laptop, ".training-message", "where you left off");
+    await laptop.waitForSelector(".lesson-finished");
+    await shot(laptop, "learner-carries-on");
+    await laptop.close();
+    current = learner;
 
     // The trainer sees Sam's progress (the page reads it every 10 seconds).
     current = trainer;
@@ -99,7 +123,7 @@ async function main() {
     const late = current = await open(await browser.createBrowserContext());
     await late.goto(`http://localhost:${port}/?class=${code}`, { waitUntil: "networkidle0" });
     await late.waitForSelector("[role=dialog] input");
-    await (await late.$$("[role=dialog] input"))[1].type("Kim");
+    await (await late.$$("[role=dialog] input:not([type=checkbox])"))[1].type("Kim");
     await click(late, "[role=dialog] button", "Join");
     await waitText(late, "[role=dialog]", "is closed");
     await shot(late, "learner-class-closed");
@@ -107,7 +131,7 @@ async function main() {
     await click(trainer, ".trainer-manage button", "Reopen the class");
     await waitText(trainer, ".trainer-status", "Open");
     await trainer.click("button[aria-label='Remove Sam']");
-    await waitText(trainer, ".trainer-body", "Nobody has started yet");
+    await waitText(trainer, ".trainer-body", "Nobody has joined yet");
     await shot(trainer, "trainer-learner-removed");
 
     // The guided tour, on the learner's screen.

@@ -21,10 +21,12 @@ import { Store } from "../simulator/store";
 import { LessonTemplate, makeLesson, newSeed } from "../lessons/template";
 import templateJson from "../../content/lessons/new-menu-choice.json";
 import { ExercisePicker, READY_MADE } from "../scenarios/ExercisePicker";
-import { JoinDialog, TrainerOpen, TrainerView } from "../classroom/Classroom";
+import { ClassDialog, JoinDialog, TrainerOpen, TrainerView } from "../classroom/Classroom";
 import { Me, me, signIn } from "../classroom/account";
-import { reportProgress } from "../classroom/client";
+import { loadWork, reportProgress, saveWork } from "../classroom/client";
 import { finished, markFinished, Membership, membership, setMembership } from "../classroom/identity";
+import { canPack, pack, unpack } from "../classroom/work";
+import { Session } from "../simulator/persist";
 import { aiScenarios } from "../scenarios/client";
 import { tourAsked } from "@toolbox/environment-3d-explorer/src/tour";
 import { TourBar, useTrainingTour } from "./Tour";
@@ -82,8 +84,31 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
   useEffect(() => { void aiScenarios().then((ai) => setAllScenarios([...READY_MADE, ...ai])); }, []);
   useEffect(() => {
     if (!member) return;
-    void import("../classroom/client").then(({ getClass }) => getClass(member.code)).then((c) => setClassScenarios(c.scenarios)).catch(() => undefined);
+    // Joining again tells the class this learner is there (learners who joined before that was recorded, too),
+    // and brings back their personal code and what they finished, in any browser.
+    void import("../classroom/client").then(({ joinClass }) => joinClass(member.code, member.name)).then((c) => {
+      setClassScenarios(c.scenarios);
+      markFinished(...c.you.done);
+      setFinishedIds(finished());
+      if (c.you.rejoinCode !== member.rejoinCode) { const m = { ...member, rejoinCode: c.you.rejoinCode }; setMembership(m); setMember(m); }
+    }).catch(() => undefined);
   }, [member?.code]);
+  const [classOpen, setClassOpen] = useState(false);
+  // The learner's work on a class exercise goes to the class a few seconds after it changes, so another
+  // browser carries on from it (src/classroom/work.ts).
+  const memberRef = useRef(member);
+  memberRef.current = member;
+  const classRef = useRef(classScenarios);
+  classRef.current = classScenarios;
+  const workTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const syncWork = () => {
+    const m = memberRef.current, r = runRef.current;
+    if (!m || !r || !classRef.current.includes(r.scenario.id) || !canPack()) return;
+    clearTimeout(workTimer.current);
+    workTimer.current = setTimeout(() => {
+      void pack(session()).then((data) => saveWork(m.code, r.scenario.id, data)).catch(() => undefined);
+    }, 3000);
+  };
   // Progress goes to the class a moment after it changes, so a burst of changes is sent once.
   const progressTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const onProgress = (checks: { title: string; passed: boolean }[], isDone: boolean) => {
@@ -120,12 +145,13 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
       changedSinceDiagram.current = true;
       clearTimeout(save);
       save = setTimeout(() => void saveSession(session()), 400);
+      syncWork();
       clearTimeout(check);
       check = setTimeout(evaluate, 150);
     });
   }, [sim, lesson, run?.scenario.id]);
   // Answers and hints are saved as they come.
-  useEffect(() => { if (run) void saveSession(session()); }, [run]);
+  useEffect(() => { if (run) { void saveSession(session()); syncWork(); } }, [run]);
 
   // Follow the lesson: when a task is done, show the next one's explanation.
   const current = lesson.tasks.find((t) => !done[t.id]?.passed);
@@ -154,6 +180,35 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
   const open = (next: Workspace) => {
     if (next === "diagram" && changedSinceDiagram.current) { setDiagramKey((k) => k + 1); changedSinceDiagram.current = false; }
     setTab(next);
+  };
+
+  // A class exercise carries on from the learner's saved work, from whichever browser they used last.
+  const openScenario = async (scenario: Scenario) => {
+    const m = memberRef.current;
+    if (m && classRef.current.includes(scenario.id) && canPack()) {
+      setPicking(false);
+      try {
+        const { work } = await loadWork(m.code, scenario.id);
+        if (work) {
+          const saved = await unpack<Session>(work.data);
+          const r = saved.scenario as ScenarioRun | undefined;
+          if (saved.rows && r?.scenario?.id === scenario.id) {
+            clearTimeout(workTimer.current);
+            sim.store.load(saved.rows);
+            setRun({ scenario, answers: r.answers ?? {}, hints: r.hints ?? {}, found: r.found, talk: r.talk });
+            setConcept(scenario.kind === "fix" ? "queue" : "route-to-queue");
+            setTab(scenario.kind === "fix" ? "diagram" : "admin");
+            clock.set(typeof saved.clock === "number" ? saved.clock : START);
+            setDiagramKey((k) => k + 1);
+            setMessage(`Carrying on with “${scenario.title}” where you left off (saved ${new Date(work.savedOn).toLocaleString()}). Start again undoes it.`);
+            return;
+          }
+        }
+      } catch {
+        // The class can't be reached: start the exercise here.
+      }
+    }
+    startScenario(scenario);
   };
 
   // A scenario starts in its own environment: the healthy one with its faults planted (src/scenarios/world.ts).
@@ -234,7 +289,7 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
             <span className="training-sim" title="Everything here is simulated: no Dynamics 365 environment, no real phone numbers.">Simulated environment · {sim.api.clientUrl.replace(/^https:\/\//, "")}</span>
             <button className="training-choose" onClick={() => setPicking(true)}>Choose an exercise</button>
             {member
-              ? <button className="training-class" title="Leave the class" onClick={() => { if (window.confirm(`Leave the class ${member.className}? Your work here stays.`)) { setMembership(undefined); setMember(undefined); setClassScenarios([]); } }}>Class {member.code} · {member.name}</button>
+              ? <button className="training-class" title="Your class: your personal code, and leaving" onClick={() => setClassOpen(true)}>Class {member.code} · {member.name}</button>
               : <button onClick={() => setJoining("")}>Join a class</button>}
             {account?.signedIn
               ? <button className="training-trainer" title="Your classes" onClick={() => setTrainer("home")}>{account.trainer ? "Trainer" : "Signed in"} · {account.name}</button>
@@ -276,10 +331,17 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
           </main>
         </div>
         <LearnStrip conceptId={concept} />
-        <ExercisePicker open={picking} current={run?.scenario.id ?? "lesson"} onClose={() => setPicking(false)} onLesson={startLesson} onScenario={startScenario}
+        <ExercisePicker open={picking} current={run?.scenario.id ?? "lesson"} onClose={() => setPicking(false)} onLesson={startLesson} onScenario={(s) => void openScenario(s)}
           classInfo={member ? { name: member.className, scenarios: classScenarios } : undefined} finishedIds={finishedIds} onTrainer={() => { setPicking(false); setTrainer("home"); }} />
         {joining !== undefined && <JoinDialog initialCode={joining} onClose={() => setJoining(undefined)}
-          onJoined={(m, list) => { setMember(m); setClassScenarios(list); setJoining(undefined); setMessage(`You joined ${m.className}. Your exercises are at the top of Choose an exercise.`); setPicking(true); }} />}
+          onJoined={(m, list, rejoined) => {
+            setMember(m); setClassScenarios(list); setFinishedIds(finished()); setJoining(undefined); setPicking(true);
+            setMessage(rejoined
+              ? `Welcome back to ${m.className}, ${m.name}. Open a class exercise to carry on where you left off.`
+              : `You joined ${m.className}. Your personal code is ${m.rejoinCode}: with it you carry on in another browser (it's under Class in the header). Your exercises are at the top of Choose an exercise.`);
+          }} />}
+        {classOpen && member && <ClassDialog member={member} onClose={() => setClassOpen(false)}
+          onLeave={() => { setMembership(undefined); setMember(undefined); setClassScenarios([]); setClassOpen(false); }} />}
         {trainer && <TrainerView all={allScenarios} initial={trainer} onClose={() => setTrainer(undefined)} />}
         <TourBar tour={tour} />
       </div>

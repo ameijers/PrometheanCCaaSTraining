@@ -125,6 +125,51 @@ describe("managing a class", () => {
     expect((await a.handle(req("GET", `/classes/${code}/progress?key=${trainerKey}`))).status).toBe(404);
   });
 
+  test("a learner who joins shows up straight away, once, and goes when removed", async () => {
+    const { code, trainerKey } = await make();
+    const join = (who: string, name: string) => a.handle(req("POST", `/classes/${code}/join`, { learnerId: who, name }));
+    expect((await join(learner, "Sam")).body).toMatchObject({ code, name: "Workshop", scenarios: ["x"], you: { name: "Sam", done: [] } });
+    await join(learner, "Sam");
+    await report(code, other); // sent progress without joining (joined before joins were recorded)
+    expect((await seen(code, trainerKey)).members.map((m: any) => m.name)).toEqual(["Kim", "Sam"]);
+    await a.handle(req("POST", `/classes/${code}/remove`, { key: trainerKey, learnerId: learner }));
+    expect((await seen(code, trainerKey)).members.map((m: any) => m.name)).toEqual(["Kim"]);
+    expect((await join(learner, "Sam")).status).toBe(403);
+    await a.handle(req("POST", `/classes/${code}/settings`, { key: trainerKey, closed: true }));
+    expect((await join(other, "Kim")).status).toBe(410);
+  });
+
+  test("a learner carries on in another browser with their personal code, work and all", async () => {
+    const { code, trainerKey } = await make();
+    const joined = (await a.handle(req("POST", `/classes/${code}/join`, { learnerId: learner, name: "Sam" }))).body as any;
+    const personal = joined.you.rejoinCode;
+    expect(personal).toMatch(/^[A-HJ-NP-Z2-9]{6}$/);
+    // Joining again (the page opening) keeps the code.
+    expect(((await a.handle(req("POST", `/classes/${code}/join`, { learnerId: learner, name: "Sam" }))).body as any).you.rejoinCode).toBe(personal);
+    await a.handle(req("POST", `/classes/${code}/progress`, { learnerId: learner, name: "Sam", scenarioId: "x", title: "X", checks: [], done: true, hints: 0 }));
+
+    // Work is saved and read with the learner's id (header X-Learner), only for the class's exercises.
+    const data = Buffer.from("packed work").toString("base64");
+    const save = (who: string, body: object) => a.handle(req("POST", `/classes/${code}/work`, body, { learner: who }));
+    expect((await save(learner, { scenarioId: "x", data })).body).toEqual({ saved: true });
+    expect((await save(learner, { scenarioId: "other", data })).status).toBe(400);
+    expect((await save(learner, { scenarioId: "x", data: "not base64!" })).status).toBe(400);
+    expect((await save(learner, { scenarioId: "x", data: "A".repeat(30_004) })).status).toBe(400);
+    expect((await save(other, { scenarioId: "x", data })).body).toEqual({ error: "Join the class first." });
+
+    // Another browser: the personal code gives back the same learner, what they finished, and their work.
+    const back = (await a.handle(req("POST", `/classes/${code}/rejoin`, { rejoinCode: personal.toLowerCase() }, { learner: other }))).body as any;
+    expect(back.you).toEqual({ learnerId: learner, name: "Sam", rejoinCode: personal, done: ["x"] });
+    expect(((await a.handle(req("GET", `/classes/${code}/work/x`, undefined, { learner }))).body as any).work).toMatchObject({ data });
+    expect((await a.handle(req("POST", `/classes/${code}/rejoin`, { rejoinCode: "ZZZZZZ" }))).status).toBe(404);
+    expect((await seen(code, trainerKey)).members).toEqual([expect.objectContaining({ name: "Sam", rejoinCode: personal })]);
+
+    // Removed: the code, the work and the learner go.
+    await a.handle(req("POST", `/classes/${code}/remove`, { key: trainerKey, learnerId: learner }));
+    expect((await a.handle(req("POST", `/classes/${code}/rejoin`, { rejoinCode: personal }))).status).toBe(404);
+    expect((await a.handle(req("GET", `/classes/${code}/work/x`, undefined, { learner }))).status).toBe(403);
+  });
+
   test("every change needs the trainer's key", async () => {
     const { code } = await make();
     for (const [action, body] of [["settings", { closed: true }], ["remove", { learnerId: learner }], ["delete", {}]] as const) {

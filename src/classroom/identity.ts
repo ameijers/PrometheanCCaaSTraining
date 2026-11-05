@@ -5,7 +5,8 @@
 // joined a class, the class code and the display name they chose (decision 15.5). Nothing else.
 // Kept in this browser only; if storage is blocked, it lasts until the page closes.
 
-export interface Membership { code: string; className: string; name: string }
+// rejoinCode: the learner's personal code in the class, to carry on in another browser.
+export interface Membership { code: string; className: string; name: string; rejoinCode?: string }
 
 const ID_KEY = "ccaas-training-learner";
 const CLASS_KEY = "ccaas-training-class";
@@ -33,6 +34,13 @@ export function learnerId(): string {
   return memoryId;
 }
 
+// Rejoining from another browser: this browser becomes that learner.
+export function setLearnerId(id: string): void {
+  if (!/^[0-9a-f]{32}$/.test(id)) return;
+  memoryId = id;
+  write(ID_KEY, id);
+}
+
 export function membership(): Membership | undefined {
   const saved = typeof window === "undefined" ? null : read(CLASS_KEY);
   try { return saved ? JSON.parse(saved) as Membership : memoryClass; } catch { return memoryClass; }
@@ -48,8 +56,8 @@ export function finished(): string[] {
   try { return JSON.parse(read(DONE_KEY) ?? "null") ?? memoryDone; } catch { return memoryDone; }
 }
 
-export function markFinished(id: string): void {
-  const all = [...new Set([...finished(), id])];
+export function markFinished(...ids: string[]): void {
+  const all = [...new Set([...finished(), ...ids])];
   memoryDone = all;
   write(DONE_KEY, JSON.stringify(all));
 }

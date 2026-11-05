@@ -4,9 +4,9 @@
 import { useEffect, useState } from "react";
 import { Button, Checkbox, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Input, MessageBar, MessageBarBody } from "@fluentui/react-components";
 import { Scenario, KIND_TITLES } from "../scenarios/scenario";
-import { claimClass, classLink, classProgress, ClassSummary, ClassView, createClass, createMyClass, deleteClass, getClass, myClasses, Progress, readTrainerLink, removeLearner, trainerConfig, trainerLink, updateClass } from "./client";
+import { claimClass, classLink, classProgress, ClassSummary, ClassView, createClass, createMyClass, deleteClass, joinClass, Member, rejoinClass, myClasses, Progress, readTrainerLink, removeLearner, trainerConfig, trainerLink, updateClass } from "./client";
 import { Me, me, signIn, signOut } from "./account";
-import { Membership, setMembership } from "./identity";
+import { markFinished, Membership, setLearnerId, setMembership } from "./identity";
 
 // Classes (manual 10, decision 15.5): learners join with a code and a display name; a trainer creates a
 // class with a few exercises, follows each learner's progress per check, and manages the class: an end date,
@@ -15,25 +15,31 @@ import { Membership, setMembership } from "./identity";
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const today = () => new Date().toISOString().slice(0, 10);
 
-export function JoinDialog({ initialCode, onJoined, onClose }: { initialCode?: string; onJoined(m: Membership, scenarios: string[]): void; onClose(): void }) {
+export function JoinDialog({ initialCode, onJoined, onClose }: { initialCode?: string; onJoined(m: Membership, scenarios: string[], rejoined: boolean): void; onClose(): void }) {
   const [code, setCode] = useState(initialCode ?? "");
   const [name, setName] = useState("");
+  const [before, setBefore] = useState(false);
+  const [personal, setPersonal] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const join = async () => {
     setBusy(true);
     setError("");
     try {
-      const c = await getClass(code);
-      const m = { code: c.code, className: c.name, name: name.trim() };
+      const c = before ? await rejoinClass(code, personal) : await joinClass(code, name.trim());
+      // Rejoining: this browser becomes that learner, with what they finished.
+      if (before) setLearnerId(c.you.learnerId);
+      markFinished(...c.you.done);
+      const m = { code: c.code, className: c.name, name: c.you.name, rejoinCode: c.you.rejoinCode };
       setMembership(m);
-      onJoined(m, c.scenarios);
+      onJoined(m, c.scenarios, before);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(message(e));
     } finally {
       setBusy(false);
     }
   };
+  const ready = code.trim().length === 6 && (before ? personal.trim().length === 6 : !!name.trim());
   return (
     <Dialog open onOpenChange={(_, d) => { if (!d.open) onClose(); }}>
       <DialogSurface>
@@ -42,14 +48,43 @@ export function JoinDialog({ initialCode, onJoined, onClose }: { initialCode?: s
           <DialogContent>
             <div className="admin-form">
               <Field label="Class code" hint="Your trainer gives you this: six letters and digits."><Input value={code} onChange={(_, v) => setCode(v.value.toUpperCase())} maxLength={6} /></Field>
-              <Field label="Your name" hint="What your trainer sees next to your progress. A first name is enough."><Input value={name} onChange={(_, v) => setName(v.value)} maxLength={40} /></Field>
-              <p className="admin-muted">The training keeps only this name and a random id from this browser. No account, no email.</p>
+              <Checkbox label="I joined this class before, in another browser" checked={before} onChange={(_, d) => setBefore(!!d.checked)} />
+              {before
+                ? <Field label="Your personal code" hint="You got it when you joined. It's under Class in the header of that browser, and your trainer can see it.">
+                    <Input value={personal} onChange={(_, v) => setPersonal(v.value.toUpperCase())} maxLength={6} />
+                  </Field>
+                : <Field label="Your name" hint="What your trainer sees next to your progress. A first name is enough."><Input value={name} onChange={(_, v) => setName(v.value)} maxLength={40} /></Field>}
+              <p className="admin-muted">The training keeps only your name, a random id and your work on the class's exercises. No account, no email.</p>
             </div>
             {error && <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>}
           </DialogContent>
           <DialogActions>
-            <Button appearance="primary" disabled={busy || code.trim().length !== 6 || !name.trim()} onClick={() => void join()}>Join</Button>
+            <Button appearance="primary" disabled={busy || !ready} onClick={() => void join()}>{before ? "Carry on" : "Join"}</Button>
             <Button onClick={onClose}>Cancel</Button>
+          </DialogActions>
+        </DialogBody>
+      </DialogSurface>
+    </Dialog>
+  );
+}
+
+// The class the learner is in: their personal code, and leaving.
+export function ClassDialog({ member, onLeave, onClose }: { member: Membership; onLeave(): void; onClose(): void }) {
+  return (
+    <Dialog open onOpenChange={(_, d) => { if (!d.open) onClose(); }}>
+      <DialogSurface>
+        <DialogBody>
+          <DialogTitle>{member.className}</DialogTitle>
+          <DialogContent>
+            <p>You're in this class as <strong>{member.name}</strong>, class code <span className="trainer-code">{member.code}</span>.</p>
+            {member.rejoinCode
+              ? <p>Your personal code: <span className="trainer-code" aria-label={`Your personal code ${member.rejoinCode.split("").join(" ")}`}>{member.rejoinCode}</span></p>
+              : <p className="admin-muted">Your personal code shows here once the class is reached.</p>}
+            <p className="admin-muted">To carry on in another browser or on another computer: Join a class, tick "I joined this class before", and enter the class code and your personal code. Your work on the class's exercises comes with you.</p>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => { if (window.confirm(`Leave the class ${member.className}? Your work here stays. To come back, you need your personal code.`)) onLeave(); }}>Leave the class</Button>
+            <Button appearance="primary" onClick={onClose}>Close</Button>
           </DialogActions>
         </DialogBody>
       </DialogSurface>
@@ -203,7 +238,7 @@ function CreateClass({ all, owned, onCreated }: { all: Scenario[]; owned: boolea
 
 // One class: its progress and its settings. With trainerKey, through the trainer link; without, as its owner.
 function ClassProgress({ code, trainerKey, all, canClaim, onClaimed, onDeleted }: { code: string; trainerKey?: string; all: Scenario[]; canClaim: boolean; onClaimed(): void; onDeleted(): void }) {
-  const [data, setData] = useState<{ class: ClassView; progress: Progress[] } | undefined>();
+  const [data, setData] = useState<{ class: ClassView; members?: Member[]; progress: Progress[] } | undefined>();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [endDraft, setEndDraft] = useState<string | undefined>();
@@ -231,7 +266,9 @@ function ClassProgress({ code, trainerKey, all, canClaim, onClaimed, onDeleted }
   const c = data?.class;
   const status = !c ? "" : c.closed ? "Closed: learners can't join or send progress." : !c.open ? `Ended on ${c.openUntil}: learners can't join or send progress.` : c.openUntil ? `Open until the end of ${c.openUntil}.` : "Open, with no last day.";
   const end = endDraft ?? c?.openUntil ?? "";
-  const learners = [...new Map((data?.progress ?? []).map((p) => [p.learnerId, p.name])).entries()];
+  // Everyone who joined, and anyone who sent progress before joining was recorded.
+  const learners = [...new Map([...(data?.members ?? []), ...(data?.progress ?? [])].map((p) => [p.learnerId, p.name])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  const personal = (id: string) => data?.members?.find((m) => m.learnerId === id)?.rejoinCode;
   const cell = (learner: string, scenario: string) => data?.progress.find((p) => p.learnerId === learner && p.scenarioId === scenario);
   const title = (id: string) => all.find((s) => s.id === id)?.title ?? id;
   return (
@@ -258,13 +295,13 @@ function ClassProgress({ code, trainerKey, all, canClaim, onClaimed, onDeleted }
           </div>
         </section>
       )}
-      {!learners.length ? <p className="admin-muted">Nobody has started yet. Progress shows here as learners work, and updates every 10 seconds.</p> : (
+      {!learners.length ? <p className="admin-muted">Nobody has joined yet. Learners show here when they join, and their progress as they work. The page updates every 10 seconds.</p> : (
         <table className="trainer-table">
           <thead><tr><th>Learner</th>{data!.class.scenarios.map((s) => <th key={s}>{title(s)}</th>)}</tr></thead>
           <tbody>
             {learners.map(([id, name]) => (
               <tr key={id}>
-                <td>{name} <Button size="small" appearance="subtle" disabled={busy} aria-label={`Remove ${name}`} onClick={() => remove(id, name)}>Remove</Button></td>
+                <td>{name}{personal(id) && <span className="admin-muted" title="Their personal code, to carry on in another browser"> · {personal(id)}</span>} <Button size="small" appearance="subtle" disabled={busy} aria-label={`Remove ${name}`} onClick={() => remove(id, name)}>Remove</Button></td>
                 {data!.class.scenarios.map((s) => {
                   const p = cell(id, s);
                   const passed = p?.checks.filter((c) => c.passed).length ?? 0;
