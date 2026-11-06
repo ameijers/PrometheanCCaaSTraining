@@ -149,9 +149,13 @@ async function main() {
     await click(trainer, ".trainer-head button", "All your classes");
     await waitText(trainer, ".trainer-list", code);
     await shot(trainer, "trainer-class-list");
-    await trainer.click(".trainer-list button[aria-label^='Open']");
-    await click(trainer, ".trainer-manage button", "Delete the class");
-    await waitText(trainer, ".lesson-title", "Your classes");
+    // Ticking the class shows "Delete the selected classes"; the row's Delete button removes it.
+    await trainer.click(".trainer-list tbody input[type=checkbox]");
+    await waitText(trainer, ".trainer-body button", "Delete the selected classes (1)");
+    await shot(trainer, "trainer-class-list-selected");
+    await trainer.click(".trainer-list button[aria-label^='Delete']");
+    await trainer.waitForFunction((c) => !document.querySelector(".trainer-list") || !document.querySelector(".trainer-list").textContent.includes(c), { timeout: 10000 }, code);
+    await shot(trainer, "trainer-class-deleted");
     await click(trainer, ".trainer-head button", "Sign out");
     await trainer.waitForNavigation({ waitUntil: "networkidle0" });
     await waitText(trainer, ".training-env button", "Trainer sign-in");

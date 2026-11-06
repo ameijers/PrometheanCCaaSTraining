@@ -13,6 +13,7 @@ Phase 8 (manual 10). How a trainer runs a class with the training, and what the 
    - **Close the class** stops joining and progress straight away; **Reopen the class** undoes it.
    - **Remove** next to a learner deletes their progress, and they can't send progress to this class again.
    - **Delete the class** deletes it and everyone's progress in it. The code stops working. This can't be undone.
+   - In **Your classes**, **Delete** on a row deletes that class; tick several (or the box in the header for all) and **Delete the selected classes** deletes them together, after one confirmation.
 
 A trainer sees and manages only their own classes. **Sign out** is at the top of the trainer's pages.
 
