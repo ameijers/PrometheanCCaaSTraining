@@ -156,26 +156,45 @@ function TrainerHome({ onOpen, onCreate }: { onOpen(code: string): void; onCreat
     setBusy(true);
     try { await claimClass(parsed.code, parsed.key); setLink(""); await load(); } catch (e) { setError(message(e)); } finally { setBusy(false); }
   };
+  // Deleting classes from the list: one with its row's button, or several ticked at once.
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const toggle = (code: string) => setPicked((p) => { const n = new Set(p); if (n.has(code)) n.delete(code); else n.add(code); return n; });
+  const remove = async (codes: string[]) => {
+    const names = (list ?? []).filter((c) => codes.includes(c.code)).map((c) => c.name);
+    const what = codes.length === 1 ? `the class ${names[0] ?? codes[0]}` : `these ${codes.length} classes: ${names.join(", ")}`;
+    if (!window.confirm(`Delete ${what}? Their codes stop working, and everyone's progress in them is deleted. This can't be undone.`)) return;
+    setBusy(true);
+    const failed: string[] = [];
+    for (const code of codes) { try { await deleteClass(code, undefined); } catch (e) { failed.push(`${code}: ${message(e)}`); } }
+    setPicked(new Set());
+    await load();
+    if (failed.length) setError(`Not deleted: ${failed.join("; ")}`);
+    setBusy(false);
+  };
   const status = (c: ClassSummary) => c.closed ? "Closed" : !c.open ? `Ended ${c.openUntil}` : c.openUntil ? `Open until ${c.openUntil}` : "Open";
   return (
     <div className="trainer-body">
-      <div className="lesson-actions"><Button appearance="primary" onClick={onCreate}>Create a class</Button></div>
+      <div className="lesson-actions">
+        <Button appearance="primary" onClick={onCreate}>Create a class</Button>
+        {picked.size > 0 && <Button className="trainer-delete" disabled={busy} onClick={() => void remove([...picked])}>Delete the selected classes ({picked.size})</Button>}
+      </div>
       {error && <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>}
       {!list ? <p className="admin-muted">Loading your classes…</p>
         : !list.length ? <p className="admin-muted">You have no classes yet. Create one, or add one you made earlier with its trainer link.</p>
         : (
           <table className="trainer-table trainer-list">
-            <thead><tr><th>Class</th><th>Code</th><th>Status</th><th>Exercises</th><th>Learners</th><th>Created</th><th /></tr></thead>
+            <thead><tr><th><Checkbox aria-label="Select all classes" checked={picked.size === list.length ? true : picked.size ? "mixed" : false} onChange={() => setPicked(picked.size === list.length ? new Set() : new Set(list.map((c) => c.code)))} /></th><th>Class</th><th>Code</th><th>Status</th><th>Exercises</th><th>Learners</th><th>Created</th><th /></tr></thead>
             <tbody>
               {list.map((c) => (
                 <tr key={c.code}>
+                  <td><Checkbox aria-label={`Select ${c.name}`} checked={picked.has(c.code)} onChange={() => toggle(c.code)} /></td>
                   <td><strong>{c.name}</strong></td>
                   <td><span className="trainer-code">{c.code}</span></td>
                   <td className={c.open ? "" : "trainer-status-off"}>{status(c)}</td>
                   <td>{c.scenarios.length}</td>
                   <td>{c.learners}</td>
                   <td>{c.createdOn.slice(0, 10)}</td>
-                  <td><Button size="small" onClick={() => onOpen(c.code)} aria-label={`Open ${c.name}`}>Open</Button></td>
+                  <td><Button size="small" onClick={() => onOpen(c.code)} aria-label={`Open ${c.name}`}>Open</Button> <Button size="small" className="trainer-delete" disabled={busy} onClick={() => void remove([c.code])} aria-label={`Delete ${c.name}`}>Delete</Button></td>
                 </tr>
               ))}
             </tbody>
