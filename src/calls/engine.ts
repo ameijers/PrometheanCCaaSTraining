@@ -104,6 +104,9 @@ function hoursNote(queue: Queue, at: CallTime | undefined): string {
 
 const digits = (number: string) => number.replace(/[^\d]/g, "");
 
+// An attribute a classification rule sets, as the admin center names it (the Toolbox drops the prefix).
+const attributeLabel = (attribute: string) => (attribute === "msdyn_priorityscore" ? "Priority Score" : attribute);
+
 export function findNumber(store: Store, dial: string): Row | undefined {
   const wanted = digits(dial);
   return wanted ? store.table("msdyn_ocphonenumber").find((p) => digits(String(p.msdyn_phonenumber ?? "")) === wanted) : undefined;
@@ -145,13 +148,20 @@ export async function placeCall(store: Store, request: CallRequest, options: { r
   const routed = model.workstreams.find((w) => cleanId(w.id) === workstream.msdyn_liveworkstreamid);
   if (!routed) return stop("Route to queues", "This workstream isn't an active inbound voice workstream, so it doesn't route calls.");
   const result = simulate(routed, model, Object.fromEntries(answered), queueValues(model, request));
-  const rule = result.steps.find((s) => s.kind === "queueRouting" && s.status === "matched");
+  // Work classification: what each matching rule set (Learn: the first match in a ruleset sets its output).
+  for (const step of result.steps.filter((s) => s.kind === "enrichment" && s.status === "matched")) {
+    const sets = routed.classificationRules.find((r) => r.id === step.id)?.sets ?? [];
+    steps.push({ what: "Work classification", detail: `The rule “${step.label}” matches and sets ${sets.map((s) => `${attributeLabel(s.attribute)} to ${s.value}`).join(", ") || "nothing"}.`, status: "ok" });
+  }
+  const rule = result.rule;
   const firstQueue = result.steps.find((s) => s.kind === "queue");
   if (!firstQueue || !result.queue) return stop("Route to queues", "No rule matched and the workstream has no fallback queue, so the call has nowhere to go.");
   const fallback = routed.fallbackQueueId && cleanId(routed.fallbackQueueId) === cleanId(firstQueue.id) && !rule;
+  const passed = result.steps.filter((s) => s.kind === "queueRouting" && s.id.endsWith("-passed")).map((s) => ` The rule “${s.label.replace(/ — not used$/, "")}” matches too and isn't used: ${s.detail}`);
+  const split = rule && rule.targets.length > 1 ? ` It shares its calls by percentage (${rule.targets.map((t) => `${model.queues.find((q) => q.id === t.queueId)?.name ?? "?"} ${t.weightPercent}%`).join(", ")}); this call is given to “${firstQueue.label}”.` : "";
   steps.push({
     what: "Route to queues",
-    detail: rule ? `The rule “${rule.label}” matches.` : fallback ? "No route-to-queue rule matches, so the call goes to the workstream's fallback queue." : "The call is routed to a queue.",
+    detail: rule ? `The rule “${rule.name}” matches.${split}${passed.join("")}` : fallback ? "No route-to-queue rule matches, so the call goes to the workstream's fallback queue." : "The call is routed to a queue.",
     status: "ok"
   });
   // Each queue the call reaches, with the overflow rule that moved it on.

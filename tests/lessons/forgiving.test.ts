@@ -3,7 +3,8 @@
 
 // Manual 9.4a: small slips don't block a learner. A queue named "Repair" is fine; a rule that checks
 // "Repair" while the IVR sends "Repairs" really misroutes, so the check says exactly why, and Edit fixes it.
-import { addRouteToQueueRule, addUsers, createQueue, deleteRouteToQueueRule, moveRouteToQueueRule, routeToQueueRuleset, simpleRule, updateRouteToQueueRule } from "../../src/admin/actions";
+import { addRouteToQueueRule, addUsers, createQueue, routeToQueueRuleset } from "../../src/admin/actions";
+import { deleteRouteToQueueRule, moveRouteToQueueRule, simpleRule, updateRouteToQueueRule } from "../../src/admin/rules";
 import { placeCall } from "../../src/calls/engine";
 import { closeName, Lesson, runChecks } from "../../src/lessons/checks";
 import { createSimulator } from "../../src/simulator";

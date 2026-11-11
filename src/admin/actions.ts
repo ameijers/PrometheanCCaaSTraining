@@ -105,58 +105,6 @@ export function addRouteToQueueRule(admin: Admin, workstreamId: string, rule: { 
 }
 
 
-// ---- Editing the decision list: Edit, Delete, Move up and Move down ----
-
-// A rule the training's rule editor can show and change: one condition on a context variable with
-// "equals", routing to one queue. Other rules (percentage splits, several conditions) can still be
-// deleted and moved, but not edited.
-export interface SimpleRule { id: string; name: string; variable: string; value: string; queueId: string }
-
-const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-// One <rule id="…">…</rule> element of a ruleset definition, with the spaces before it.
-const RULE_BLOCK = (id: string) => new RegExp("[ \\t]*<rule\\s+id=\"" + escapeRegExp(id) + "\"[\\s\\S]*?</rule>");
-
-export function simpleRule(rule: { id: string; name: string; conditions: { operator: string; lhs: string; rhs?: string }[]; setAttributes: { lhs: string; rhs: string }[]; distributionRecords: unknown[] }): SimpleRule | undefined {
-  if (rule.conditions.length !== 1 || rule.distributionRecords.length) return undefined;
-  const c = rule.conditions[0];
-  const queue = rule.setAttributes.find((s) => s.lhs === "assign_to.queue")?.rhs;
-  if (!/^liveworkitemcontext\./.test(c.lhs) || !["==", "equals"].includes(c.operator) || c.rhs === undefined || !queue) return undefined;
-  return { id: rule.id, name: rule.name, variable: c.lhs.replace(/^liveworkitemcontext\./, ""), value: c.rhs, queueId: queue.replace(/[{}]/g, "").toLowerCase() };
-}
-
-function rewriteRuleset(admin: Admin, workstreamId: string, change: (definition: string) => string): void {
-  const ruleset = routeToQueueRuleset(admin.store, workstreamId);
-  if (!ruleset) throw new Error("This workstream has no route-to-queue rules.");
-  admin.api.update("msdyn_decisionruleset", ruleset.msdyn_decisionrulesetid, { msdyn_rulesetdefinition: change(String(ruleset.msdyn_rulesetdefinition ?? "")) });
-}
-
-export function updateRouteToQueueRule(admin: Admin, workstreamId: string, rule: SimpleRule): void {
-  if (!rule.name.trim()) throw new Error("Enter a rule name.");
-  if (!rule.variable || !rule.value.trim()) throw new Error("Complete the condition.");
-  if (!rule.queueId) throw new Error("Select a queue in Route to queues.");
-  rewriteRuleset(admin, workstreamId, (definition) => {
-    if (!RULE_BLOCK(rule.id).test(definition)) throw new Error("The rule no longer exists.");
-    return definition.replace(RULE_BLOCK(rule.id), ruleXml({ ...rule, name: rule.name.trim(), value: rule.value.trim() }));
-  });
-}
-
-export function deleteRouteToQueueRule(admin: Admin, workstreamId: string, ruleId: string): void {
-  rewriteRuleset(admin, workstreamId, (definition) => definition.replace(new RegExp(RULE_BLOCK(ruleId).source + "\\n?"), ""));
-}
-
-// Moves a rule one place up (-1) or down (+1) in the decision list.
-export function moveRouteToQueueRule(admin: Admin, workstreamId: string, ruleId: string, step: -1 | 1): void {
-  rewriteRuleset(admin, workstreamId, (definition) => {
-    const blocks = [...definition.matchAll(/[ \t]*<rule\s+id="([^"]*)"[\s\S]*?<\/rule>/g)];
-    const i = blocks.findIndex((b) => b[1] === ruleId);
-    const j = i + step;
-    if (i < 0 || j < 0 || j >= blocks.length) return definition;
-    const [a, b] = i < j ? [blocks[i], blocks[j]] : [blocks[j], blocks[i]];
-    const end = (m: RegExpMatchArray) => m.index! + m[0].length;
-    return definition.slice(0, a.index) + b[0] + definition.slice(end(a), b.index) + a[0] + definition.slice(end(b));
-  });
-}
-
 // ---- Phone numbers: the number pool (manual 5.1) ----
 //
 // "Add ACS number" in the real admin center buys a number through Azure Communication Services (Learn,

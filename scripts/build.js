@@ -98,7 +98,8 @@ async function main() {
     await click("[role=option]", "SelectedMenuItem");
     await page.type("[role=dialog] input[aria-label=Value]", "Warranty");
     await (await page.$$("[role=dialog] [role=combobox]")).pop().click();
-    await click("[role=option]", "Warranty Claims");
+    // Queues are listed as "Name (N users)", as in the admin center.
+    await (await page.waitForFunction((t) => [...document.querySelectorAll("[role=option]")].find((e) => e.textContent.trim().startsWith(t + " (")), {}, "Warranty Claims")).asElement().click();
     await click(".admin-drawer-actions button", "Create");
     await waitText(".admin-main td", "Warranty");
 

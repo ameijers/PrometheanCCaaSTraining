@@ -5,9 +5,8 @@ import { createContext, useContext, useEffect, useState } from "react";
 import {
   Button, Checkbox, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, DrawerBody, DrawerFooter, DrawerHeader,
   DrawerHeaderTitle, Dropdown, Field, Input, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger, MessageBar, MessageBarBody, Option,
-  OverlayDrawer, Radio, Tab, TabList, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Textarea, Tooltip
+  OptionGroup, OverlayDrawer, Radio, Tab, TabList, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Textarea, Tooltip
 } from "@fluentui/react-components";
-import { parseDecisionXml } from "@toolbox/visual-routing-tester/src/ruleXml";
 import { ASSIGNMENT_METHODS, AssignmentMethod, QueueType } from "@toolbox/queue-builder/src/queueSchema";
 import pagesJson from "../../content/admin-pages/pages.json";
 import { useStoreVersion, useTraining } from "../shell/context";
@@ -16,12 +15,17 @@ import { Matching, matchingOf, ratingOf, skillRules } from "../calls/skills";
 import { DEFAULT_CAPACITY_PROFILE } from "@toolbox/voice-workstream-builder/src/voiceSchema";
 import { Row, Store } from "../simulator/store";
 import {
-  Admin, addRouteToQueueRule, addUsers, ASSIGNMENT_LABELS, createQueue, deleteRouteToQueueRule, moveRouteToQueueRule, QUEUE_TYPE_LABELS, routeToQueueRuleset,
-  setAssignmentMethod, setFallbackQueue, SimpleRule, simpleRule, updateRouteToQueueRule,
+  Admin, addUsers, ASSIGNMENT_LABELS, createQueue, QUEUE_TYPE_LABELS, routeToQueueRuleset, setAssignmentMethod, setFallbackQueue,
   channelOfNumber, findNumber, NUMBER_COUNTRIES, NumberCountry, purchaseNumber, setupWorkstream,
   addProfileUsers, createCapacityProfile, createVoiceWorkstream, addTeamMembers, createBusinessUnit, createOwnerTeam,
   addSkillRule, createOutboundProfile, createSkill, deleteSkillRule, outboundProfiles, removeUserSkill, setMatchingLogic, setUserSkills, OverflowActionKind, OverflowCondition, OverflowPair, readOverflow, saveOverflow, setOperationHours, setWorkItemLimit
 } from "./actions";
+import {
+  ClassificationRule, classificationRulesets, createClassificationRuleset, deleteClassificationRuleset, deleteRule, describeConditions, emptyConditions, fieldLabel,
+  hitPolicyOf, MAX_OUTPUTS, MAX_QUEUES, moveClassificationRuleset, moveRule, PRIORITY_SCORE, QueueShare, readClassificationRule, readRouteRule, RouteRule, ruleFields,
+  rulesOf, saveClassificationRule, saveRouteRule, setHitPolicy
+} from "./rules";
+import { ConditionBuilder } from "./ConditionBuilder";
 
 // The simulated Copilot Service admin center: the real menu path, page, section, button and field names
 // (checked in the admin center itself, content/admin-pages/pages.json), our own look (Fluent UI), and a
@@ -39,7 +43,8 @@ type Place =
   | { page: "channels" } | { page: "phone-numbers" } | { page: "overflow"; id: string }
   | { page: "user-management" } | { page: "capacity-profiles" } | { page: "capacity-profile"; id: string }
   | { page: "business-units" } | { page: "teams" }
-  | { page: "skills" } | { page: "classification"; id: string } | { page: "productivity" } | { page: "outbound-profiles" };
+  | { page: "skills" } | { page: "classification"; id: string } | { page: "classification-ruleset"; id: string; rulesetId: string }
+  | { page: "productivity" } | { page: "outbound-profiles" };
 
 interface AdminUi {
   store: Store;
@@ -58,7 +63,7 @@ const CONCEPT_OF: Record<Place["page"], string> = {
   channels: P.channels.concept, "phone-numbers": P["phone-numbers"].concept, overflow: "overflow",
   "user-management": P["user-management"].concept, "capacity-profiles": P["capacity-profiles"].concept, "capacity-profile": P["capacity-profiles"].concept,
   "business-units": P["business-units"].concept, teams: P.teams.concept,
-  skills: P.skills.concept, classification: P.classification.concept, productivity: P.productivity.concept, "outbound-profiles": P["outbound-profiles"].concept
+  skills: P.skills.concept, classification: "work-classification", "classification-ruleset": "work-classification", productivity: P.productivity.concept, "outbound-profiles": P["outbound-profiles"].concept
 };
 
 // A request to show where a record is configured ("Where is this configured?", manual 6.4). `at` makes each request new.
@@ -130,6 +135,7 @@ export function AdminCenter({ request }: { request?: AdminRequest } = {}) {
             {place.page === "teams" && <Teams />}
             {place.page === "skills" && <Skills />}
             {place.page === "classification" && <Classification id={place.id} />}
+            {place.page === "classification-ruleset" && <ClassificationRuleset id={place.id} rulesetId={place.rulesetId} />}
             {place.page === "productivity" && <Productivity />}
             {place.page === "outbound-profiles" && <OutboundProfiles />}
           </section>
@@ -470,9 +476,11 @@ function WorkstreamPage({ id }: { id: string }) {
   const rr = def.routingRules;
   const ws = store.find("msdyn_liveworkstream", id);
   const [editFallback, setEditFallback] = useState(false);
+  const [editHit, setEditHit] = useState(false);
   if (!ws) return <p>This workstream no longer exists.</p>;
   const ruleset = routeToQueueRuleset(store, id);
-  const hit = ruleset ? parseDecisionXml(ruleset.msdyn_rulesetdefinition)?.hitPolicy : undefined;
+  const hit = hitPolicyOf(ruleset);
+  const classifications = classificationRulesets(store, id);
   const voice = ws.msdyn_streamsource === VOICE_STREAM;
   const queues = store.table("queue").filter((q) => q.msdyn_isomnichannelqueue === true && q.statecode === 0 && (!voice || q.msdyn_queuetype === VOICE_QUEUE))
     .sort((a, b) => String(a.name).localeCompare(String(b.name)));
@@ -513,8 +521,9 @@ function WorkstreamPage({ id }: { id: string }) {
         <div className="admin-section">
           <div className="admin-row">
             <div><strong>{rr.classification}</strong><p className="admin-muted admin-tight">{rr.classificationText}</p></div>
-            <Button appearance="subtle" onClick={() => go({ page: "classification", id })}>{skillRules(store, id).length ? "See more" : `+ ${rr.createRuleset}`}</Button>
+            <Button appearance="subtle" onClick={() => go({ page: "classification", id })}>{classifications.length || skillRules(store, id).length ? "See more" : `+ ${rr.createRuleset}`}</Button>
           </div>
+          {classifications.length > 0 && <p className="admin-tight">{classifications.length} {rr.rulesets}{classifications.length === 1 ? "" : "s"}: {classifications.map((r) => r.msdyn_name).join(", ")}</p>}
           {skillRules(store, id).length > 0 && <p className="admin-tight">{skillRules(store, id).length} skill attachment rule{skillRules(store, id).length === 1 ? "" : "s"}</p>}
         </div>
         <div className="admin-section">
@@ -526,7 +535,21 @@ function WorkstreamPage({ id }: { id: string }) {
             <span>{rr.fallbackQueue} <Info concept={rr.fallbackConcept} /></span>
             {editFallback ? fallbackPicker : <span>{queueName(ws._msdyn_defaultqueue_value) ?? "--"}</span>}
             <Button appearance="transparent" size="small" onClick={() => setEditFallback((e) => !e)}>{editFallback ? "Cancel" : "Edit"}</Button>
-            {ruleset && <><span>{rr.hitPolicy}</span><span>{(rr.hitPolicies as Record<string, string>)[hit ?? "all"] ?? hit}</span><Off>Edit</Off></>}
+            {ruleset && (
+              <>
+                <span>{rr.hitPolicy} <Info concept="rule-hit-policy" /></span>
+                {editHit
+                  ? (
+                    <Dropdown aria-label={rr.hitPolicy} value={rr.hitPolicies[hit ?? "all"]} selectedOptions={[hit ?? "all"]}
+                      onOptionSelect={(_, d) => { if (d.optionValue) { setHitPolicy(admin, id, d.optionValue as "first" | "all"); setEditHit(false); } }}>
+                      <Option value="all">{rr.hitPolicies.all}</Option>
+                      <Option value="first">{rr.hitPolicies.first}</Option>
+                    </Dropdown>
+                  )
+                  : <span>{rr.hitPolicies[hit ?? "all"]}</span>}
+                <Button appearance="transparent" size="small" aria-label={`${editHit ? "Cancel" : "Edit"} ${rr.hitPolicy}`} onClick={() => setEditHit((e) => !e)}>{editHit ? "Cancel" : "Edit"}</Button>
+              </>
+            )}
           </div>
           {ruleset && (
             <Table size="small" aria-label={rr.routeToQueues}>
@@ -575,22 +598,15 @@ function DecisionList({ id }: { id: string }) {
   const def = P["decision-list"];
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string | undefined>(undefined);
-  const [editing, setEditing] = useState<SimpleRule | undefined>(undefined);
+  const [editing, setEditing] = useState<RouteRule | undefined>(undefined);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const ws = store.find("msdyn_liveworkstream", id);
   const ruleset = routeToQueueRuleset(store, id);
-  const rules = ruleset ? parseDecisionXml(ruleset.msdyn_rulesetdefinition)?.rules ?? [] : [];
-  const queueOf = (rule: (typeof rules)[number]) => {
-    const set = rule.setAttributes.find((s) => s.lhs === "assign_to.queue")?.rhs;
-    const split = rule.distributionRecords.map((r) => r.find((s) => s.lhs === "queuedetails.queueid")?.rhs).filter(Boolean) as string[];
-    return [set, ...split].filter(Boolean).map((q) => queueName(String(q).replace(/[{}]/g, "").toLowerCase()) ?? "(deleted queue)").join(", ");
-  };
+  const rules = rulesOf(ruleset);
+  const queuesOf = (rule: RouteRule) => rule.queues
+    .map((q) => `${queueName(q.queueId) ?? "(deleted queue)"}${rule.queues.length > 1 ? ` (${q.percentage}%)` : ""}`).join(", ");
   const index = rules.findIndex((r) => r.id === selected);
   const picked = index >= 0 ? rules[index] : undefined;
-  const editable = picked ? simpleRule(picked) : undefined;
-  const condition = (rule: (typeof rules)[number]) => rule.conditions
-    .map((c) => `${c.lhs.replace(/^liveworkitemcontext\./, "")} ${c.operator === "==" || c.operator === "equals" ? "equals" : c.operator} ${c.rhs ?? ""}`)
-    .join(` ${rule.conditionLogic.toLowerCase()} `) || "Always";
   return (
     <section>
       <Crumbs items={[{ label: "Workstreams", to: { page: "workstreams" } }, { label: ws?.msdyn_name ?? "", to: { page: "workstream", id } }]} />
@@ -604,11 +620,9 @@ function DecisionList({ id }: { id: string }) {
           <span>
             <Button appearance="subtle" onClick={() => setOpen(true)}>+ {def.createRule}</Button>
             <Button appearance="subtle">{def.refresh}</Button>
-            <Button appearance="subtle" disabled={!picked || index === 0} onClick={() => moveRouteToQueueRule(admin, id, picked!.id, -1)}>↑ {def.commands[0]}</Button>
-            <Button appearance="subtle" disabled={!picked || index === rules.length - 1} onClick={() => moveRouteToQueueRule(admin, id, picked!.id, 1)}>↓ {def.commands[1]}</Button>
-            <Tooltip content={picked && !editable ? "This rule uses more than the training's rule editor supports." : def.commands[2]} relationship="description">
-              <Button appearance="subtle" disabled={!editable} onClick={() => setEditing(editable)}>{def.commands[2]}</Button>
-            </Tooltip>
+            <Button appearance="subtle" disabled={!picked || index === 0} onClick={() => moveRule(admin, ruleset!, picked!.id, -1)}>↑ {def.commands[0]}</Button>
+            <Button appearance="subtle" disabled={!picked || index === rules.length - 1} onClick={() => moveRule(admin, ruleset!, picked!.id, 1)}>↓ {def.commands[1]}</Button>
+            <Button appearance="subtle" disabled={!picked} onClick={() => setEditing(readRouteRule(picked!))}>{def.commands[2]}</Button>
             <Button appearance="subtle" disabled={!picked} onClick={() => setConfirmDelete(true)}>{def.commands[3]}</Button>
           </span>
         </div>
@@ -616,18 +630,21 @@ function DecisionList({ id }: { id: string }) {
         <Table size="small" aria-label={def.title}>
           <TableHeader><TableRow><TableHeaderCell className="admin-check" />{def.columns.map((c) => <TableHeaderCell key={c}>{c}</TableHeaderCell>)}</TableRow></TableHeader>
           <TableBody>
-            {rules.map((r, i) => (
-              <TableRow key={r.id} className={r.id === selected ? "admin-selected" : undefined}>
-                <TableCell className="admin-check"><Radio aria-label={`Select ${r.name}`} checked={r.id === selected} onChange={() => setSelected(r.id)} /></TableCell>
-                <TableCell>{i + 1}</TableCell><TableCell>{r.name}</TableCell><TableCell>{condition(r)}</TableCell><TableCell>{queueOf(r)}</TableCell>
-              </TableRow>
-            ))}
+            {rules.map((r, i) => {
+              const rule = readRouteRule(r);
+              return (
+                <TableRow key={r.id} className={r.id === selected ? "admin-selected" : undefined}>
+                  <TableCell className="admin-check"><Radio aria-label={`Select ${r.name}`} checked={r.id === selected} onChange={() => setSelected(r.id)} /></TableCell>
+                  <TableCell>{i + 1}</TableCell><TableCell>{r.name}</TableCell><TableCell>{describeConditions(rule.conditions)}</TableCell><TableCell>{queuesOf(rule)}</TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
         {!rules.length && <p className="admin-muted">No rules yet. Select {def.createRule}.</p>}
       </div>
-      {open && <CreateRulePanel workstreamId={id} onClose={() => setOpen(false)} />}
-      {editing && <CreateRulePanel workstreamId={id} rule={editing} onClose={() => setEditing(undefined)} />}
+      {open && <RouteRulePanel workstreamId={id} onClose={() => setOpen(false)} />}
+      {editing && <RouteRulePanel workstreamId={id} rule={editing} onClose={() => setEditing(undefined)} />}
       {confirmDelete && picked && (
         <Dialog open onOpenChange={(_, d) => { if (!d.open) setConfirmDelete(false); }}>
           <DialogSurface>
@@ -635,7 +652,7 @@ function DecisionList({ id }: { id: string }) {
               <DialogTitle>Delete rule</DialogTitle>
               <DialogContent>Delete the rule “{picked.name}”? Calls it routes go to the next matching rule, or to the fallback queue.</DialogContent>
               <DialogActions>
-                <Button appearance="primary" onClick={() => { deleteRouteToQueueRule(admin, id, picked.id); setSelected(undefined); setConfirmDelete(false); }}>{def.commands[3]}</Button>
+                <Button appearance="primary" onClick={() => { deleteRule(admin, ruleset!, picked.id); setSelected(undefined); setConfirmDelete(false); }}>{def.commands[3]}</Button>
                 <Button onClick={() => setConfirmDelete(false)}>Cancel</Button>
               </DialogActions>
             </DialogBody>
@@ -646,21 +663,42 @@ function DecisionList({ id }: { id: string }) {
   );
 }
 
-function CreateRulePanel({ workstreamId, rule, onClose }: { workstreamId: string; rule?: SimpleRule; onClose: () => void }) {
+// The rule panel's name, root record and conditions, shared by route-to-queue and work classification rules.
+function RuleBasics({ name, setName, conditions, setConditions, workstreamId, rootText }: {
+  name: string; setName(v: string): void; conditions: RouteRule["conditions"]; setConditions(c: RouteRule["conditions"]): void; workstreamId: string; rootText: string;
+}) {
+  const { store } = useUi();
+  const d = P["decision-list"].panel;
+  return (
+    <>
+      <Field label={d.ruleName} required><Input value={name} onChange={(_, v) => setName(v.value)} /></Field>
+      <div><strong>{d.rootRecord}</strong> {d.rootRecordName}<p className="admin-muted admin-tight">{rootText}</p></div>
+      <div className="admin-section">
+        <h3 className="admin-subtitle">{d.conditions}</h3>
+        <ConditionBuilder value={conditions} onChange={setConditions} fields={ruleFields(store, workstreamId)} />
+        <p className="admin-muted admin-small">{d.simplified}</p>
+      </div>
+    </>
+  );
+}
+
+function RouteRulePanel({ workstreamId, rule, onClose }: { workstreamId: string; rule?: RouteRule; onClose: () => void }) {
   const { store, admin, explain } = useUi();
   const d = P["decision-list"].panel;
-  const variables = store.table("msdyn_ocliveworkstreamcontextvariable").filter((v) => v._msdyn_liveworkstreamid_value === workstreamId).map((v) => String(v.msdyn_name));
   const queues = store.table("queue").filter((q) => q.msdyn_isomnichannelqueue === true && q.statecode === 0 && q.msdyn_queuetype === VOICE_QUEUE)
     .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+  const members = (queueId: string) => store.table("queuemembership").filter((m) => m.queueid === queueId).length;
+  const label = (q: Row) => `${q.name} (${members(q.queueid)} ${d.users}${members(q.queueid) === 1 ? "" : "s"})`;
   const [name, setName] = useState(rule?.name ?? "");
-  const [rows, setRows] = useState<{ field: string; value: string }[]>(rule ? [{ field: rule.variable, value: rule.value }] : []);
-  const [queueId, setQueueId] = useState(rule?.queueId ?? "");
+  const [conditions, setConditions] = useState(rule?.conditions ?? emptyConditions());
+  const [shares, setShares] = useState<QueueShare[]>(rule?.queues ?? [{ queueId: "", percentage: "" }]);
   const [error, setError] = useState("");
+  const split = shares.length > 1;
+  const total = shares.reduce((sum, s) => sum + (Number(s.percentage) || 0), 0);
+  const setShare = (i: number, change: Partial<QueueShare>) => setShares((all) => all.map((s, j) => (j === i ? { ...s, ...change } : s)));
   const save = () => {
     try {
-      if (rows.length !== 1) throw new Error(rows.length ? "The training supports one condition row per rule." : "Add a condition row: Add, then Add row.");
-      if (rule) updateRouteToQueueRule(admin, workstreamId, { id: rule.id, name, variable: rows[0].field, value: rows[0].value, queueId });
-      else addRouteToQueueRule(admin, workstreamId, { name, variable: rows[0].field, value: rows[0].value, queueId });
+      saveRouteRule(admin, workstreamId, { id: rule?.id, name, conditions, queues: shares });
       onClose();
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
   };
@@ -671,48 +709,44 @@ function CreateRulePanel({ workstreamId, rule, onClose }: { workstreamId: string
         <p className="admin-muted admin-tight">{d.intro} <button className="admin-link" onClick={() => explain("create-rule")}>Learn more</button></p>
       </DrawerHeader>
       <DrawerBody className="admin-form">
-        <Field label={d.ruleName} required><Input value={name} onChange={(_, v) => setName(v.value)} /></Field>
-        <div><strong>{d.rootRecord}</strong> {d.rootRecordName}<p className="admin-muted admin-tight">{d.rootRecordText}</p></div>
+        <RuleBasics name={name} setName={setName} conditions={conditions} setConditions={setConditions} workstreamId={workstreamId} rootText={d.rootRecordText} />
         <div className="admin-section">
-          <h3 className="admin-subtitle">{d.conditions}</h3>
-          <div className="admin-group-box">
-            <Button size="small" disabled>{d.and}</Button>
-            {rows.map((r, i) => (
-              <div key={i} className="admin-condition">
-                <Dropdown aria-label="Field" placeholder={d.field} value={r.field} selectedOptions={r.field ? [r.field] : []}
-                  onOptionSelect={(_, o) => setRows((all) => all.map((x, j) => (j === i ? { ...x, field: o.optionValue ?? "" } : x)))}>
-                  {variables.map((v) => <Option key={v} value={v}>{v}</Option>)}
-                </Dropdown>
-                <Dropdown aria-label="Operator" value={d.operators[0]} selectedOptions={[d.operators[0]]}>{d.operators.map((o) => <Option key={o} value={o}>{o}</Option>)}</Dropdown>
-                <Input aria-label={d.value} placeholder={d.value} value={r.value} onChange={(_, v) => setRows((all) => all.map((x, j) => (j === i ? { ...x, value: v.value } : x)))} />
-                <Button appearance="subtle" aria-label="Remove row" onClick={() => setRows((all) => all.filter((_, j) => j !== i))}>✕</Button>
-              </div>
-            ))}
-            <Menu>
-              <MenuTrigger disableButtonEnhancement><Button size="small">+ {d.add} ⌄</Button></MenuTrigger>
-              <MenuPopover>
-                <MenuList>
-                  <MenuItem onClick={() => setRows((all) => [...all, { field: "", value: "" }])}>{d.addMenu[0]}</MenuItem>
-                  <MenuItem disabled>{d.addMenu[1]}</MenuItem>
-                  <MenuItem disabled>{d.addMenu[2]}</MenuItem>
-                </MenuList>
-              </MenuPopover>
-            </Menu>
+          <div className="admin-row">
+            <h3 className="admin-subtitle">{d.routeToQueues} {split && <Info concept="percentage-routing" />}</h3>
+            <span>
+              <Button appearance="subtle" disabled={shares.length >= MAX_QUEUES} onClick={() => setShares((all) => [...all, { queueId: "", percentage: "" }])}>+ {d.addQueue}</Button>
+              <Menu>
+                <MenuTrigger disableButtonEnhancement><Button appearance="subtle" aria-label={d.moreCommands}>⋮</Button></MenuTrigger>
+                <MenuPopover>
+                  <MenuList>
+                    <MenuItem disabled={!split} onClick={() => setShares((all) => [{ ...all[0], percentage: "" }])}>{d.removeAllocations}</MenuItem>
+                  </MenuList>
+                </MenuPopover>
+              </Menu>
+            </span>
           </div>
-          <p className="admin-muted admin-small">{d.simplified}</p>
-        </div>
-        <div className="admin-section">
-          <div className="admin-row"><h3 className="admin-subtitle">{d.routeToQueues}</h3><Off>{`+ ${d.addQueue}`}</Off></div>
-          <Field label={d.queue} required>
-            <Dropdown placeholder={d.queuePlaceholder} value={queues.find((q) => q.queueid === queueId)?.name ?? ""} selectedOptions={queueId ? [queueId] : []} onOptionSelect={(_, o) => setQueueId(o.optionValue ?? "")}>
-              {queues.map((q) => <Option key={q.queueid} value={q.queueid}>{q.name}</Option>)}
-            </Dropdown>
-          </Field>
+          {shares.map((s, i) => (
+            <div key={i} className="admin-condition">
+              <Field label={d.queue} required>
+                <Dropdown placeholder={d.queuePlaceholder} value={queues.find((q) => q.queueid === s.queueId)?.name ?? ""} selectedOptions={s.queueId ? [s.queueId] : []}
+                  onOptionSelect={(_, o) => setShare(i, { queueId: o.optionValue ?? "" })}>
+                  {queues.map((q) => <Option key={q.queueid} value={q.queueid} text={String(q.name)}>{label(q)}</Option>)}
+                </Dropdown>
+              </Field>
+              {split && (
+                <Field label={d.workAllocation} required>
+                  <Input type="number" min={1} max={99} value={s.percentage} onChange={(_, v) => setShare(i, { percentage: v.value })} contentAfter="%" />
+                </Field>
+              )}
+              {split && <Button appearance="subtle" aria-label={`${d.removeQueue} ${i + 1}`} onClick={() => setShares((all) => all.filter((_, j) => j !== i))}>✕</Button>}
+            </div>
+          ))}
+          {split && <p className={total === 100 ? "admin-muted" : "admin-warning"}>{d.total}: {total}%{total === 100 ? "" : " (must be 100)"}</p>}
         </div>
         {error && <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>}
       </DrawerBody>
       <DrawerFooter className="admin-drawer-actions">
-        <Button appearance="primary" onClick={save}>{rule ? "Save" : d.submit}</Button>
+        <Button appearance="primary" onClick={save}>{rule ? "Save and close" : d.submit}</Button>
         <Button onClick={onClose}>{d.cancel}</Button>
       </DrawerFooter>
     </OverlayDrawer>
@@ -1391,30 +1425,73 @@ function EditSkillPanel({ skillId, onClose }: { skillId: string; onClose(): void
   );
 }
 
-// ---- Workstream › Work classification: skill attachment rules (level 4) ----
+// ---- Workstream › Work classification: rulesets (Learn, Configure work classification rulesets) ----
+//
+// As in the admin center (docs/admin-center-check.md): a page listing the rulesets with Create new, the
+// commands Move up, Move down, Edit, Delete, Copy ruleset and Paste ruleset below once a row is ticked, and
+// each ruleset's own decision list. The training's skill attachment rules are listed below them.
 
 function Classification({ id }: { id: string }) {
-  const { store, admin } = useUi();
+  const { store, admin, go } = useUi();
   const def = P.classification;
   const ws = store.find("msdyn_liveworkstream", id);
+  const rulesets = classificationRulesets(store, id);
   const rules = skillRules(store, id);
   const [open, setOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [pickedSet, setPickedSet] = useState<string | undefined>();
   const [selected, setSelected] = useState<string | undefined>();
+  const at = rulesets.findIndex((r) => r.msdyn_decisionrulesetid === pickedSet);
   const name = (table: string, rowId: string) => String(store.find(table, rowId)?.name ?? "(deleted)");
+  const [c0, c1, c2, c3, c4, c5] = def.rulesetCommands;
   return (
     <section>
+      <CommandBar>
+        {at >= 0 ? (
+          <>
+            <Button appearance="subtle" disabled={at === 0} onClick={() => moveClassificationRuleset(admin, id, pickedSet!, -1)}>↑ {c0}</Button>
+            <Button appearance="subtle" disabled={at === rulesets.length - 1} onClick={() => moveClassificationRuleset(admin, id, pickedSet!, 1)}>↓ {c1}</Button>
+            <Button appearance="subtle" onClick={() => go({ page: "classification-ruleset", id, rulesetId: pickedSet! })}>{c2}</Button>
+            <Button appearance="subtle" onClick={() => { deleteClassificationRuleset(admin, id, pickedSet!); setPickedSet(undefined); }}>{c3}</Button>
+            <Off>{c4}</Off>
+            <Off>{c5}</Off>
+          </>
+        ) : <Button appearance="subtle">{def.refresh}</Button>}
+      </CommandBar>
       <Crumbs items={[{ label: "Workstreams", to: { page: "workstreams" } }, { label: ws?.msdyn_name ?? "", to: { page: "workstream", id } }]} />
-      <h1 className="admin-title">{def.title} <Info concept={def.concept} /></h1>
+      <div className="admin-row">
+        <h1 className="admin-title">{def.title} <Info concept="work-classification" /></h1>
+        <Button appearance="primary" onClick={() => setCreating(true)}>{def.createNew}</Button>
+      </div>
+      <div className="admin-card">
+      <Table size="small" aria-label={def.title}>
+        <TableHeader><TableRow><TableHeaderCell className="admin-check"><span className="visually-hidden">Select</span></TableHeaderCell>{def.rulesetColumns.map((c) => <TableHeaderCell key={c}>{c}</TableHeaderCell>)}</TableRow></TableHeader>
+        <TableBody>
+          {rulesets.map((r, i) => (
+            <TableRow key={r.msdyn_decisionrulesetid} className={r.msdyn_decisionrulesetid === pickedSet ? "admin-selected" : undefined}>
+              <TableCell className="admin-check"><Checkbox aria-label={`Select ${r.msdyn_name}`} checked={r.msdyn_decisionrulesetid === pickedSet} onChange={(_, d) => setPickedSet(d.checked ? r.msdyn_decisionrulesetid : undefined)} /></TableCell>
+              <TableCell>{i + 1}</TableCell>
+              <TableCell><button className="admin-link" onClick={() => go({ page: "classification-ruleset", id, rulesetId: r.msdyn_decisionrulesetid })}>{r.msdyn_name}</button></TableCell>
+              <TableCell>{def.rulesetType}</TableCell>
+              <TableCell>{r.msdyn_description ?? ""}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      {!rulesets.length && <p className="admin-muted">{def.noRulesets}</p>}
+      </div>
+
       <div className="admin-card">
         <div className="admin-row">
-          <h2 className="admin-subtitle">{ws?.msdyn_name} skill attachment rules</h2>
+          <h2 className="admin-subtitle">{def.skillRules} <Info concept={def.concept} /></h2>
           <span>
             <Button appearance="subtle" onClick={() => setOpen(true)}>+ {def.createRule}</Button>
             <Button appearance="subtle" disabled={!selected} onClick={() => { deleteSkillRule(admin, selected!); setSelected(undefined); }}>{def.delete}</Button>
           </span>
         </div>
+        <p className="admin-muted admin-tight">{def.skillRulesText}</p>
         <MessageBar intent="info"><MessageBarBody>{def.simplified}</MessageBarBody></MessageBar>
-        <Table size="small" aria-label={def.title}>
+        <Table size="small" aria-label={def.skillRules}>
           <TableHeader><TableRow><TableHeaderCell className="admin-check"><span className="visually-hidden">Select</span></TableHeaderCell>{def.columns.map((c) => <TableHeaderCell key={c}>{c}</TableHeaderCell>)}</TableRow></TableHeader>
           <TableBody>
             {rules.map((r, i) => (
@@ -1430,7 +1507,189 @@ function Classification({ id }: { id: string }) {
         {matchingOf(ws) ? null : <p className="admin-muted">Skills only count when the workstream's Default skill matching algorithm is set (Work distribution).</p>}
       </div>
       {open && <SkillRulePanel workstreamId={id} onClose={() => setOpen(false)} />}
+      {creating && <CreateRulesetDialog workstreamId={id} onClose={() => setCreating(false)} />}
     </section>
+  );
+}
+
+function CreateRulesetDialog({ workstreamId, onClose }: { workstreamId: string; onClose(): void }) {
+  const { admin, go, explain } = useUi();
+  const d = P.classification.createDialog;
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [error, setError] = useState("");
+  const create = () => {
+    try {
+      const rulesetId = createClassificationRuleset(admin, workstreamId, { name, description });
+      onClose();
+      go({ page: "classification-ruleset", id: workstreamId, rulesetId });
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+  };
+  return (
+    <Dialog open onOpenChange={(_, o) => { if (!o.open) onClose(); }}>
+      <DialogSurface className="admin-wide-dialog">
+        <DialogBody>
+          <DialogTitle action={<Button appearance="subtle" aria-label="Close" onClick={onClose}>✕</Button>}>{d.title}</DialogTitle>
+          <DialogContent className="admin-two-columns">
+            <div>
+              <h3 className="admin-subtitle">{d.ruleType}</h3>
+              <div className="admin-condition" role="radiogroup" aria-label={d.ruleType}>
+                <Radio checked label={d.logical} value="logical" />
+                <Tooltip content={NOT_YET} relationship="description"><Radio disabled label={d.ml} value="ml" /></Tooltip>
+              </div>
+              <p className="admin-muted"><strong>{d.logical}</strong><br />{d.logicalText}</p>
+            </div>
+            <div className="admin-form">
+              <Field label={d.template}>
+                <Dropdown value={d.templates[0]} selectedOptions={[d.templates[0]]}>
+                  <Option value={d.templates[0]}>{d.templates[0]}</Option>
+                  {d.templates.slice(1).map((t) => <Option key={t} value={t} disabled>{t}</Option>)}
+                </Dropdown>
+              </Field>
+              <Field label={d.name} required><Input value={name} onChange={(_, v) => setName(v.value)} /></Field>
+              <Field label={d.description}><Textarea value={description} onChange={(_, v) => setDescription(v.value)} /></Field>
+              {error && <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>}
+            </div>
+          </DialogContent>
+          <DialogActions>
+            <button className="admin-link" onClick={() => explain("work-classification")}>Learn more</button>
+            <Button appearance="primary" disabled={!name.trim()} onClick={create}>{d.create}</Button>
+            <Button onClick={onClose}>{d.cancel}</Button>
+          </DialogActions>
+        </DialogBody>
+      </DialogSurface>
+    </Dialog>
+  );
+}
+
+function ClassificationRuleset({ id, rulesetId }: { id: string; rulesetId: string }) {
+  const { store, admin } = useUi();
+  const def = P.classification.ruleset;
+  const ws = store.find("msdyn_liveworkstream", id);
+  const ruleset = store.find("msdyn_decisionruleset", rulesetId);
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<ClassificationRule | undefined>();
+  const [selected, setSelected] = useState<string | undefined>();
+  if (!ruleset) return <p>This ruleset no longer exists.</p>;
+  const rules = rulesOf(ruleset);
+  const index = rules.findIndex((r) => r.id === selected);
+  const picked = index >= 0 ? rules[index] : undefined;
+  const outputs = (rule: ClassificationRule) => rule.outputs.map((o) => `${fieldLabel(o.field)} = ${o.value}`).join(", ");
+  return (
+    <section>
+      <Crumbs items={[{ label: "Workstreams", to: { page: "workstreams" } }, { label: ws?.msdyn_name ?? "", to: { page: "workstream", id } }, { label: P.classification.title, to: { page: "classification", id } }]} />
+      <div className="admin-row">
+        <h1 className="admin-title">{ruleset.msdyn_name} <Tooltip content={NOT_YET} relationship="description"><Button appearance="transparent" size="small" disabled>Edit</Button></Tooltip></h1>
+        <Facts items={[[def.ruleType, P.classification.createDialog.logical], [def.owner, LEARNER.userName]]} />
+      </div>
+      <div className="admin-card">
+        <div className="admin-row">
+          <h2 className="admin-subtitle">{def.decisionList}</h2>
+          <span>
+            <Button appearance="subtle" onClick={() => setOpen(true)}>+ {def.createRule}</Button>
+            {rules.length > 0 && (
+              <>
+                <Button appearance="subtle" disabled={!picked || index === 0} onClick={() => moveRule(admin, ruleset, picked!.id, -1)}>↑ {def.commands[0]}</Button>
+                <Button appearance="subtle" disabled={!picked || index === rules.length - 1} onClick={() => moveRule(admin, ruleset, picked!.id, 1)}>↓ {def.commands[1]}</Button>
+                <Button appearance="subtle" disabled={!picked} onClick={() => setEditing(readClassificationRule(picked!))}>{def.commands[2]}</Button>
+                <Button appearance="subtle" disabled={!picked} onClick={() => { deleteRule(admin, ruleset, picked!.id); setSelected(undefined); }}>{def.commands[3]}</Button>
+              </>
+            )}
+          </span>
+        </div>
+        {rules.length ? (
+          <>
+            <MessageBar intent="info"><MessageBarBody>{def.info}</MessageBarBody></MessageBar>
+            <Table size="small" aria-label={def.decisionList}>
+              <TableHeader><TableRow><TableHeaderCell className="admin-check" />{def.columns.map((c) => <TableHeaderCell key={c}>{c}</TableHeaderCell>)}</TableRow></TableHeader>
+              <TableBody>
+                {rules.map((r, i) => {
+                  const rule = readClassificationRule(r);
+                  return (
+                    <TableRow key={r.id} className={r.id === selected ? "admin-selected" : undefined}>
+                      <TableCell className="admin-check"><Radio aria-label={`Select ${r.name}`} checked={r.id === selected} onChange={() => setSelected(r.id)} /></TableCell>
+                      <TableCell>{i + 1}</TableCell><TableCell>{r.name}</TableCell><TableCell>{describeConditions(rule.conditions)}</TableCell><TableCell>{outputs(rule)}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </>
+        ) : (
+          <div className="admin-empty">
+            <p><strong>{def.empty}</strong></p>
+            <Button appearance="primary" onClick={() => setOpen(true)}>+ {def.createRule}</Button>
+          </div>
+        )}
+      </div>
+      {open && <ClassificationRulePanel workstreamId={id} rulesetId={rulesetId} onClose={() => setOpen(false)} />}
+      {editing && <ClassificationRulePanel workstreamId={id} rulesetId={rulesetId} rule={editing} onClose={() => setEditing(undefined)} />}
+    </section>
+  );
+}
+
+function ClassificationRulePanel({ workstreamId, rulesetId, rule, onClose }: { workstreamId: string; rulesetId: string; rule?: ClassificationRule; onClose(): void }) {
+  const { store, admin, explain } = useUi();
+  const d = P.classification.rulePanel;
+  const variables = ruleFields(store, workstreamId).filter((f) => f.lhs !== PRIORITY_SCORE);
+  const CONTEXT = "liveworkitemcontext.";
+  const [name, setName] = useState(rule?.name ?? "");
+  const [conditions, setConditions] = useState(rule?.conditions ?? emptyConditions());
+  const [outputs, setOutputs] = useState(rule?.outputs ?? [{ field: "", value: "" }]);
+  const [error, setError] = useState("");
+  const setOutput = (i: number, change: Partial<{ field: string; value: string }>) => setOutputs((all) => all.map((o, j) => (j === i ? { ...o, ...change } : o)));
+  const duplicates = new Set(outputs.map((o) => o.field)).size !== outputs.length;
+  const save = () => {
+    try {
+      saveClassificationRule(admin, workstreamId, rulesetId, { id: rule?.id, name, conditions, outputs });
+      onClose();
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+  };
+  return (
+    <OverlayDrawer open position="end" size="large" onOpenChange={(_, o) => { if (!o.open) onClose(); }}>
+      <DrawerHeader>
+        <DrawerHeaderTitle action={<Button appearance="subtle" aria-label="Close" onClick={onClose}>✕</Button>}>{rule ? rule.name : d.title}</DrawerHeaderTitle>
+        <p className="admin-muted admin-tight">{d.intro} <button className="admin-link" onClick={() => explain("work-classification")}>Learn more</button></p>
+      </DrawerHeader>
+      <DrawerBody className="admin-form">
+        <RuleBasics name={name} setName={setName} conditions={conditions} setConditions={setConditions} workstreamId={workstreamId} rootText={d.rootRecordText} />
+        <div className="admin-section">
+          <div className="admin-row">
+            <h3 className="admin-subtitle">{d.output}</h3>
+            <Button appearance="subtle" disabled={outputs.length >= MAX_OUTPUTS} onClick={() => setOutputs((all) => [...all, { field: "", value: "" }])}>+ {d.addAttribute}</Button>
+          </div>
+          {duplicates && <MessageBar intent="error"><MessageBarBody>{d.duplicates}</MessageBarBody></MessageBar>}
+          {outputs.map((o, i) => {
+            const context = o.field.startsWith(CONTEXT);
+            const first = o.field === PRIORITY_SCORE ? d.priorityScore : context ? d.contextItem : "";
+            return (
+              <div key={i} className="admin-condition">
+                <Button appearance="subtle" aria-label={`Delete output ${i + 1}`} onClick={() => setOutputs((all) => all.filter((_, j) => j !== i))}>🗑</Button>
+                <Dropdown aria-label={d.attribute} placeholder={d.attribute} value={first} selectedOptions={first ? [o.field === PRIORITY_SCORE ? PRIORITY_SCORE : CONTEXT] : []}
+                  onOptionSelect={(_, v) => setOutput(i, { field: v.optionValue ?? "", value: "" })}>
+                  <OptionGroup label="Attributes"><Option value={PRIORITY_SCORE}>{d.priorityScore}</Option></OptionGroup>
+                  <OptionGroup label="Related entities"><Option value={CONTEXT}>{d.contextItem}</Option></OptionGroup>
+                </Dropdown>
+                {context && (
+                  <Dropdown aria-label={d.variable} placeholder={d.variable} value={o.field === CONTEXT ? "" : fieldLabel(o.field)} selectedOptions={o.field === CONTEXT ? [] : [o.field]}
+                    onOptionSelect={(_, v) => setOutput(i, { field: v.optionValue ?? CONTEXT })}>
+                    {variables.map((f) => <Option key={f.lhs} value={f.lhs}>{f.label}</Option>)}
+                  </Dropdown>
+                )}
+                <span>{d.setTo}</span>
+                <Input aria-label={`${first || "Output"} value`} disabled={!first || o.field === CONTEXT} type={o.field === PRIORITY_SCORE ? "number" : "text"} value={o.value} onChange={(_, v) => setOutput(i, { value: v.value })} />
+              </div>
+            );
+          })}
+          <p className="admin-muted admin-small">{d.simplified}</p>
+        </div>
+        {error && <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>}
+      </DrawerBody>
+      <DrawerFooter className="admin-drawer-actions">
+        <Button appearance="primary" onClick={save}>{rule ? "Save and close" : P["decision-list"].panel.submit}</Button>
+        <Button onClick={onClose}>{P["decision-list"].panel.cancel}</Button>
+      </DrawerFooter>
+    </OverlayDrawer>
   );
 }
 

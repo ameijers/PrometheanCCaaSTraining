@@ -5,7 +5,8 @@
 // checks see each fault go; a call question is graded by the call engine. And the checks of manual 8.3
 // catch what a careless writer (person or AI) gets wrong.
 import { parseDecisionXml } from "@toolbox/visual-routing-tester/src/ruleXml";
-import { addUsers, routeToQueueRuleset, setFallbackQueue, simpleRule, updateRouteToQueueRule } from "../../src/admin/actions";
+import { addUsers, routeToQueueRuleset, setFallbackQueue } from "../../src/admin/actions";
+import { simpleRule, updateRouteToQueueRule } from "../../src/admin/rules";
 import { createSimulator } from "../../src/simulator";
 import { answerKey, gradeCall, gradeFix, optionsFor } from "../../src/scenarios/grade";
 import { Scenario } from "../../src/scenarios/scenario";
