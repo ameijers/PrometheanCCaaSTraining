@@ -101,7 +101,8 @@ async function main() {
   await click("[role=option]", variable);
   await page.type("[role=dialog] input[aria-label=Value]", slip); // a slip in the value: the call is misrouted
   await (await page.$$("[role=dialog] [role=combobox]")).pop().click();
-  await click("[role=option]", slip);
+  // Queues are listed as "Name (N users)", as in the admin center.
+  await (await page.waitForFunction((t) => [...document.querySelectorAll("[role=option]")].find((e) => e.textContent.trim().startsWith(t + " (")), {}, slip)).asElement().click();
   await shot("create-route-to-queue-rule");
   await click(".admin-drawer-actions button", "Create");
   await waitText(".admin-main td", slip);
@@ -114,7 +115,7 @@ async function main() {
   await value.focus();
   await page.keyboard.down("Control"); await page.keyboard.press("A"); await page.keyboard.up("Control");
   await value.type(choice);
-  await click(".admin-drawer-actions button", "Save");
+  await click(".admin-drawer-actions button", "Save and close");
   await waitText(".lesson-tasks li.done", `Route ${choice} calls`);
   await shot("decision-list");
 

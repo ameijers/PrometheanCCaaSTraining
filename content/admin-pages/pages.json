@@ -307,7 +307,8 @@
         ],
         "rulesetType": "Logical - Decision list",
         "concept": "route-to-queue",
-        "fallbackConcept": "fallback-queue"
+        "fallbackConcept": "fallback-queue",
+        "rulesets": "work classification ruleset"
       },
       "workDistribution": {
         "title": "Work distribution",
@@ -353,7 +354,7 @@
         "Edit",
         "Delete"
       ],
-      "info": "Rules are checked in order. A call goes to the queue of the first rule that matches.",
+      "info": "Before sending a work item to a queue, we'll match rules and overflow actions in priority order. If we don't find any queue that have not overflowed, work items will be sent to the earliest operating queue or follow the rule's overflow action.",
       "columns": [
         "Order",
         "Rule name",
@@ -376,9 +377,6 @@
           "Add related entity"
         ],
         "field": "Select a field",
-        "operators": [
-          "Equals"
-        ],
         "value": "Value",
         "routeToQueues": "Route to queues",
         "addQueue": "Add queue",
@@ -386,7 +384,17 @@
         "queuePlaceholder": "Select queue",
         "submit": "Create",
         "cancel": "Cancel",
-        "simplified": "Simplified for the training: rows on the workstream's context variables with Equals. Groups, related records and other operators aren't in the training yet."
+        "simplified": "Simplified for the training: fields are the workstream's context variables (in the admin center they're under the related entity Context item value) and Priority Score. Operators the training leaves out: Does not contain, Begins with, Does not begin with, Ends with, Does not end with, In, Not In and Does not contain data.",
+        "or": "Or",
+        "removeRow": "Remove row",
+        "removeGroup": "Remove group",
+        "relatedEntityOff": "Related entities other than Context item value aren't in the training.",
+        "workAllocation": "Work allocation percentage",
+        "moreCommands": "More commands",
+        "removeAllocations": "Remove allocations",
+        "removeQueue": "Remove queue",
+        "total": "Total",
+        "users": "user"
       }
     },
     "channels": {
@@ -596,8 +604,80 @@
         "operator": "Equals",
         "create": "Create"
       },
-      "simplified": "Simplified: in the training a workstream has one work classification ruleset of logical rules, and each rule checks one field and attaches one skill. The first rule that matches attaches its skill.",
-      "source": "Learn, Configure work classification rulesets (ms.date 2026-05-08): Routing rules, Work classification (optional), Create Ruleset, then Create Rule with a name, Conditions and Output."
+      "simplified": "Simplified: each skill attachment rule checks one field with Equals and attaches one skill. The first rule that matches attaches its skill.",
+      "source": "Learn, Configure work classification rulesets (ms.date 2026-05-08): Routing rules, Work classification (optional), Create Ruleset, then Create Rule with a name, Conditions and Output.",
+      "createNew": "Create new",
+      "refresh": "Refresh",
+      "rulesetColumns": [
+        "Order",
+        "Ruleset name",
+        "Type",
+        "Description"
+      ],
+      "rulesetType": "Logical - Decision list",
+      "rulesetCommands": [
+        "Move up",
+        "Move down",
+        "Edit",
+        "Delete",
+        "Copy ruleset",
+        "Paste ruleset below"
+      ],
+      "noRulesets": "No work classification rulesets yet. Select Create new.",
+      "skillRules": "Skill attachment rules",
+      "skillRulesText": "The training's own simplified rules that attach a skill to a call. In the admin center, Skills is one of the attributes a work classification rule's Output can set.",
+      "createDialog": {
+        "title": "Create work classification ruleset",
+        "ruleType": "Rule type",
+        "logical": "Logical rules",
+        "ml": "Machine learning model",
+        "logicalText": "Create conditions to define your rules based on multiple entity attributes.",
+        "template": "Start new or use a template",
+        "templates": [
+          "New ruleset",
+          "Template ruleset",
+          "Copy from template"
+        ],
+        "name": "Name",
+        "description": "Description",
+        "create": "Create",
+        "cancel": "Cancel"
+      },
+      "ruleset": {
+        "ruleType": "Rule type",
+        "owner": "Owner",
+        "decisionList": "Decision list",
+        "createRule": "Create rule",
+        "empty": "Create a work classification rule",
+        "columns": [
+          "Order",
+          "Rule name",
+          "Condition",
+          "Output"
+        ],
+        "commands": [
+          "Move up",
+          "Move down",
+          "Edit",
+          "Delete"
+        ],
+        "info": "Rules are checked in order. The first rule that matches sets its output, and then the next ruleset runs."
+      },
+      "rulePanel": {
+        "title": "Create work classification rule",
+        "intro": "Add conditions and output attributes to define this rule.",
+        "ruleName": "Rule Name",
+        "rootRecordText": "Root record is the starting record for the conditions and the output below. Starting from the root record you can navigate to its related records and attributes.",
+        "output": "Output",
+        "addAttribute": "Add attribute",
+        "attribute": "Select attribute or related entity",
+        "variable": "Select attribute",
+        "setTo": "set to",
+        "contextItem": "Context item value (Conversation)",
+        "priorityScore": "Priority Score",
+        "duplicates": "We found some duplicate attributes. Change or remove any attributes that appear more than once.",
+        "simplified": "Simplified for the training: Output can set Priority Score and context variables. The admin center also offers Capacity profile, Skills, Customer, Escalation Count, Issue, Language, Region and related records."
+      }
     },
     "productivity": {
       "title": "Productivity",

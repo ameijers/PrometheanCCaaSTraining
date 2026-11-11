@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: MIT
 
 import { parseDecisionXml } from "@toolbox/visual-routing-tester/src/ruleXml";
-import { routeToQueueRuleset, simpleRule } from "../admin/actions";
+import { routeToQueueRuleset } from "../admin/actions";
+import { simpleRule } from "../admin/rules";
 import { Store } from "../simulator/store";
 import { closeName, Ivr, Lesson } from "./checks";
 

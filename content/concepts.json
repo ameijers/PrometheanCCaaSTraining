@@ -290,6 +290,42 @@
         "checkedOn": "2026-11-04",
         "quote": "You can define how representatives use the outbound calls and which representatives can make those calls."
       }
+    },
+    {
+      "id": "work-classification",
+      "title": "Work classification rulesets",
+      "summary": "Work classification rules add details to a call before it is routed, such as a Priority Score. The rulesets run in order; in each one, the first rule that matches sets its output, and then the next ruleset runs. Later rulesets and the route-to-queue rules can use what was set.",
+      "learn": {
+        "title": "Configure work classification rulesets",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/configure-work-classification",
+        "date": "2026-05-08",
+        "checkedOn": "2026-11-11",
+        "quote": "The system runs the work classification rulesets in the order they're listed. Within a ruleset, rule items are run in the order they're listed. When one of the rule item conditions matches, the output section of the rule item is run. The system evaluates the rules in the next ruleset if it's configured."
+      }
+    },
+    {
+      "id": "rule-hit-policy",
+      "title": "Rule hit policy",
+      "summary": "Hit-all, the default, checks every route-to-queue rule and sends the call to the first matching rule whose queue isn’t overflowing. Hit-first stops at the first rule that matches, even if its queue is overflowing.",
+      "learn": {
+        "title": "Configure route-to-queue rules",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/configure-route-to-queue-rules",
+        "date": "2026-05-08",
+        "checkedOn": "2026-11-11",
+        "quote": "If multiple rules match the required condition and none of the respective queues are overflowing, then the system selects the queue associated with the first rule in the list for assignment."
+      }
+    },
+    {
+      "id": "percentage-routing",
+      "title": "Percentage-based allocation",
+      "summary": "A route-to-queue rule can share its calls between up to five queues, with a Work allocation percentage for each that adds up to 100. Each call picks one of the queues by those percentages; overflow is checked after that.",
+      "learn": {
+        "title": "Configure route-to-queue rules",
+        "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/configure-route-to-queue-rules#percentage-based-allocation-of-work-to-queues",
+        "date": "2026-05-08",
+        "checkedOn": "2026-11-11",
+        "quote": "When you configure this feature, the system picks a queue from the available list of queues in the route-to-queue rule, as per the configured percentages."
+      }
     }
   ]
 }

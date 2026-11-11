@@ -15,7 +15,8 @@ import { COLUMNS as CHANNEL_COLUMNS } from "@toolbox/voice-channel-builder/src/t
 import { COLUMNS as WORKSTREAM_COLUMNS } from "@toolbox/voice-workstream-builder/src/template";
 import { CAPACITY_FORMAT, NOTIFICATION, PRESENCES, WORK_DISTRIBUTION } from "@toolbox/voice-workstream-builder/src/voiceSchema";
 import { parseDecisionXml } from "@toolbox/visual-routing-tester/src/ruleXml";
-import { ASSIGNMENT_LABELS, isOutbound, outboundProfiles, QUEUE_TYPE_LABELS, routeToQueueRuleset, simpleRule } from "../admin/actions";
+import { ASSIGNMENT_LABELS, isOutbound, outboundProfiles, QUEUE_TYPE_LABELS, routeToQueueRuleset } from "../admin/actions";
+import { simpleRule } from "../admin/rules";
 import { skillRules } from "../calls/skills";
 import { Row, Store } from "../simulator/store";
 
