@@ -8,6 +8,7 @@ import { describe as describeOverflow } from "@toolbox/voicemail-builder/src/ove
 import { isWithinOperatingHours } from "@toolbox/visual-routing-tester/src/operatingHours";
 import { cleanId, newGuid, Row, Store } from "../simulator/store";
 import type { Routing } from "./routing";
+import { identificationText, recordCaller } from "./customers";
 import { channelOfNumber } from "../admin/actions";
 
 // A call, step by step (manual 5.2): number → voice channel → workstream → IVR answers → route-to-queue
@@ -35,6 +36,8 @@ export interface CallResult {
 
 export interface CallRequest {
   dial: string;
+  // The number the caller calls from, used to identify the customer (customers.ts). Optional.
+  from?: string;
   // The caller's answers to the IVR, by context variable name.
   answers: Record<string, string>;
   // When the call comes in, in the contact center's own local time. Without it, operating hours aren't
@@ -190,6 +193,7 @@ export async function placeCall(store: Store, request: CallRequest, options: { r
   if (options.record && outcome === "Agent") {
     const now = options.now ?? new Date();
     out.workItemId = recordCall(store, request, workstream.msdyn_liveworkstreamid, queueId, now);
+    if (request.from) steps.push({ what: "Customer", detail: identificationText(recordCaller(store, out.workItemId, request.from)), status: "ok" });
     if (options.routing) {
       options.routing.cycle(now);
       steps.push(options.routing.step(out.workItemId));

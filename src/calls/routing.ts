@@ -77,6 +77,17 @@ export class Routing {
     this.cycle(now);
   }
 
+  // A supervisor's transfer to the learner: offered to them like a routed call (Learn: the transfer
+  // completes when the representative selects Accept or Reject).
+  offerToLearner(workItemId: string): void {
+    if (this.learnerAgent) this.offers.add(workItemId);
+  }
+
+  // A call that's assigned, transferred or closed some other way isn't offered any more.
+  withdraw(workItemId: string): void {
+    this.offers.delete(workItemId);
+  }
+
   // Signing out or switching representative: open offers go back to the queue.
   signInAs(agentId: string | undefined): void {
     this.offers.clear();

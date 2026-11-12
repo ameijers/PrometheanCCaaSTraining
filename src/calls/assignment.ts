@@ -170,6 +170,18 @@ export function endCall(store: Store, workItemId: string, at: string): void {
 // Closed: capacity is released.
 export function closeCall(store: Store, workItemId: string, at: string): void {
   store.update("msdyn_ocliveworkitem", workItemId, { statecode: 1, statuscode: STATUS.closed, modifiedon: at });
+  release(store, workItemId, at);
+}
+
+// The representative's capacity for this call is released (the call closes or moves on to someone else).
+export function release(store: Store, workItemId: string, at: string): void {
   for (const a of store.table("training_assignment").filter((x) => x.workitemid === workItemId && !x.releasedon)) store.update("training_assignment", a.training_assignmentid, { releasedon: at });
+}
+
+// Back to a queue, unassigned and Open: a transfer to a queue, or a transfer to a representative who
+// hasn't accepted yet.
+export function requeue(store: Store, workItemId: string, queueId: string, at: string): void {
+  release(store, workItemId, at);
+  store.update("msdyn_ocliveworkitem", workItemId, { _msdyn_cdsqueueid_value: queueId, _msdyn_activeagentid_value: null, statuscode: STATUS.open, modifiedon: at });
 }
 

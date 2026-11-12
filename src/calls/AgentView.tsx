@@ -2,38 +2,44 @@
 // SPDX-License-Identifier: MIT
 
 import { Fragment, useEffect, useState } from "react";
-import { QUEUE_TYPES } from "@toolbox/queue-builder/src/queueSchema";
-import { Button, Checkbox, Dropdown, Field, Input, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger, MessageBar, MessageBarBody, Option } from "@fluentui/react-components";
+import { Button, Field, Input, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger, MessageBar, MessageBarBody, Tab, TabList, Dropdown, Option } from "@fluentui/react-components";
 import { useStoreVersion, useTraining } from "../shell/context";
 import { PRESENCE_NAMES, presenceId } from "../simulator/seeds/presence";
 import { Row, Store } from "../simulator/store";
 import { closeCall, endCall, representatives, STATUS } from "./assignment";
 import { iso } from "./clock";
+import { assignedAt, saveSummary, sentiment, summaryOf, transcript } from "./conversation";
+import { customerName, customerOfCall, earlierCalls, identificationText, identifyCaller, callInfo } from "./customers";
+import { transfer } from "./supervisor";
+import { duration, OngoingDashboard, RealtimeAnalytics, STATUS_NAME, TargetDialog, Transcript } from "./SupervisorViews";
 
 // The representative's and supervisor's app (manual 5.3), shaped like the Copilot Service workspace
-// (looked at in academyexperiment, 2026-11-12; docs/workspace-check.md): a top bar with presence, session
-// tabs (Home, Inbox, one per call), an incoming call notification, and a call session with the
-// Communication Panel and the Active Conversation form. Home holds the supervisor's Omnichannel Ongoing
-// Conversations Dashboard. Microsoft's names, our own look, and a training simulation banner.
+// (looked at in academyexperiment, 2026-11-12; docs/workspace-check.md), Contact Center parts only:
+// - a top bar with presence and the account menu; session tabs (Home, Inbox, one per call);
+// - the Inbox (My work items) and the calls waiting in the representative's queues;
+// - an incoming call notification (Accept, Reject) with the identified customer;
+// - a call session: the Communication Panel (call controls, live transcript), the Active Conversation form
+//   (customer, timeline of earlier conversations, phone call details, IVR answers) and Copilot
+//   (Summarize conversation);
+// - Home: the supervisor's Omnichannel Ongoing Conversations Dashboard and Omnichannel real-time analytics
+//   (SupervisorViews.tsx).
 //
 // Call controls follow Learn (Use agent dashboard and call controls in the voice channel): Mute, Hold,
-// Consult, Transfer, End; "To end the call after you select End, you must close the session."
-// Simplified: Consult and Transfer aren't simulated, there's no notification timeout, no transcript and
-// no sentiment, and the customer isn't identified. Closing a session is only offered after End.
+// Consult, Transfer, End; "To end the call after you select End, you must close the session." Hide
+// Transcript / Show Transcript "persists across all calls and sessions".
+// Simplified: Consult isn't simulated, there's no notification timeout, the transcript and sentiment are
+// scripted (conversation.ts), and a session can only be closed after End.
 
 const LEARN = "https://learn.microsoft.com/en-us/dynamics365/contact-center/use/voice-channel-agent-experience";
 
 type Place = { kind: "home" } | { kind: "inbox" } | { kind: "session"; id: string };
+type Dashboard = "ongoing" | "realtime";
 
 const PRESENCE_COLOR: Record<string, string> = { Available: "#107c10", Busy: "#c50f1f", "Busy - DND": "#c50f1f", Away: "#eaa300", Offline: "#8a8886" };
-const STATUS_NAME: Record<number, string> = { [STATUS.open]: "Open", [STATUS.active]: "Active", [STATUS.wrapUp]: "Wrap-up", [STATUS.closed]: "Closed" };
-
-// 75 seconds as 00:01:15.
-const duration = (ms: number) => {
-  const s = Math.max(0, Math.floor(ms / 1000));
-  return [Math.floor(s / 3600), Math.floor(s / 60) % 60, s % 60].map((n) => String(n).padStart(2, "0")).join(":");
-};
+const SENTIMENT_ICON: Record<string, string> = { Positive: "🙂", Neutral: "😐", Negative: "🙁" };
 const initials = (name: string) => name.split(/\s+/).map((p) => p[0]).join("").slice(0, 2).toUpperCase();
+const hhmm = (t: number | string | undefined) => (t === undefined ? "" : new Date(t).toISOString().slice(11, 16));
+const toggle = (set: Set<string>, id: string) => { const n = new Set(set); if (n.has(id)) n.delete(id); else n.add(id); return n; };
 
 export function AgentView() {
   const { sim, clock, routing, explain } = useTraining();
@@ -41,9 +47,11 @@ export function AgentView() {
   const [, setTick] = useState(0);
   const [me, setMe] = useState<string | undefined>(routing.learnerAgent);
   const [place, setPlace] = useState<Place>({ kind: "home" });
+  const [dashboard, setDashboard] = useState<Dashboard>("ongoing");
   // Call controls that only change how the call looks here (nothing is heard in the training).
   const [muted, setMuted] = useState<Set<string>>(new Set());
   const [held, setHeld] = useState<Set<string>>(new Set());
+  const [showTranscript, setShowTranscript] = useState(true);
   useEffect(() => { const t = setInterval(() => setTick((n) => n + 1), 1000); return () => clearInterval(t); }, []);
   void version;
   const store = sim.store;
@@ -70,11 +78,11 @@ export function AgentView() {
   const offers = [...routing.offers].map((id) => items.find((w) => w.activityid === id)).filter(Boolean) as Row[];
   const mine = me ? items.filter((w) => w.statecode === 0 && w._msdyn_activeagentid_value === me) : [];
   const queues = me ? store.table("queuemembership").filter((m) => m.systemuserid === me).map((m) => store.find("queue", m.queueid)).filter(Boolean) as Row[] : [];
-  const waitingIn = (queueId: string) => items.filter((w) => w.statecode === 0 && w.statuscode === STATUS.open && !w._msdyn_activeagentid_value && w._msdyn_cdsqueueid_value === queueId).length;
+  const waiting = items.filter((w) => w.statecode === 0 && w.statuscode === STATUS.open && !w._msdyn_activeagentid_value && queues.some((q) => q.queueid === w._msdyn_cdsqueueid_value));
 
   const accept = (id: string) => { routing.accept(id, clock.now()); setPlace({ kind: "session", id }); };
   const session = place.kind === "session" ? mine.find((w) => w.activityid === place.id) : undefined;
-  // A session whose call was closed elsewhere (or a switch of representative) goes back to the Inbox.
+  // A session whose call was closed or moved elsewhere goes back to the Inbox.
   useEffect(() => { if (place.kind === "session" && !session) setPlace({ kind: "inbox" }); }, [place.kind, session]);
 
   const closeSession = (w: Row) => {
@@ -97,8 +105,8 @@ export function AgentView() {
             {people.map((u) => <Option key={u!.systemuserid} value={u!.systemuserid}>{u!.fullname}</Option>)}
           </Dropdown>
         </span>
-        {me && <span className="ws-queues">My queues: {queues.length ? queues.map((q) => `${q.name} (${waitingIn(q.queueid)} waiting)`).join(", ") : "none"}</span>}
-        <span className="admin-muted">Training: call one of these queues on the Phone tab to get a call here.</span>
+        {me && <span className="ws-queues">My queues: {queues.length ? queues.map((q) => q.name).join(", ") : "none"}</span>}
+        <span className="admin-muted">Training: call one of these queues on the Phone tab to get a call here. Home has the supervisor's views.</span>
       </div>
 
       <div className="ws-top">
@@ -139,14 +147,13 @@ export function AgentView() {
       {!me ? (
         <div className="ws-empty"><p>Choose a representative under <strong>Sign in as</strong> to open their workspace.</p></div>
       ) : (
-        <>
-          <div className="ws-stage">
+        <div className="ws-stage">
           <nav className="ws-sessions" aria-label="Sessions">
             <button className={place.kind === "home" ? "active" : ""} onClick={() => setPlace({ kind: "home" })}>Home</button>
             <button className={place.kind === "inbox" ? "active" : ""} onClick={() => setPlace({ kind: "inbox" })}>Inbox</button>
             {mine.map((w) => (
               <span key={w.activityid} className={`ws-session${place.kind === "session" && place.id === w.activityid ? " active" : ""}`}>
-                <button onClick={() => setPlace({ kind: "session", id: w.activityid })}>📞 {customerOf(w)}</button>
+                <button onClick={() => setPlace({ kind: "session", id: w.activityid })}>📞 {customerName(store, w)}</button>
                 <button className="ws-close" aria-label="Close session" disabled={w.statuscode !== STATUS.wrapUp}
                   title={w.statuscode === STATUS.wrapUp ? "Close session: closes the conversation" : "End the call first"} onClick={() => closeSession(w)}>✕</button>
               </span>
@@ -158,58 +165,55 @@ export function AgentView() {
             : !offers.length && !mine.length && <MessageBar intent="info"><MessageBarBody>No calls for you right now. {whyNoCalls(store, me)}</MessageBarBody></MessageBar>}
 
           <div className="ws-body">
-            {place.kind === "home" && <OngoingDashboard store={store} now={now} />}
-            {place.kind === "inbox" && <Inbox store={store} items={mine} now={now} open={(id) => setPlace({ kind: "session", id })} />}
+            {place.kind === "home" && (
+              <div>
+                <TabList size="small" selectedValue={dashboard} onTabSelect={(_, d) => setDashboard(d.value as Dashboard)} className="ws-dashboard-tabs">
+                  <Tab value="ongoing">Omnichannel Ongoing Conversations Dashboard</Tab>
+                  <Tab value="realtime">Omnichannel real-time analytics</Tab>
+                </TabList>
+                {dashboard === "ongoing" ? <OngoingDashboard store={store} routing={routing} now={now} me={me} /> : <RealtimeAnalytics store={store} routing={routing} now={now} me={me} />}
+              </div>
+            )}
+            {place.kind === "inbox" && <Inbox store={store} items={mine} waiting={waiting} now={now} open={(id) => setPlace({ kind: "session", id })} />}
             {session && (
-              <CallSession store={store} w={session} now={now} muted={muted.has(session.activityid)} held={held.has(session.activityid)}
+              <CallSession store={store} w={session} now={now} me={me} muted={muted.has(session.activityid)} held={held.has(session.activityid)} showTranscript={showTranscript}
+                toggleTranscript={() => setShowTranscript(!showTranscript)}
                 toggleMute={() => setMuted(toggle(muted, session.activityid))} toggleHold={() => setHeld(toggle(held, session.activityid))}
-                end={() => { endCall(store, session.activityid, iso(clock.now())); explain("capacity-profile"); }}
+                end={() => { endCall(store, session.activityid, iso(clock.now())); saveSummary(store, store.find("msdyn_ocliveworkitem", session.activityid)!, now); explain("capacity-profile"); }}
+                transfer={(t) => { transfer(store, routing, session.activityid, t, now); setPlace({ kind: "inbox" }); }}
                 close={() => closeSession(session)} why={routing.decision(session.activityid)} />
             )}
           </div>
 
-          {offers.map((w) => (
-            <div key={w.activityid} className="ws-notification" role="alertdialog" aria-label="Incoming call">
-              <p className="ws-notification-title">📞 Incoming call</p>
-              <p className="admin-tight"><strong>{customerOf(w)}</strong></p>
-              <p className="admin-tight">Queue: {store.find("queue", w._msdyn_cdsqueueid_value)?.name}</p>
-              {answersOf(store, w.activityid).length > 0 && <p className="admin-tight admin-muted">{answersOf(store, w.activityid).map(([n, v]) => `${n}: ${v}`).join(" · ")}</p>}
-              <p className="admin-muted admin-tight ws-why">Training: {routing.decision(w.activityid)?.method}: {routing.decision(w.activityid)?.why}</p>
-              <div className="ws-notification-actions">
-                <Button appearance="primary" onClick={() => accept(w.activityid)}>Accept</Button>
-                <Button onClick={() => routing.reject(w.activityid, clock.now())}>Reject</Button>
+          {offers.map((w) => {
+            const found = identifyCaller(store, callInfo(store, w.activityid)?.fromnumber);
+            return (
+              <div key={w.activityid} className="ws-notification" role="alertdialog" aria-label="Incoming call">
+                <p className="ws-notification-title">📞 Incoming call</p>
+                <p className="admin-tight"><strong>{customerName(store, w)}</strong></p>
+                <p className="admin-tight">Queue: {store.find("queue", w._msdyn_cdsqueueid_value)?.name}</p>
+                {answersOf(store, w.activityid).length > 0 && <p className="admin-tight admin-muted">{answersOf(store, w.activityid).map(([n, v]) => `${n}: ${v}`).join(" · ")}</p>}
+                <p className="admin-muted admin-tight ws-why">Training: {identificationText(found)} {routing.decision(w.activityid)?.method ? `${routing.decision(w.activityid)?.method}: ${routing.decision(w.activityid)?.why}` : "A transfer to you."}</p>
+                <div className="ws-notification-actions">
+                  <Button appearance="primary" onClick={() => accept(w.activityid)}>Accept</Button>
+                  <Button onClick={() => routing.reject(w.activityid, clock.now())}>Reject</Button>
+                </div>
               </div>
-            </div>
-          ))}
-          </div>
-        </>
+            );
+          })}
+        </div>
       )}
     </div>
   );
-}
-
-function toggle(set: Set<string>, id: string): Set<string> {
-  const next = new Set(set);
-  if (next.has(id)) next.delete(id); else next.add(id);
-  return next;
-}
-
-// The caller isn't identified in the training: no customer records are matched to phone numbers.
-function customerOf(_w: Row): string {
-  return "Unknown caller";
 }
 
 function answersOf(store: Store, id: string): [string, string][] {
   return store.table("msdyn_ocliveworkitemcontextitem").filter((c) => c._msdyn_ocliveworkitemid_value === id).map((c) => [String(c.msdyn_name), String(c.msdyn_value)]);
 }
 
-function assignedAt(store: Store, id: string): number | undefined {
-  const a = store.table("training_assignment").filter((x) => x.workitemid === id).sort((x, y) => String(y.assignedon).localeCompare(String(x.assignedon)))[0];
-  return a ? new Date(a.assignedon).getTime() : undefined;
-}
-
-// Inbox: My work items, as in the workspace (customer, queue, how long, when).
-function Inbox({ store, items, now, open }: { store: Store; items: Row[]; now: number; open: (id: string) => void }) {
+// Inbox: My work items, as in the workspace (customer, queue, how long, sentiment), and the calls waiting in
+// the representative's queues.
+function Inbox({ store, items, waiting, now, open }: { store: Store; items: Row[]; waiting: Row[]; now: number; open: (id: string) => void }) {
   return (
     <div className="ws-inbox">
       <div className="ws-card ws-inbox-list">
@@ -218,51 +222,75 @@ function Inbox({ store, items, now, open }: { store: Store; items: Row[]; now: n
           <button key={w.activityid} className="ws-item" onClick={() => open(w.activityid)}>
             <span className="ws-item-icon" aria-hidden="true">📞</span>
             <span>
-              <strong>{customerOf(w)}</strong><br />
+              <strong>{customerName(store, w)}</strong><br />
               <span className="ws-link">Queue: {store.find("queue", w._msdyn_cdsqueueid_value)?.name}</span><br />
-              <span className="admin-muted">{duration(now - (assignedAt(store, w.activityid) ?? now))} · {STATUS_NAME[Number(w.statuscode)]}</span>
+              <span className="admin-muted">{duration(now - (assignedAt(store, w.activityid) ?? now))} · {sentiment(store, w, now) ?? "---"} · {STATUS_NAME[Number(w.statuscode)]}</span>
             </span>
           </button>
         )) : <p className="admin-muted">No work items.</p>}
         <p className="admin-muted ws-count">{items.length} items</p>
       </div>
-      <div className="ws-card ws-inbox-empty"><p className="admin-muted">Select an item to work on.</p></div>
+      <div className="ws-card">
+        <p className="ws-card-title">Waiting in my queues</p>
+        {waiting.length ? (
+          <table className="ws-table">
+            <thead><tr><th>Customer</th><th>Queue</th><th>Waiting</th></tr></thead>
+            <tbody>{waiting.map((w) => <tr key={w.activityid}><td>{customerName(store, w)}</td><td>{String(store.find("queue", w._msdyn_cdsqueueid_value)?.name ?? "")}</td><td>{duration(now - Date.parse(w.createdon))}</td></tr>)}</tbody>
+          </table>
+        ) : <p className="admin-muted">Nobody is waiting in your queues.</p>}
+        <p className="admin-muted admin-tight ws-why">Training view: routing offers these calls to the representatives of the queue as they become free.</p>
+      </div>
     </div>
   );
 }
 
-// A call session: the Communication Panel (call controls) and the Active Conversation form.
+// A call session: the Communication Panel (call controls, transcript), the Active Conversation form and
+// Copilot.
 function CallSession(props: {
-  store: Store; w: Row; now: number; muted: boolean; held: boolean; toggleMute(): void; toggleHold(): void; end(): void; close(): void;
+  store: Store; w: Row; now: number; me: string; muted: boolean; held: boolean; showTranscript: boolean; toggleTranscript(): void;
+  toggleMute(): void; toggleHold(): void; end(): void; close(): void; transfer(t: import("./supervisor").Target): void;
   why?: { method: string; why: string };
 }) {
   const { store, w, now, muted, held } = props;
+  const [transferring, setTransferring] = useState(false);
+  // The summary card shows the latest summary until it's closed; a new one (Summarize, End) shows again.
+  const [closedFor, setClosedFor] = useState<string>();
   const active = w.statuscode === STATUS.active;
   const started = assignedAt(store, w.activityid);
   const queue = store.find("queue", w._msdyn_cdsqueueid_value);
   const workstream = store.find("msdyn_liveworkstream", w._msdyn_liveworkstreamid_value);
   const answers = answersOf(store, w.activityid);
-  const notSimulated = "Not simulated in the training";
+  const customer = customerOfCall(store, w);
+  const found = identifyCaller(store, callInfo(store, w.activityid)?.fromnumber);
+  const mood = sentiment(store, w, now);
+  const lines = transcript(store, w, now);
+  const info = callInfo(store, w.activityid);
+  const shownSummary = info?.summary && String(info.summarizedon) !== closedFor ? String(info.summary) : undefined;
+  const account = customer?.kind === "contact" && customer.row._parentcustomerid_value ? store.find("account", customer.row._parentcustomerid_value) : undefined;
+  const history = earlierCalls(store, w);
   return (
     <div className="ws-session-body">
       <section className="ws-card ws-panel" aria-label="Communication Panel">
         <p className="ws-card-title">Communication Panel</p>
         <div className="ws-caller">
-          <span className="ws-avatar" aria-hidden="true">?</span>
-          <span><strong>{customerOf(w)}</strong><br /><span className="admin-muted">{active ? (held ? "On hold" : "On the call") : "Call ended"} · {duration(now - (started ?? now))}</span></span>
+          <span className="ws-avatar" aria-hidden="true">{customer ? initials(customer.name) : "?"}</span>
+          <span><strong>{customerName(store, w)}</strong><br />
+            <span className="admin-muted">{active ? (held ? "On hold" : "On the call") : "Call ended"} · {duration(now - (started ?? now))}{mood ? ` · ${SENTIMENT_ICON[mood]} ${mood}` : ""}</span></span>
         </div>
         <div className="ws-controls" role="toolbar" aria-label="Call controls">
           <button disabled={!active} aria-pressed={muted} onClick={props.toggleMute}>🎙️<span>{muted ? "Unmute" : "Mute"}</span></button>
           <button disabled={!active} aria-pressed={held} onClick={props.toggleHold}>⏸️<span>{held ? "Unhold" : "Hold"}</span></button>
-          <button disabled title={notSimulated}>👥<span>Consult</span></button>
-          <button disabled title={notSimulated}>↪️<span>Transfer</span></button>
+          <button disabled title="Not simulated in the training">👥<span>Consult</span></button>
+          <button disabled={!active} onClick={() => setTransferring(true)}>↪️<span>Transfer</span></button>
           <button className="ws-end" disabled={!active} onClick={props.end}>📵<span>End</span></button>
         </div>
         <div className="ws-messages">
-          <p className="ws-card-title">System Messages</p>
-          {started && <p className="admin-tight">{new Date(started).toISOString().slice(11, 16)} You accepted the call.</p>}
-          {!active && <p className="admin-tight">The call ended. Wrap-up: close the session to close the conversation.</p>}
-          <p className="admin-muted admin-tight">The transcript and sentiment aren't simulated.</p>
+          <div className="ws-conversations-head">
+            <p className="ws-card-title">Transcript</p>
+            <Button size="small" appearance="subtle" onClick={props.toggleTranscript}>{props.showTranscript ? "Hide Transcript" : "Show Transcript"}</Button>
+          </div>
+          {props.showTranscript && <Transcript lines={lines} />}
+          <p className="admin-muted admin-tight ws-why">Simulated: nobody speaks in the training, so the transcript is a short script and sentiment follows how long the caller waited.</p>
         </div>
       </section>
 
@@ -275,15 +303,33 @@ function CallSession(props: {
             <Button size="small" appearance="primary" onClick={props.close}>Close session</Button>
           </MessageBarBody></MessageBar>
         )}
-        <Field label="Search customer"><Input disabled placeholder="No customer linked" /></Field>
+        {customer ? (
+          <>
+            <p className="ws-section">Customer</p>
+            <dl className="ws-fields">
+              <dt>{customer.kind === "contact" ? "Contact" : "Account"}</dt><dd className="ws-link">{customer.name}</dd>
+              {account && <><dt>Company</dt><dd>{String(account.name)}</dd></>}
+              <dt>{customer.kind === "contact" ? "Mobile Phone" : "Main Phone"}</dt><dd>{String(customer.kind === "contact" ? customer.row.mobilephone : customer.row.telephone1)}</dd>
+              {customer.row.emailaddress1 && <><dt>Email</dt><dd>{String(customer.row.emailaddress1)}</dd></>}
+            </dl>
+            <p className="ws-section">Timeline</p>
+            {history.length ? (
+              <ul className="ws-timeline">
+                {history.map((h) => <li key={h.activityid}><strong>{hhmm(h.createdon)} · {String(store.find("queue", h._msdyn_cdsqueueid_value)?.name ?? "")} · {STATUS_NAME[Number(h.statuscode)]}</strong>{summaryOf(store, h.activityid) && <span className="admin-muted"> {summaryOf(store, h.activityid)!.split("\n").find((l) => l.startsWith("Issue"))}</span>}</li>)}
+              </ul>
+            ) : <p className="admin-muted">No earlier conversations.</p>}
+          </>
+        ) : (
+          <Field label="Search customer" hint={found.status === "no number" ? "The number was withheld." : identificationText(found)}><Input disabled placeholder="No customer linked" /></Field>
+        )}
         <p className="ws-section">Phone call details</p>
         <dl className="ws-fields">
           <dt>Engagement channel</dt><dd>Voice call</dd>
+          <dt>Phone Number</dt><dd>{String(callInfo(store, w.activityid)?.fromnumber || "Withheld")}</dd>
           <dt>Workstream</dt><dd>{String(workstream?.msdyn_name ?? "")}</dd>
           <dt>Queue</dt><dd>{String(queue?.name ?? "")}</dd>
-          <dt>Waiting time</dt><dd>{started ? duration(started - new Date(w.createdon).getTime()) : ""}</dd>
-          <dt>Start time</dt><dd>{started ? new Date(started).toISOString().slice(11, 16) : ""}</dd>
-          <dt>Subject</dt><dd>{String(w.msdyn_title ?? "")}</dd>
+          <dt>Waiting time</dt><dd>{started ? duration(started - Date.parse(w.createdon)) : ""}</dd>
+          <dt>Start time</dt><dd>{hhmm(started)}</dd>
         </dl>
         <p className="ws-section">Context from the IVR</p>
         {answers.length
@@ -291,55 +337,27 @@ function CallSession(props: {
           : <p className="admin-muted">No answers were captured.</p>}
         {props.why && <p className="admin-muted ws-why">Training: why you got this call. {props.why.method}: {props.why.why}</p>}
       </section>
-    </div>
-  );
-}
 
-// The supervisor's Omnichannel Ongoing Conversations Dashboard: Filter by queues, and the conversations
-// that are open, active or in wrap-up. Monitor and Copy URL aren't simulated.
-function OngoingDashboard({ store, now }: { store: Store; now: number }) {
-  const [picked, setPicked] = useState<Set<string>>(new Set());
-  const [search, setSearch] = useState("");
-  const queues = store.table("queue").filter((q) => q.msdyn_queuetype === QUEUE_TYPES.Voice || store.table("msdyn_ocliveworkitem").some((w) => w._msdyn_cdsqueueid_value === q.queueid))
-    .sort((a, b) => String(a.name).localeCompare(String(b.name)));
-  const shown = queues.filter((q) => String(q.name).toLowerCase().includes(search.toLowerCase()));
-  const rows = store.table("msdyn_ocliveworkitem").filter((w) => w.statecode === 0 && (!picked.size || picked.has(w._msdyn_cdsqueueid_value)));
-  const agent = (w: Row) => w._msdyn_activeagentid_value ? String(store.find("systemuser", w._msdyn_activeagentid_value)?.fullname ?? "") : "";
-  void now;
-  return (
-    <div>
-      <p className="ws-dashboard-title">Omnichannel Ongoing Conversations Dashboard</p>
-      <div className="ws-dashboard">
-        <div className="ws-card ws-filter">
-          <p className="ws-card-title">Filter by queues</p>
-          <Input size="small" placeholder="Search" value={search} onChange={(_, d) => setSearch(d.value)} aria-label="Search queues" />
-          <p className="admin-muted admin-tight">{shown.length} records</p>
-          <div className="ws-filter-list">
-            {shown.map((q) => <Checkbox key={q.queueid} label={String(q.name)} checked={picked.has(q.queueid)} onChange={() => setPicked(toggle(picked, q.queueid))} />)}
+      <section className="ws-card ws-copilot" aria-label="Copilot">
+        <p className="ws-card-title">✨ Copilot</p>
+        <Button size="small" onClick={() => saveSummary(store, w, now)}>Summarize conversation</Button>
+        {shownSummary ? (
+          <div className="ws-summary">
+            <ul>{shownSummary.split("\n").map((l) => <li key={l}>{l}</li>)}</ul>
+            <span className="ws-toolbar">
+              <Button size="small" appearance="subtle" onClick={() => void navigator.clipboard?.writeText(shownSummary).catch(() => undefined)}>Copy</Button>
+              <Button size="small" appearance="subtle" onClick={() => setClosedFor(String(info?.summarizedon))}>Close</Button>
+            </span>
           </div>
-        </div>
-        <div className="ws-card ws-conversations">
-          <div className="ws-conversations-head">
-            <p className="ws-card-title">Conversations</p>
-            <span><Button size="small" appearance="subtle" disabled title="Not simulated in the training">Monitor</Button><Button size="small" appearance="subtle" disabled title="Not simulated in the training">Copy URL</Button></span>
-          </div>
-          <div className="ws-table-wrap">
-            <table className="ws-table">
-              <thead><tr><th>Customer</th><th>Subject</th><th>Queue</th><th>Channel</th><th>Status Reason</th><th>Customer Sentiment</th><th>Representative</th></tr></thead>
-              <tbody>
-                {rows.map((w) => (
-                  <tr key={w.activityid}>
-                    <td>{customerOf(w)}</td><td>{String(w.msdyn_title ?? "")}</td><td>{String(store.find("queue", w._msdyn_cdsqueueid_value)?.name ?? "")}</td>
-                    <td>Voice call</td><td>{STATUS_NAME[Number(w.statuscode)]}</td><td>---</td><td>{agent(w) || "---"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {!rows.length && <p className="admin-muted">We didn't find anything to show here.</p>}
-          </div>
-          <p className="admin-muted admin-tight">Representative is the training's extra column: who has the call. Sentiment isn't simulated.</p>
-        </div>
-      </div>
+        ) : <p className="admin-muted">Copilot also summarizes the call by itself when you transfer or end it.</p>}
+        <p className="admin-muted admin-tight ws-why">Simulated: the training writes the summary from the call's data, in Copilot's structured format. In the product Copilot writes it from the transcript.</p>
+      </section>
+
+      {transferring && (
+        <TargetDialog store={store} title="Transfer" w={w} me={props.me}
+          intro="Transfer the call to a representative or a queue. Copilot summarizes the call for whoever gets it."
+          close={() => setTransferring(false)} done={(t) => { setTransferring(false); props.transfer(t); }} />
+      )}
     </div>
   );
 }

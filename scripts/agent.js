@@ -59,21 +59,34 @@ async function main() {
     await click("[role=tab]", "Phone");
     await page.$eval(".phone-pad input", (e) => e.select());
     await page.keyboard.type(dial);
+    // Call from Sophie Turner's mobile, so the workspace identifies her.
+    await page.evaluate(() => {
+      const select = [...document.querySelectorAll(".phone-pad select")].find((s) => [...s.options].some((o) => o.text === "Number withheld"));
+      const option = [...select.options].find((o) => o.text.includes("Sophie Turner"));
+      select.value = option.value;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
     await click(".phone-ivr label", "Returns");
     await click(".phone-pad button", "Call");
     await waitText(".phone-steps", "offered to you in the agent view");
     await shot("call-offered");
 
     await click("[role=tab]", "Agent");
-    await waitText(".ws-notification", "Incoming call");
+    await waitText(".ws-notification", "Sophie Turner");
     await shot("incoming-call");
     await click(".ws-notification button", "Accept");
     await waitText(".ws-form .phone-badge", "Active");
+    await waitText(".ws-transcript", "Hi, this is Sophie");
+    await click(".ws-copilot button", "Summarize conversation");
+    await waitText(".ws-summary", "Customer: Sophie Turner");
     await shot("on-the-call");
     // The supervisor's view of it: Home, the Omnichannel Ongoing Conversations Dashboard.
     await click(".ws-sessions button", "Home");
     await waitText(".ws-table", "Active");
     await shot("ongoing-conversations");
+    await click("[role=tab]", "Omnichannel real-time analytics");
+    await waitText(".ws-kpis", "Total conversations offered");
+    await shot("realtime-summary");
 
     await click("[role=tab]", "Diagram");
     await new Promise((r) => setTimeout(r, 6000));
@@ -89,7 +102,7 @@ async function main() {
     await shot("diagram-live");
 
     await click("[role=tab]", "Agent");
-    await click(".ws-session button", "📞 Unknown caller");
+    await click(".ws-session button", "📞 Sophie Turner");
     await page.click(".ws-controls .ws-end");
     await waitText(".ws-form .phone-badge", "Wrap-up");
     await shot("wrap-up");

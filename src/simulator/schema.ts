@@ -228,6 +228,21 @@ const DEFS: Record<string, Def> = {
     msdyn_name: S, msdyn_value: S, msdyn_datatype: O(), createdon: D, msdyn_ocliveworkitemid: L("msdyn_ocliveworkitem")
   }],
 
+  // Customers (Learn, Identify customers automatically: a call is matched on a contact's mobile phone or an
+  // account's phone). The Toolbox doesn't read these; the training's workspace does.
+  account: ["accounts", "accountid", "name", { name: S, telephone1: S, statecode: I }],
+  contact: ["contacts", "contactid", "fullname", {
+    fullname: S, firstname: S, lastname: S, mobilephone: S, emailaddress1: S, statecode: I, parentcustomerid: L("account")
+  }],
+
+  // NOT a Dataverse table: what the training knows about a call besides the live work item: the number it
+  // came from, the customer it was matched to, the simulated sentiment, the Copilot summary, and whether a
+  // supervisor joined. The platform keeps these elsewhere (the conversation's customer, transcript and
+  // summary records), with columns the training doesn't need to copy.
+  training_call: ["training_calls", "training_callid", undefined, {
+    workitemid: G, fromnumber: S, customerkind: S, customerid: G, summary: M, summarizedon: D, supervisorjoined: B
+  }],
+
   // NOT a Dataverse table: the training's own record of each assignment. Unified routing keeps "the last
   // assignment time" per queue and "the time since last capacity is released" for its round robin and
   // least active methods (Learn, Assignment methods for queues), in tables whose columns Learn doesn't
