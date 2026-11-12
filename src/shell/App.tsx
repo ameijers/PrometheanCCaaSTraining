@@ -29,7 +29,7 @@ import { canPack, pack, unpack } from "../classroom/work";
 import { Session } from "../simulator/persist";
 import { aiScenarios } from "../scenarios/client";
 import { tourAsked } from "@toolbox/environment-3d-explorer/src/tour";
-import { TourBar, useTrainingTour } from "./Tour";
+import { TourCard, useTrainingTour } from "./Tour";
 import { CallAnswer, ScenarioPanel } from "../scenarios/ScenarioPanel";
 import { Talk } from "../scenarios/BuildExercise";
 import { Scenario } from "../scenarios/scenario";
@@ -343,7 +343,7 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
         {classOpen && member && <ClassDialog member={member} onClose={() => setClassOpen(false)}
           onLeave={() => { setMembership(undefined); setMember(undefined); setClassScenarios([]); setClassOpen(false); }} />}
         {trainer && <TrainerView all={allScenarios} initial={trainer} onClose={() => setTrainer(undefined)} />}
-        <TourBar tour={tour} />
+        <TourCard tour={tour} />
       </div>
       </FluentProvider>
     </TrainingContext.Provider>
