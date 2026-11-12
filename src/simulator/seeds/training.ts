@@ -3,17 +3,18 @@
 
 import { Rows } from "../store";
 import { demoSeed } from "./demo";
+import { withCustomers } from "./customers";
 import { withHours } from "./hours";
 import { withPresence } from "./presence";
 import { platformRows, ROLE_NAMES, routingContracts } from "./platform";
 
 // The environment a learner starts in: the Toolbox's demo contact center (demo.ts) plus what every
-// Contact Center environment has (platform.ts).
+// Contact Center environment has (platform.ts), and a few customers who call (customers.ts).
 
 const id = (prefix: string, n: number) => `${prefix.padStart(8, "0")}-0000-4000-8000-${String(n).padStart(12, "0")}`;
 
 export function trainingSeed(): Rows {
-  return withPresence(withHours(ivrBots(uniqueNames(withExtras(demoSeed(), [platformRows()])))));
+  return withCustomers(withPresence(withHours(ivrBots(uniqueNames(withExtras(demoSeed(), [platformRows()]))))));
 }
 
 // The demo has an IVR bot on Customer Service only. Lessons that start at the IVR can use any line that

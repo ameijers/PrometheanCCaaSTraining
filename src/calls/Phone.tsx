@@ -10,6 +10,8 @@ import { Ivr } from "../lessons/checks";
 import { aiCaller, aiStatus, Caller } from "../scenarios/client";
 import { Store } from "../simulator/store";
 import { CallResult, CallTime, DAYS, describeTime, endingOf, lineOf, placeCall } from "./engine";
+import { callerNumbers } from "./customers";
+import { UNKNOWN_NUMBER } from "../simulator/seeds/customers";
 import { canSpeak, Line, setSpeechOn, speak, speechOn } from "./speech";
 
 // The phone: dial a simulated number, answer the IVR, and follow the call step by step. Numbers are
@@ -40,6 +42,8 @@ export function Phone({ line }: { line?: { dial: string; label: string; ivr?: Iv
   const [answer, setAnswer] = useState("");
   const [other, setOther] = useState("");
   const [day, setDay] = useState("clock");
+  // The number the caller calls from: matched to a customer when it's theirs (customers.ts).
+  const [from, setFrom] = useState("");
   const [time, setTime] = useState("10:00");
   const [calls, setCalls] = useState<{ dial: string; answer: string; at?: CallTime; caller?: Caller; result: CallResult }[]>([]);
   const [busy, setBusy] = useState(false);
@@ -64,7 +68,7 @@ export function Phone({ line }: { line?: { dial: string; label: string; ivr?: Iv
       const value = caller ? caller.choice : answer === OTHER ? other.trim() : answer;
       const answers = ivr && value ? { [ivr.variable]: value } : {};
       // A call now goes through routing to a representative; a call at another time only shows where it would go.
-      const result = await placeCall(sim.store, { dial, answers, at }, day === "clock" ? { record: true, now: clock.now(), routing } : { record: false });
+      const result = await placeCall(sim.store, { dial, from: from || undefined, answers, at }, day === "clock" ? { record: true, now: clock.now(), routing } : { record: false });
       const label = ivr?.options.find((o) => o.value === value)?.label ?? value;
       setCalls((c) => [{ dial, answer: label, at, caller, result }, ...c]);
       if (aloud) {
@@ -100,6 +104,13 @@ export function Phone({ line }: { line?: { dial: string; label: string; ivr?: Iv
         <h2 className="phone-title">Phone</h2>
         <Field label="Number to call" hint={line && dial === line.dial ? line.label : undefined}>
           <Input value={dial} onChange={(_, v) => { setDial(v.value); setAnswer(""); }} />
+        </Field>
+        <Field label="Call from" hint="The customer's number. A number that matches one contact or account links the call to that customer.">
+          <Select value={from} onChange={(_, d) => setFrom(d.value)}>
+            <option value="">Number withheld</option>
+            {callerNumbers(sim.store).map((n) => <option key={n.number} value={n.number}>{n.label}</option>)}
+            <option value={UNKNOWN_NUMBER}>{UNKNOWN_NUMBER} · not a customer</option>
+          </Select>
         </Field>
         <details className="phone-numbers">
           <summary>Numbers in this environment ({numbers.length})</summary>
