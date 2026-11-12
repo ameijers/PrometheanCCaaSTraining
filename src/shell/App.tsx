@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FluentProvider, Tab, TabList, webLightTheme } from "@fluentui/react-components";
+import { FluentProvider, Menu, MenuDivider, MenuItem, MenuList, MenuPopover, MenuTrigger, Tab, TabList, webLightTheme } from "@fluentui/react-components";
 import { AdminCenter, AdminRequest } from "../admin/AdminCenter";
 import { conceptForRecord, recordLink } from "../learn/records";
 import { Navigate } from "../simulator/xrmShim";
@@ -374,10 +374,21 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
               ? <button className="training-trainer" title="Your classes" onClick={() => setTrainer("home")}>{account.trainer ? "Trainer" : "Signed in"} · {account.name}</button>
               : <button className="training-trainer" title="For trainers: sign in to manage your classes" onClick={signIn}>Trainer sign-in</button>}
             <button onClick={() => tour.start()}>Tour</button>
-            <button onClick={restart}>Start again</button>
-            <button onClick={download}>Save my work</button>
-            <button onClick={() => upload.current?.click()}>Open saved work</button>
-            <button onClick={() => setExporting(true)} title="Export for the Toolbox: download what you built as the Toolbox's CSV templates">Export</button>
+            {/* Everything about the learner's own work, in one menu; Start again last, as it undoes changes. */}
+            <Menu>
+              <MenuTrigger disableButtonEnhancement>
+                <button className="training-mywork" aria-haspopup="menu">My work ▾</button>
+              </MenuTrigger>
+              <MenuPopover>
+                <MenuList>
+                  <MenuItem onClick={download}>Save my work</MenuItem>
+                  <MenuItem onClick={() => upload.current?.click()}>Open saved work</MenuItem>
+                  <MenuItem onClick={() => setExporting(true)} title="Export for the Toolbox: download what you built as the Toolbox's CSV templates">Export</MenuItem>
+                  <MenuDivider />
+                  <MenuItem onClick={restart}>Start again</MenuItem>
+                </MenuList>
+              </MenuPopover>
+            </Menu>
             <input ref={upload} type="file" accept="application/json,.json" hidden onChange={(e) => void onUpload(e.target.files?.[0])} />
           </div>
         </header>

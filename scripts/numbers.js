@@ -70,7 +70,8 @@ async function main() {
     console.log(`${number} rings Partner Line – Voice`);
 
     // The new line, exported for the Toolbox's Voice Channel Builder.
-    await click("header button", "Export");
+    await click("header button", "My work ▾");
+    await click("[role=menuitem]", "Export");
     await waitText("[role=dialog]", "Voice Channel Builder");
     await shot("export-voice-channels");
   } catch (e) {
