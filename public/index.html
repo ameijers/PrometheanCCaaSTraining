@@ -323,6 +323,14 @@
     .lab-scenario > .lesson { flex: 1; }
     .lab-back { padding: 8px 18px; border: 0; border-bottom: 1px solid var(--line); background: #eef5fc; color: var(--accent); text-align: left; font: inherit; font-size: 13px; cursor: pointer; }
     .picker-practice { margin: 20px 0 4px; font-size: 18px; }
+    .picker-toggle { display: inline-flex; margin: 8px 0 4px; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+    .picker-toggle button { padding: 5px 14px; border: 0; background: #fff; font: inherit; font-size: 13px; cursor: pointer; color: var(--ink); }
+    .picker-toggle button.active { background: var(--accent); color: #fff; }
+    .picker-item-sub { display: block; font-size: 12px; color: var(--muted); }
+    .picker-after h3 { margin-bottom: 0; }
+    .picker-after-done h3::before { content: "✓ "; color: #166534; }
+    .lab-later { font-size: 12px; color: #9a3412; }
+    .lab-more { margin: 24px 0 0; font-size: 16px; }
     .picker-lab { display: flex; align-items: center; gap: 10px; text-align: left; }
     .picker-lab-number { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: #edebe9; font-weight: 700; flex: none; }
     .picker-lab-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }

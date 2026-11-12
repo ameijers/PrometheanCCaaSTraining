@@ -49,3 +49,13 @@ Product facts come from Microsoft Learn. [tests/labs/labs.test.ts](../tests/labs
 ## Classes
 
 A trainer can add ready labs to a class (`lab-<id>`). The class's progress shows a lab as one column: Learn (pages and quiz) and each Do task.
+
+## Practice by lab
+
+**Labs and practice** shows the exercises under **Practice**, by lab (the default) or by kind and level. Each exercise is placed after the last lab it needs ([src/labs/practice.ts](../src/labs/practice.ts)), worked out from what's in it, so AI-written exercises are placed too:
+
+- build and interview exercises by their goals: new line and fallback queue lab 3, members lab 4, assignment method and capacity lab 5, a menu choice with its queue lab 7, skills lab 8, hours and overflow lab 9, outbound profile lab 10, business unit and team lab 11; an interview also needs lab 11;
+- fix exercises by their faults: fallback queue off lab 3, no members lab 4, a rule's queue off lab 7;
+- "Where does this call go?" by level (1 → lab 1, 2 → lab 6, 3 → lab 9), and lab 9 whenever a call's time or wait matters.
+
+Under each lab, the list says whether the learner has done it. A lab's Challenge part also shows **More practice after this lab**, and a challenge that needs a later lab says so ("Best after lab 4").

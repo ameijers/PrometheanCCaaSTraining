@@ -6,7 +6,8 @@ import { Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface
 import { aiScenarios, AiStatus, aiStatus, writeAiScenario } from "./client";
 import { KIND_TITLES, LEVELS, Scenario, ScenarioKind } from "./scenario";
 import readyMade from "../../content/scenarios/ready-made.json";
-import { classId, LABS, labById, labStatuses, LabStatus } from "../labs/labs";
+import { classId, doDoneId, LABS, labById, labStatuses, LabStatus, learnDoneId } from "../labs/labs";
+import { readyAfter, subjectsOf } from "../labs/practice";
 
 // Choosing what to do: a lab, in the recommended order (src/labs), or practice: the guided lesson, a
 // ready-made scenario, or one the AI wrote (and the training checked). With the AI switched on, "Write a
@@ -40,6 +41,9 @@ export function ExercisePicker({ open, current, onClose, onLesson, onScenario, o
   const [written, setWritten] = useState<Scenario[]>([]);
   const [writing, setWriting] = useState<string | undefined>();
   const [error, setError] = useState("");
+  // Practice by lab (which exercises suit after which lab) or by kind and level; remembered in this browser.
+  const [practiceBy, setPracticeBy] = useState<"lab" | "kind">(() => { try { return localStorage.getItem("practice-by") === "kind" ? "kind" : "lab"; } catch { return "lab"; } });
+  const showBy = (v: "lab" | "kind") => { setPracticeBy(v); try { localStorage.setItem("practice-by", v); } catch { /* not remembered */ } };
 
   useEffect(() => {
     if (!open) return;
@@ -62,9 +66,11 @@ export function ExercisePicker({ open, current, onClose, onLesson, onScenario, o
     }
   };
 
-  const item = (s: Scenario) => (
-    <button key={s.id} className={`picker-item${s.id === current ? " current" : ""}`} onClick={() => onScenario(s)}>
-      <span>{finishedIds.includes(s.id) ? "✓ " : ""}{s.title}</span>{s.source === "ai" ? <em>AI · {s.createdOn}</em> : finishedIds.includes(s.id) ? <em>done</em> : null}
+  const labDone = (n: number) => { const l = LABS.find((x) => x.number === n); return !!l && finishedIds.includes(learnDoneId(l)) && finishedIds.includes(doDoneId(l)); };
+  const item = (s: Scenario, byLab = false) => (
+    <button key={s.id} className={`picker-item${s.id === current ? " current" : ""}`} onClick={() => onScenario(s)} title={`Covers: ${subjectsOf(s)}`}>
+      <span>{finishedIds.includes(s.id) ? "✓ " : ""}{s.title}{byLab && <span className="picker-item-sub">{KIND_TITLES[s.kind]} · level {s.level} · covers {subjectsOf(s)}</span>}</span>
+      {s.source === "ai" ? <em>AI · {s.createdOn}</em> : finishedIds.includes(s.id) ? <em>done</em> : !byLab ? <em>after lab {readyAfter(s)}</em> : null}
     </button>
   );
   const everything = [...READY_MADE, ...written];
@@ -102,6 +108,27 @@ export function ExercisePicker({ open, current, onClose, onLesson, onScenario, o
               {LABS.map((l) => labItem(l.id))}
             </section>
             <h2 className="picker-practice">Practice</h2>
+            <p className="admin-muted admin-tight">Exercises without steps. Each is placed after the last lab it needs; it suits you once you've done that lab.</p>
+            <div className="picker-toggle" role="group" aria-label="Show practice">
+              <button className={practiceBy === "lab" ? "active" : ""} aria-pressed={practiceBy === "lab"} onClick={() => showBy("lab")}>By lab</button>
+              <button className={practiceBy === "kind" ? "active" : ""} aria-pressed={practiceBy === "kind"} onClick={() => showBy("kind")}>By kind</button>
+            </div>
+            {practiceBy === "lab" && LABS.map((lab) => {
+              const list = everything.filter((s) => readyAfter(s) === lab.number);
+              const lesson = lab.id === "routing";
+              if (!list.length && !lesson) return null;
+              const done = labDone(lab.number);
+              return (
+                <section key={lab.id} className={`picker-kind picker-after${done ? " picker-after-done" : ""}`}>
+                  <h3>After lab {lab.number}: {lab.title}</h3>
+                  <p className="picker-level-name">{done ? "✓ You've done this lab: these suit you now." : `Best after you've done lab ${lab.number}.`}</p>
+                  {lesson && <button className={`picker-item${current === "lesson" ? " current" : ""}`} onClick={onLesson}><span>A new menu choice<span className="picker-item-sub">Guided lesson, step by step · the same as lab 7's hands-on part</span></span></button>}
+                  {list.map((s) => item(s, true))}
+                </section>
+              );
+            })}
+            {practiceBy === "lab" && <p className="admin-muted picker-ai">To have the AI write a new exercise, switch to By kind.</p>}
+            {practiceBy === "kind" && <>
             <section className="picker-kind">
               <h3>Guided lesson</h3>
               <button className={`picker-item${current === "lesson" ? " current" : ""}`} onClick={onLesson}><span>A new menu choice</span><em>step by step, with tasks</em></button>
@@ -114,7 +141,7 @@ export function ExercisePicker({ open, current, onClose, onLesson, onScenario, o
                   return (
                     <div key={level} className="picker-level">
                       <p className="picker-level-name">Level {level} · {LEVEL_NAMES[level]}</p>
-                      {list.map(item)}
+                      {list.map((s) => item(s))}
                       {status?.available && (
                         <Button size="small" appearance="subtle" disabled={!!writing} onClick={() => void write(kind, level)}>
                           {writing === `${kind}-${level}` ? <><Spinner size="extra-tiny" /> The AI is writing, the training is checking…</> : "Write a new one with AI"}
@@ -125,6 +152,7 @@ export function ExercisePicker({ open, current, onClose, onLesson, onScenario, o
                 })}
               </section>
             ))}
+            </>}
             {error && <p className="lesson-problem">{error}</p>}
             <p className="admin-muted picker-ai">
               {status?.available

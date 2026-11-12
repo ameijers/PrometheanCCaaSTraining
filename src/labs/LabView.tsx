@@ -6,6 +6,7 @@ import { Button, MessageBar, MessageBarBody, Radio, RadioGroup } from "@fluentui
 import conceptsJson from "../../content/concepts.json";
 import { KIND_TITLES, Scenario } from "../scenarios/scenario";
 import { Lab, LabState, LearnPage, quizPassed } from "./labs";
+import { readyAfter, subjectsOf } from "./practice";
 
 // A lab's reading part, in the workspace's Lab tab: one Learn page at a time with its passages from
 // Microsoft Learn, then the quiz; and the Challenge part's exercises.
@@ -35,20 +36,29 @@ export function LabView({ lab, state, setState, scenarios, finishedIds, onStartD
 
   if (state.part === "challenge") {
     const list = (lab.challenges ?? []).map((id) => scenarios.find((s) => s.id === id)).filter(Boolean) as Scenario[];
+    // Other exercises that suit after this lab, AI-written ones too (src/labs/practice.ts).
+    const more = scenarios.filter((s) => readyAfter(s) === lab.number && !list.includes(s));
+    const row = (s: Scenario) => (
+      <li key={s.id}>
+        <div>
+          <strong>{finishedIds.includes(s.id) ? "✓ " : ""}{s.title}</strong><br />
+          <span className="admin-muted">{KIND_TITLES[s.kind]} · level {s.level} · covers {subjectsOf(s)}</span>
+          {readyAfter(s) > lab.number && <><br /><span className="lab-later">Best after lab {readyAfter(s)}: it also needs what that lab teaches.</span></>}
+        </div>
+        <Button onClick={() => onScenario(s)}>{finishedIds.includes(s.id) ? "Do it again" : "Start"}</Button>
+      </li>
+    );
     return (
       <article className="lab-view">
         <p className="lesson-eyebrow">Lab {lab.number} · Challenge</p>
         <h2 className="lab-title">Try it without the steps</h2>
         <p>These exercises go with this lab. You get a story and a goal, but no step-by-step tasks. Each starts in its own environment.</p>
-        <ul className="lab-challenges">
-          {list.map((s) => (
-            <li key={s.id}>
-              <div><strong>{finishedIds.includes(s.id) ? "✓ " : ""}{s.title}</strong><br /><span className="admin-muted">{KIND_TITLES[s.kind]} · level {s.level}</span></div>
-              <Button onClick={() => onScenario(s)}>{finishedIds.includes(s.id) ? "Do it again" : "Start"}</Button>
-            </li>
-          ))}
-        </ul>
+        <ul className="lab-challenges">{list.map(row)}</ul>
         {!list.length && <p className="admin-muted">This lab has no challenge yet.</p>}
+        {more.length > 0 && <>
+          <h3 className="lab-more">More practice after this lab</h3>
+          <ul className="lab-challenges">{more.map(row)}</ul>
+        </>}
       </article>
     );
   }
