@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT
 
 // Plays a call from ring to a representative in a real browser (phase 6): the learner signs in as a
-// representative in the agent view, calls their queue on the phone, accepts the call, ends it and closes
-// it; the Diagram's Live tab shows the call with the representative. Saves a screenshot of each step.
+// representative in the workspace (Agent tab), calls their queue on the phone, accepts the call, sees it on
+// the Ongoing Conversations dashboard, ends it and closes the session; the Diagram's Live tab shows the call with the representative. Saves a screenshot of each step.
 // Serve the build first (npm run serve), then:  node scripts/agent.js <screenshot folder> [port]
 
 const fs = require("fs");
@@ -51,9 +51,9 @@ async function main() {
     });
     console.log(`signing in as ${name}; calling ${dial}`);
 
-    await (await page.waitForSelector(".agent-side [role=combobox]")).click();
+    await (await page.waitForSelector(".ws-training [role=combobox]")).click();
     await click("[role=option]", name);
-    await waitText(".agent-queues", "Returns");
+    await waitText(".ws-queues", "Returns");
     await shot("signed-in");
 
     await click("[role=tab]", "Phone");
@@ -65,11 +65,15 @@ async function main() {
     await shot("call-offered");
 
     await click("[role=tab]", "Agent");
-    await waitText(".agent-offer", "Incoming call");
+    await waitText(".ws-notification", "Incoming call");
     await shot("incoming-call");
-    await click(".agent-offer button", "Accept");
-    await waitText(".phone-badge", "On the call");
+    await click(".ws-notification button", "Accept");
+    await waitText(".ws-form .phone-badge", "Active");
     await shot("on-the-call");
+    // The supervisor's view of it: Home, the Omnichannel Ongoing Conversations Dashboard.
+    await click(".ws-sessions button", "Home");
+    await waitText(".ws-table", "Active");
+    await shot("ongoing-conversations");
 
     await click("[role=tab]", "Diagram");
     await new Promise((r) => setTimeout(r, 6000));
@@ -85,11 +89,12 @@ async function main() {
     await shot("diagram-live");
 
     await click("[role=tab]", "Agent");
-    await click(".agent-main button", "End call");
-    await waitText(".phone-badge", "Wrap-up");
+    await click(".ws-session button", "📞 Unknown caller");
+    await page.click(".ws-controls .ws-end");
+    await waitText(".ws-form .phone-badge", "Wrap-up");
     await shot("wrap-up");
-    await click(".agent-main button", "Close");
-    await waitText(".agent-main", "No calls for you right now");
+    await click(".ws-form button", "Close session");
+    await waitText(".ws", "No calls for you right now");
     await shot("closed");
   } catch (e) {
     await page.screenshot({ path: path.join(out, "failure.png") });
