@@ -129,7 +129,8 @@ async function main() {
     console.log("both exercises finished");
 
     // What was built, as the Toolbox's CSV files, in the order to run them.
-    await click("header button", "Export");
+    await click("header button", "My work ▾");
+    await click("[role=menuitem]", "Export");
     await waitText("[role=dialog]", "in this order");
     await shot("export");
   } catch (e) {
