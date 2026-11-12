@@ -58,6 +58,8 @@ export function transcript(store: Store, w: Row, now: number): TranscriptLine[] 
   const start = assignedAt(store, w.activityid);
   if (start === undefined) return [];
   const until = Math.min(now, endedAt(w) ?? now);
+  // A call transferred back to a queue has nobody on it until it's assigned again.
+  if (!w._msdyn_activeagentid_value) return [];
   const repName = String(store.find("systemuser", w._msdyn_activeagentid_value)?.fullname ?? "your representative").split(" ")[0];
   const customer = customerOfCall(store, w);
   const first = customer?.kind === "contact" ? String(customer.row.firstname ?? "") || undefined : undefined;
@@ -86,8 +88,8 @@ const mmss = (ms: number) => {
 export function summarize(store: Store, w: Row, now: number): string {
   const start = acceptedAt(store, w.activityid);
   const reason = reasonOf(store, w.activityid);
-  const queue = store.find("queue", w._msdyn_cdsqueueid_value)?.name;
-  const rep = store.find("systemuser", w._msdyn_activeagentid_value)?.fullname;
+  const queue = w._msdyn_cdsqueueid_value ? store.find("queue", w._msdyn_cdsqueueid_value)?.name : undefined;
+  const rep = w._msdyn_activeagentid_value ? store.find("systemuser", w._msdyn_activeagentid_value)?.fullname : undefined;
   const end = endedAt(w) ?? now;
   const said = transcript(store, w, now);
   const parts = [

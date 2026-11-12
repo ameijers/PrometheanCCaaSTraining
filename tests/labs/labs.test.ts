@@ -35,9 +35,9 @@ describe("lab content", () => {
     const [first, , , fourth] = LABS;
     expect(labStatuses([]).get(first.id)).toBe("next");
     expect(labStatuses([]).get(fourth.id)).toBe("open");
-    expect(labStatuses([]).get("numbers")).toBe("planned");
+    expect(labStatuses([]).get("numbers")).toBe("open");
     const s = labStatuses([learnDoneId(first), doDoneId(first), learnDoneId(fourth)]);
-    expect([s.get(first.id), s.get(fourth.id), s.get("routing")]).toEqual(["done", "next", "open"]);
+    expect([s.get(first.id), s.get("numbers"), s.get(fourth.id), s.get("routing")]).toEqual(["done", "next", "started", "open"]);
   });
 
   test("the quiz passes only with every answer right", () => {

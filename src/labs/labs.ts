@@ -3,7 +3,8 @@
 
 import labsJson from "../../content/labs/labs.json";
 import templateJson from "../../content/lessons/new-menu-choice.json";
-import { assignmentFor } from "../calls/assignment";
+import { assignmentFor, methodOf } from "../calls/assignment";
+import { classificationRulesets } from "../admin/rules";
 import { Lesson } from "../lessons/checks";
 import { fill, Line, linesWithIvr, LessonTemplate, lineLabel, listOf, makeLesson } from "../lessons/template";
 import { Store } from "../simulator/store";
@@ -69,6 +70,11 @@ function labLine(store: Store): Line {
 
 const NEW_QUEUE = "Priority Customers";
 
+const VOICE = 192440000;
+const voiceWorkstreams = (store: Store) => store.table("msdyn_liveworkstream").filter((w) => w.msdyn_streamsource === VOICE && w.statecode === 0 && w._msdyn_defaultqueue_value);
+const numbersOf = (store: Store, workstreamId: string) => store.table("msdyn_ocvoicechannelsetting").filter((c) => c._msdyn_liveworkstreamid_value === workstreamId && c._msdyn_phonenumberid_value);
+const nameOf = (store: Store, table: string, id: unknown) => (id ? String(store.find(table, String(id))?.[table === "queue" ? "name" : "msdyn_name"] ?? "") : "");
+
 // The values a lab's {placeholders} take in this environment.
 export function labValues(store: Store): Record<string, string> {
   const line = labLine(store);
@@ -77,7 +83,34 @@ export function labValues(store: Store): Record<string, string> {
   const queue2 = second ? store.find("queue", second.queueId) : undefined;
   // Who the queue would give the next call to: the learner signs in as them to get it.
   const rep = queue1 ? assignmentFor(store, queue1.queueid, line.workstreamId).chosen?.name : undefined;
+  // The second line with an IVR (technical support if there is one), for labs that need another line.
+  const lines = linesWithIvr(store);
+  const tech = lines.find((l) => /technical/i.test(l.workstream) && l !== line) ?? lines.find((l) => l !== line) ?? line;
+  const retail = lines.find((l) => /retail|sales/i.test(l.workstream)) ?? tech;
+  // Lines without an IVR: one with a number (Dutch Desk in the training) and one without (Partner Line).
+  const noIvr = voiceWorkstreams(store).filter((w) => !w._msdyn_bot_user_value);
+  const dutch = noIvr.find((w) => numbersOf(store, w.msdyn_liveworkstreamid).length);
+  const partner = noIvr.find((w) => !numbersOf(store, w.msdyn_liveworkstreamid).length);
+  const ws = store.find("msdyn_liveworkstream", line.workstreamId)!;
+  const profileLink = store.table("msdyn_liveworkstreamcapacityprofile").find((l) => l._msdyn_workstream_id_value === line.workstreamId);
+  const profile = profileLink ? store.find("msdyn_capacityprofile", profileLink._msdyn_capacityprofile_id_value) : undefined;
+  const technical = line.menu.find((m) => /technical/i.test(m.label)) ?? line.menu[line.menu.length - 1];
+  const last = line.menu[line.menu.length - 1];
+  const hours1 = queue1?._msdyn_operatinghourid_value ? String(store.find("msdyn_operatinghour", queue1._msdyn_operatinghourid_value)?.msdyn_name ?? "") : String(store.table("msdyn_operatinghour")[0]?.msdyn_name ?? "");
+  const dial = (id: string | undefined) => {
+    const c = id ? numbersOf(store, id)[0] : undefined;
+    return c ? String(store.find("msdyn_ocphonenumber", c._msdyn_phonenumberid_value)?.msdyn_phonenumber ?? "") : "";
+  };
   return {
+    techWs: tech.workstream, techDial: tech.dial, techLine: lineLabel(tech.workstream), techFallback: tech.fallback,
+    techQueue1: nameOf(store, "queue", tech.menu[0]?.queueId), techChoice1: tech.menu[0]?.label ?? "", techValue1: tech.menu[0]?.value ?? "",
+    retailQueue2: nameOf(store, "queue", (retail.menu[1] ?? retail.menu[0])?.queueId),
+    dutchWs: String(dutch?.msdyn_name ?? ""), dutchDial: dial(dutch?.msdyn_liveworkstreamid), partnerWs: String(partner?.msdyn_name ?? ""),
+    wsNumbers: String(numbersOf(store, line.workstreamId).length),
+    profile: String(profile?.msdyn_name ?? ""), limit: String(profile?.msdyn_defaultmaxunits ?? 1),
+    method1: methodOf(queue1), next1: rep ?? "",
+    choiceLast: last.label, valueLast: last.value, techChoice: technical.label, techValue: technical.value, techQueue: nameOf(store, "queue", technical.queueId),
+    rulesets: String(classificationRulesets(store, ws.msdyn_liveworkstreamid).length), hours1,
     line: lineLabel(line.workstream), dial: line.dial, workstream: line.workstream, variable: line.variable,
     menu: listOf(line.menu.map((m) => m.label)), fallback: line.fallback,
     choice1: first.label, value1: first.value, queue1: String(queue1?.name ?? ""),

@@ -350,6 +350,66 @@
     "checkedOn": "2026-11-12",
     "quote": "Presence status indicates whether customer service representatives (service representatives or representatives) are available to take work."
    }
+  },
+  {
+   "id": "call-controls",
+   "title": "Call controls",
+   "summary": "During a call the representative uses the call controls in the Communication Panel: Mute, Hold, Consult, Transfer and End. After End the call is in wrap-up until the session is closed.",
+   "learn": {
+    "title": "Use agent dashboard and call controls in the voice channel",
+    "url": "https://learn.microsoft.com/en-us/dynamics365/contact-center/use/voice-channel-agent-experience",
+    "date": "2026-05-11",
+    "checkedOn": "2026-11-12",
+    "quote": "End the call. To end the call after you select End, you must close the session. If you close the session without selecting End, the call is routed back to a queue."
+   }
+  },
+  {
+   "id": "customer-identification",
+   "title": "Customer identification",
+   "summary": "When the caller's number matches one contact's mobile phone or one account's phone, the call is linked to that customer, and the representative sees their details. When it matches more than one record, nothing is linked.",
+   "learn": {
+    "title": "Identify customers automatically",
+    "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/administer/record-identification-rule",
+    "date": "2026-05-27",
+    "checkedOn": "2026-11-12",
+    "quote": "You can identify incoming voice calls if the phone number of the incoming call matches the number for a contact in the mobile phone or account phone field."
+   }
+  },
+  {
+   "id": "copilot-summary",
+   "title": "Copilot conversation summary",
+   "summary": "Copilot summarizes a conversation: on Summarize conversation, and by itself when the representative consults, transfers or ends the call.",
+   "learn": {
+    "title": "Use Copilot to summarize conversations",
+    "url": "https://learn.microsoft.com/en-us/dynamics365/contact-center/use/copilot-summarize-conversations",
+    "date": "2026-08-27",
+    "checkedOn": "2026-11-12",
+    "quote": "The Copilot conversation summary is generated automatically when you request a consultation with another customer service representative, transfer the conversation, or end the conversation."
+   }
+  },
+  {
+   "id": "supervisor-monitor",
+   "title": "Monitoring calls",
+   "summary": "A supervisor can listen in on an active call without being seen, join it when help is needed, and assign, transfer or end conversations.",
+   "learn": {
+    "title": "Monitor calls in the voice channel",
+    "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/use/voice-channel-monitor-calls",
+    "date": "2026-07-31",
+    "checkedOn": "2026-11-12",
+    "quote": "As a supervisor, you can monitor the calls between your customer service representatives (service representatives) and their customers without interrupting them."
+   }
+  },
+  {
+   "id": "realtime-analytics",
+   "title": "Real-time analytics",
+   "summary": "Omnichannel real-time analytics shows what's happening in the contact center now: calls offered, waiting and answered, how fast they're answered, and who is available.",
+   "learn": {
+    "title": "Overview of the real-time Omnichannel analytics dashboard",
+    "url": "https://learn.microsoft.com/en-us/dynamics365/customer-service/use/intro-realtime-analytics-dashboard",
+    "date": "2026-07-29",
+    "checkedOn": "2026-11-12",
+    "quote": "The real-time analytics reports provide information about the health and key performance indicators (KPIs) for your organization."
+   }
   }
  ]
 }
