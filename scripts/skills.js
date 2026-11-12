@@ -46,7 +46,7 @@ async function main() {
     await click("[role=option]", option);
   };
   const choose = async (title) => {
-    await click(".training-env button", "Choose an exercise");
+    await click(".training-env button", "Labs and practice");
     await page.waitForSelector(".picker");
     await click(".picker-item span", title);
     await waitText(".lesson-title", title);

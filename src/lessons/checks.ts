@@ -21,7 +21,13 @@ export type Check =
   // A call with these IVR answers ends in the queue with (about) this name; the check places the call itself.
   | { type: "call"; dial: string; answers: Record<string, string>; expect: { queue: string } }
   // The learner made such a call (a recorded call with these answers, ending in that queue if given).
-  | { type: "callMade"; answers: Record<string, string>; expect?: { queue: string } };
+  | { type: "callMade"; answers: Record<string, string>; expect?: { queue: string } }
+  // The learner opened a part of the training (recorded by the app as "seen:<what>"), e.g. the diagram.
+  | { type: "seen"; what: string }
+  // The learner did something in the workspace (recorded as "did:<what>"), e.g. accepted a call.
+  | { type: "did"; what: string }
+  // The learner answered a question about the environment (the task's `ask`) with this value.
+  | { type: "answer"; key: string; expect: string };
 
 export interface Lesson {
   id: string;
@@ -46,9 +52,21 @@ export interface Task {
   check: Check;
   done?: string;
   concept: string;
-  tab: "admin" | "diagram" | "phone";
+  tab: "admin" | "diagram" | "phone" | "agent";
   hints: string[];
+  // A question the learner answers in the task (check type "answer"): pick from the environment's queues or
+  // workstreams, from a list, or type a number.
+  ask?: { question: string; options: "queues" | "workstreams" | "number" | string[] };
 }
+
+// What the learner did, saw and answered, kept in the environment (schema.ts training_answer).
+export function record(store: Store, key: string, value = "yes"): void {
+  const row = store.table("training_answer").find((r) => r.key === key);
+  if (row && row.value === value) return;
+  if (row) store.update("training_answer", row.training_answerid, { value });
+  else store.insert("training_answer", { key, value });
+}
+export const recorded = (store: Store, key: string): string | undefined => store.table("training_answer").find((r) => r.key === key)?.value;
 
 export interface CheckResult {
   passed: boolean;
@@ -125,6 +143,14 @@ export async function runCheck(store: Store, check: Check): Promise<CheckResult>
       const last = calls.sort((a, b) => String(b.createdon).localeCompare(String(a.createdon)))[0];
       const lastQueue = last ? store.find("queue", last._msdyn_cdsqueueid_value)?.name : undefined;
       return { passed: false, note: lastQueue ? `Your last call like this went to ${lastQueue}.` : undefined };
+    }
+    case "seen": return { passed: recorded(store, `seen:${check.what}`) !== undefined };
+    case "did": return { passed: recorded(store, `did:${check.what}`) !== undefined };
+    case "answer": {
+      const given = recorded(store, `answer:${check.key}`);
+      if (given === undefined) return { passed: false };
+      const right = /^d+$/.test(check.expect) ? Number(given.trim()) === Number(check.expect) : same(given, check.expect);
+      return right ? { passed: true } : { passed: false, note: `“${given}” isn't it. Look again.` };
     }
   }
 }

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Alexander Meijers
 // SPDX-License-Identifier: MIT
 
+import type { LabState } from "../labs/labs";
 import { createRoot } from "react-dom/client";
 import { createSimulator, Simulator } from "../simulator";
 import { loadSession } from "../simulator/persist";
@@ -34,7 +35,7 @@ async function start(): Promise<void> {
   // What the Diagram's iframe bridge script picks up (src/tools/bridge.ts).
   w.__ccaasTraining = { xrm: sim.xrm, fetch: sim.fetch };
   createRoot(document.getElementById("root")!).render(
-    <App sim={sim} restored={!!saved} savedLesson={lesson} savedScenario={scenario} savedClock={typeof saved?.clock === "number" ? saved.clock : undefined} seed={askedSeed === null ? undefined : Number(askedSeed)} />
+    <App sim={sim} restored={!!saved} savedLesson={lesson} savedScenario={scenario} savedClock={typeof saved?.clock === "number" ? saved.clock : undefined} seed={askedSeed === null ? undefined : Number(askedSeed)} savedLab={saved?.lab as LabState | undefined} />
   );
 }
 

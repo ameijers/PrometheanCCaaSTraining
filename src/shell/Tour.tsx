@@ -21,8 +21,8 @@ export function trainingTour(open: (tab: Tab) => void): TrainingStep[] {
   });
   return [
     step("A contact center to practise on", "Everything here is simulated: a Dynamics 365 Contact Center environment with made-up people and phone numbers reserved for fiction. Nothing you do reaches a real system.", ".training-sim"),
-    step("Your exercise", "The story and what to do. Tasks tick off by themselves when the training's checks pass. Hints are there when you need them.", ".lesson"),
-    step("Choose an exercise", "A guided lesson, or scenarios: fix a broken contact center, predict where calls go, build what a company asks for, or interview a customer first.", ".training-choose"),
+    step("Your lab", "Each lab is one subject in three parts: Learn (short pages and a quiz), Do (tasks in the environment that tick off by themselves) and Challenge.", ".lesson"),
+    step("Labs and practice", "The labs in the recommended order, starting with how a call finds its way. Practice has more exercises: fix a broken contact center, predict where calls go, build what a company asks for, or interview a customer.", ".training-choose"),
     step("The admin center", "A simulation of the Copilot Service admin center: Microsoft's menu and field names, our own look. This is where you change things.", ".workspace-view", "admin"),
     step("The Environment Diagram", "How it all connects: phone numbers, channels, workstreams, rules, queues and people. Problems are marked, and the Live tab shows calls as they happen.", ".workspace-view", "diagram"),
     step("The phone", "Call any number in the environment, answer the IVR, and follow the call step by step to the queue and the representative who takes it.", ".workspace-view", "phone"),

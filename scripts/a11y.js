@@ -51,14 +51,14 @@ async function main() {
   await check("admin center: capacity profiles");
   await clickText("[role=tab]", "Agent"); await wait(800);
   await check("agent view");
-  await clickText(".training-env button", "Choose an exercise"); await wait(800);
+  await clickText(".training-env button", "Labs and practice"); await wait(800);
   await check("choose an exercise");
   await clickText(".picker-item span", "Late calls and long waits"); await wait(2000);
   await check("where does this call go");
-  await clickText(".training-env button", "Choose an exercise"); await wait(800);
+  await clickText(".training-env button", "Labs and practice"); await wait(800);
   await clickText(".picker-item span", "What does the service manager need?"); await wait(2000);
   await check("customer interview");
-  await clickText(".training-env button", "Choose an exercise"); await wait(800);
+  await clickText(".training-env button", "Labs and practice"); await wait(800);
   await clickText("[role=dialog] button", "For trainers"); await wait(800);
   await check("trainer: sign in");
   await browser.close();

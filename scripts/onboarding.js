@@ -37,7 +37,7 @@ async function main() {
 
   try {
     await page.goto(`http://localhost:${port}/?seed=1`, { waitUntil: "networkidle0" });
-    await click(".training-env button", "Choose an exercise");
+    await click(".training-env button", "Labs and practice");
     await page.waitForSelector(".picker");
     await click(".picker-item span", "A home for the new parts team");
     await waitText(".lesson-title", "A home for the new parts team");

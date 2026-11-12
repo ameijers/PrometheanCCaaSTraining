@@ -35,7 +35,7 @@ async function main() {
   };
   const waitText = (selector, text) => { last = `${selector} "${text}"`; return page.waitForFunction((s, t) => [...document.querySelectorAll(s)].some((e) => e.textContent.includes(t)), { timeout: 10000 }, selector, text); };
   const choose = async (title) => {
-    await click(".training-env button", "Choose an exercise");
+    await click(".training-env button", "Labs and practice");
     await page.waitForSelector(".picker");
     await click(".picker-item span", title);
     await waitText(".lesson-title", title);
