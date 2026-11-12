@@ -27,7 +27,7 @@ export function trainingTour(open: (tab: Tab) => void): TrainingStep[] {
     step("The Environment Diagram", "How it all connects: phone numbers, channels, workstreams, rules, queues and people. Problems are marked, and the Live tab shows calls as they happen.", ".workspace-view", "diagram"),
     step("The phone", "Call any number in the environment, answer the IVR, and follow the call step by step to the queue and the representative who takes it.", ".workspace-view", "phone"),
     step("Be a representative", "Sign in as one of the representatives, set your presence, and take the calls routing offers you.", ".workspace-view", "agent"),
-    step("The clock", "The contact center's own time. Let it run, speed it up, or jump to a day and time to see what happens out of hours.", ".clock"),
+    step("The clock", "The contact center's own time, above the Phone, Agent and Diagram tabs. Let it run, speed it up, or jump to a day and time to see what happens out of hours.", ".clock-strip", "phone"),
     step("Explanations from Microsoft Learn", "What you're looking at, in a few words, with a passage from Microsoft Learn and a link to read more. That's the tour: Tour at the top shows it again.", ".learn")
   ];
 }

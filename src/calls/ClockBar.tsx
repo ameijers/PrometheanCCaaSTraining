@@ -6,7 +6,8 @@ import { useTraining } from "../shell/context";
 import { Speed, SPEEDS } from "./clock";
 import { DAYS } from "./engine";
 
-// The clock in the header: the contact center's local time, how fast it runs, and a jump to a day and time.
+// The contact center's clock, in a bar above the Phone, Agent and Diagram tabs: its local time, how fast it
+// runs, and a jump to a day and time.
 
 const SPEED_LABELS: Record<Speed, string> = { 0: "Stopped", 1: "Real time", 10: "10× faster", 60: "60× faster" };
 

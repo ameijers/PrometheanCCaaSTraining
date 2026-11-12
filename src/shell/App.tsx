@@ -364,7 +364,6 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
         <header className="training-header">
           <div className="training-brand"><strong>Promethean CCaaS Training</strong><span>Dynamics 365 Contact Center, hands-on</span></div>
           <div className="training-env">
-            <ClockBar />
             <span className="training-sim" title="Everything here is simulated: no Dynamics 365 environment, no real phone numbers.">Simulated environment · {sim.api.clientUrl.replace(/^https:\/\//, "")}</span>
             <button className="training-choose" onClick={() => setPicking(true)}>Labs and practice</button>
             {member
@@ -419,13 +418,21 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
               <Tab value="phone">Phone</Tab>
               <Tab value="agent">Agent</Tab>
             </TabList>
+            {/* The contact center's time matters where calls happen: on the Phone, Agent and Diagram tabs. */}
+            {(tab === "phone" || tab === "agent" || tab === "diagram") && (
+              <div className="clock-strip" role="group" aria-label="Contact center time">
+                <span className="clock-strip-label">Contact center time</span>
+                <ClockBar />
+                <span className="clock-strip-note">Operating hours, waiting times and the representatives' calls follow this clock.</span>
+              </div>
+            )}
             <div className="workspace-view">
               {labDef && lab && <div hidden={tab !== "lab"} className="workspace-pane">
                 <LabView lab={labDef} state={lab} setState={setLab} scenarios={allScenarios} finishedIds={finishedIds} onStartDo={startLabDo}
                   onScenario={(x) => void openScenario(x)} onLearnDone={() => { markFinished(learnDoneId(labDef)); setFinishedIds(finished()); }} />
               </div>}
               <div hidden={tab !== "admin"} className="workspace-pane"><AdminCenter request={adminRequest} /></div>
-              <div hidden={tab !== "phone"} className="workspace-pane"><Phone key={run?.scenario.id ?? lesson.variant?.seed} line={run ? undefined : lesson.line} /></div>
+              <div hidden={tab !== "phone"} className="workspace-pane">{/* The lesson's line (with its new menu choice) only while doing that lesson; otherwise the real menus. */}<Phone key={run?.scenario.id ?? (labDef && !inLabDo ? `learn-${labDef.id}` : lesson.variant?.seed ?? lesson.id)} line={run || (labDef && !inLabDo) ? undefined : lesson.line} /></div>
               <div hidden={tab !== "agent"} className="workspace-pane"><AgentView /></div>
               <div hidden={tab !== "diagram"} className="workspace-pane">
                 <iframe key={diagramKey} className="workspace-diagram" title="Environment Diagram" src="tools/diagram2d/" />
