@@ -72,4 +72,8 @@ The AI routes take the learner's random id too (header `X-Learner`), for the per
 
 ## The tour
 
-**Tour** in the header, or `?tour=1` in the address: nine steps through the screen, each lighting up its part. It runs on the Toolbox's tour engine ([environment-3d-explorer/src/tour.tsx](../vendor/toolbox/tools/environment-3d-explorer/src/tour.tsx): `useTour` and `TourBar`), with the training's own look and steps ([src/shell/Tour.tsx](../src/shell/Tour.tsx)).
+**Tour** in the header, or `?tour=1` in the address: nine steps through the screen. Each step dims the page, lights up one part and shows a card next to it with **Back**, **Next** and **Skip the tour**. The learner moves on when they're ready; the arrow keys, Enter and Esc work too.
+
+The first time someone opens the training, a welcome card offers the tour (**Show me around** or **Not now**). It's offered once per browser (remembered in the browser's storage). Browser scripts don't get the offer; `?welcome=1` shows it anyway.
+
+The steps use the Toolbox's tour engine ([environment-3d-explorer/src/tour.tsx](../vendor/toolbox/tools/environment-3d-explorer/src/tour.tsx): `useTour`); the card, the welcome and the steps are the training's own ([src/shell/Tour.tsx](../src/shell/Tour.tsx)). The Toolbox's `TourBar`, which plays a tour by itself on a timer, isn't used.
