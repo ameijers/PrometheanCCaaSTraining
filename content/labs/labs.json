@@ -14,7 +14,9 @@
       "Dynamics 365 Contact Center lets a company answer its customers on channels like chat, messaging and voice. This training is about voice: customers phone a number, and a representative helps them.",
       "Between the ringing phone and the representative, unified routing decides where the call goes and who takes it. It first adds information to the call, then sends it to a queue and assigns it to a person who is free."
      ],
-     "concepts": ["unified-routing"]
+     "concepts": [
+      "unified-routing"
+     ]
     },
     {
      "title": "The path of a call",
@@ -23,7 +25,11 @@
       "Many workstreams have an AI agent that answers first, like an IVR menu. Then the workstream's route-to-queue rules pick a queue, and the queue's assignment method picks a representative."
      ],
      "diagram": "call-path",
-     "concepts": ["phone-number", "voice-channel", "workstream"]
+     "concepts": [
+      "phone-number",
+      "voice-channel",
+      "workstream"
+     ]
     },
     {
      "title": "The caller's answer",
@@ -31,7 +37,10 @@
       "When an AI agent asks “What is your call about?”, the caller's answer is kept on the call in a context variable, for example SelectedMenuItem = Billing.",
       "Routing rules can read that value. That's how a choice in the menu leads to a queue."
      ],
-     "concepts": ["ai-agent", "context-variable"]
+     "concepts": [
+      "ai-agent",
+      "context-variable"
+     ]
     },
     {
      "title": "Queues and the safety net",
@@ -39,7 +48,11 @@
       "A queue holds calls until a representative takes them. Only the members of a queue get its calls.",
       "A call that no route-to-queue rule picks up isn't lost: it goes to the workstream's fallback queue. That keeps the call, but the people there may not be the right ones."
      ],
-     "concepts": ["queue", "fallback-queue", "representative"]
+     "concepts": [
+      "queue",
+      "fallback-queue",
+      "representative"
+     ]
     },
     {
      "title": "Where you work in this training",
@@ -54,21 +67,36 @@
     {
      "id": "decides-queue",
      "question": "What decides which queue a call goes to?",
-     "options": ["The phone number on its own", "The workstream's route-to-queue rules", "Whichever representative is free", "The language of the voice channel"],
+     "options": [
+      "The phone number on its own",
+      "The workstream's route-to-queue rules",
+      "Whichever representative is free",
+      "The language of the voice channel"
+     ],
      "answer": 1,
      "why": "The workstream's route-to-queue rules pick the queue. The phone number only decides which workstream takes the call."
     },
     {
      "id": "no-rule",
      "question": "A call matches none of the route-to-queue rules. Where does it go?",
-     "options": ["Nowhere: the call is dropped", "To the workstream's fallback queue", "To the first queue in the list", "Back to the IVR"],
+     "options": [
+      "Nowhere: the call is dropped",
+      "To the workstream's fallback queue",
+      "To the first queue in the list",
+      "Back to the IVR"
+     ],
      "answer": 1,
      "why": "The fallback queue is the safety net for calls no rule picks up."
     },
     {
      "id": "ivr-answer",
      "question": "Where does the caller's answer to the IVR end up?",
-     "options": ["In a context variable on the call", "In the name of the queue", "In the representative's presence", "Nowhere: it's only spoken"],
+     "options": [
+      "In a context variable on the call",
+      "In the name of the queue",
+      "In the representative's presence",
+      "Nowhere: it's only spoken"
+     ],
      "answer": 0,
      "why": "The AI agent stores the answer in a context variable, and routing rules can check it."
     }
@@ -87,79 +115,481 @@
       "id": "first-call",
       "title": "Call the {line} and choose {choice1}",
       "do": "Open the Phone tab, call the {line} and choose {choice1}. Read the steps the call goes through.",
-      "check": { "type": "callMade", "answers": { "{variable}": "{value1}" } },
+      "check": {
+       "type": "callMade",
+       "answers": {
+        "{variable}": "{value1}"
+       }
+      },
       "done": "Each line of the trace is one part of the path: number, channel, workstream, IVR, rules, queue and representative.",
       "concept": "unified-routing",
       "tab": "phone",
-      "hints": ["The line's number is already filled in on the Phone tab.", "Choose {choice1} in the IVR, then select Call."]
+      "hints": [
+       "The line's number is already filled in on the Phone tab.",
+       "Choose {choice1} in the IVR, then select Call."
+      ]
      },
      {
       "id": "which-workstream",
       "title": "Which workstream took the call?",
       "do": "Read the call trace and pick the workstream.",
-      "ask": { "question": "The workstream", "options": "workstreams" },
-      "check": { "type": "answer", "key": "which-workstream", "expect": "{workstream}" },
+      "ask": {
+       "question": "The workstream",
+       "options": "workstreams"
+      },
+      "check": {
+       "type": "answer",
+       "key": "which-workstream",
+       "expect": "{workstream}"
+      },
       "concept": "workstream",
       "tab": "phone",
-      "hints": ["Look at the third step of the trace."]
+      "hints": [
+       "Look at the third step of the trace."
+      ]
      },
      {
       "id": "which-queue",
       "title": "Which queue did the call wait in?",
       "do": "Read the call trace and pick the queue.",
-      "ask": { "question": "The queue", "options": "queues" },
-      "check": { "type": "answer", "key": "which-queue", "expect": "{queue1}" },
+      "ask": {
+       "question": "The queue",
+       "options": "queues"
+      },
+      "check": {
+       "type": "answer",
+       "key": "which-queue",
+       "expect": "{queue1}"
+      },
       "concept": "route-to-queue",
       "tab": "phone",
-      "hints": ["The Route to queues step names the rule; the next step names the queue."]
+      "hints": [
+       "The Route to queues step names the rule; the next step names the queue."
+      ]
      },
      {
       "id": "see-diagram",
       "title": "Find the route in the Diagram",
       "do": "Open the Diagram. Follow the line from the phone number {dial} through the workstream to {queue1}.",
-      "check": { "type": "seen", "what": "diagram" },
+      "check": {
+       "type": "seen",
+       "what": "diagram"
+      },
       "done": "The Diagram shows every route at once. Select a shape and choose Open record to see where it's set up.",
       "concept": "workstream",
       "tab": "diagram",
-      "hints": ["The Diagram is the second tab above the workspace."]
+      "hints": [
+       "The Diagram is the second tab above the workspace."
+      ]
      },
      {
       "id": "second-call",
       "title": "Call again and choose {choice2}",
       "do": "Call the {line} again, this time choosing {choice2}.",
-      "check": { "type": "callMade", "answers": { "{variable}": "{value2}" } },
+      "check": {
+       "type": "callMade",
+       "answers": {
+        "{variable}": "{value2}"
+       }
+      },
       "concept": "context-variable",
       "tab": "phone",
-      "hints": ["Same number, another choice in the IVR."]
+      "hints": [
+       "Same number, another choice in the IVR."
+      ]
      },
      {
       "id": "second-queue",
       "title": "Where did that call go?",
       "do": "Pick the queue the second call waited in.",
-      "ask": { "question": "The queue", "options": "queues" },
-      "check": { "type": "answer", "key": "second-queue", "expect": "{queue2}" },
+      "ask": {
+       "question": "The queue",
+       "options": "queues"
+      },
+      "check": {
+       "type": "answer",
+       "key": "second-queue",
+       "expect": "{queue2}"
+      },
       "done": "Same number, same workstream, another queue: the caller's choice made the difference.",
       "concept": "route-to-queue",
       "tab": "phone",
-      "hints": ["Read the newest call at the top of the Phone tab."]
+      "hints": [
+       "Read the newest call at the top of the Phone tab."
+      ]
      }
     ]
    },
-   "challenges": ["route-1-first-day"]
+   "challenges": [
+    "route-1-first-day"
+   ]
   },
   {
    "id": "numbers",
    "number": 2,
    "title": "Phone numbers and the voice channel",
    "summary": "Where calls come in: numbers, voice channels, and which workstream answers.",
-   "status": "planned"
+   "status": "ready",
+   "learn": [
+    {
+     "title": "Phone numbers",
+     "text": [
+      "Customers reach the contact center on phone numbers. An administrator gets numbers with calling plans: to receive calls, to make them, or both.",
+      "In this training the numbers are simulated and come from ranges kept for films and TV, so they never ring a real phone."
+     ],
+     "concepts": [
+      "phone-number"
+     ]
+    },
+    {
+     "title": "The voice channel",
+     "text": [
+      "A number does nothing until it's on a voice channel. The voice channel connects the number to a voice workstream and holds settings like language and hold music.",
+      "One workstream can answer several numbers, for example a main number and a second line."
+     ],
+     "diagram": "call-path",
+     "concepts": [
+      "voice-channel"
+     ]
+    },
+    {
+     "title": "Which workstream answers",
+     "text": [
+      "The workstream behind the number decides everything that follows: whether an IVR answers, which rules route the call, and which fallback queue catches the rest.",
+      "So the first question for any call is: which workstream answers this number?"
+     ],
+     "concepts": [
+      "workstream"
+     ]
+    },
+    {
+     "title": "Numbers in the admin center",
+     "text": [
+      "Numbers are under Channels, then Phone numbers. There you can get a new number and set up the workstream that answers it.",
+      "A workstream's page shows its voice channel and its numbers."
+     ]
+    }
+   ],
+   "quiz": [
+    {
+     "id": "number-alone",
+     "question": "A new number has calling plans but isn't on a voice channel. What happens when a customer calls it?",
+     "options": [
+      "It rings in the fallback queue",
+      "Nobody answers: no workstream takes the call",
+      "The IVR answers",
+      "It rings every representative"
+     ],
+     "answer": 1,
+     "why": "Only a voice channel connects a number to a workstream."
+    },
+    {
+     "id": "several-numbers",
+     "question": "Can one workstream answer more than one phone number?",
+     "options": [
+      "No, one number per workstream",
+      "Yes, for example a main number and a second line",
+      "Only for outbound calls",
+      "Only with an IVR"
+     ],
+     "answer": 1,
+     "why": "A workstream can have several numbers, each on its voice channel."
+    },
+    {
+     "id": "plans",
+     "question": "Which calling plan does a number need so customers can call in?",
+     "options": [
+      "Make calls",
+      "Receive calls",
+      "SMS",
+      "None"
+     ],
+     "answer": 1,
+     "why": "Receiving calls needs the plan to receive; making calls is a separate plan."
+    }
+   ],
+   "do": {
+    "title": "Lines and numbers",
+    "company": "Contoso",
+    "summary": "Find out which workstream answers which number, and give a line its own number.",
+    "finished": "{partnerWs} answers its own number now. Next: what a workstream does with the calls it takes.",
+    "story": [
+     "Contoso's partners say they can't phone the partner line: there's no number for it.",
+     "Before you fix that, find out how Contoso's numbers are set up today."
+    ],
+    "tasks": [
+     {
+      "id": "which-ws",
+      "title": "Which workstream answers {techDial}?",
+      "do": "Find the number in the admin center under Channels, Phone numbers, or call it on the Phone tab.",
+      "ask": {
+       "question": "The workstream",
+       "options": "workstreams"
+      },
+      "check": {
+       "type": "answer",
+       "key": "which-ws",
+       "expect": "{techWs}"
+      },
+      "concept": "voice-channel",
+      "tab": "admin",
+      "hints": [
+       "Channels is under Customer support in the site map.",
+       "Calling the number shows the workstream in the trace's third step."
+      ]
+     },
+     {
+      "id": "how-many",
+      "title": "How many numbers does {workstream} answer?",
+      "do": "Open the workstream's page, or look at Phone numbers.",
+      "ask": {
+       "question": "Number of phone numbers",
+       "options": "number"
+      },
+      "check": {
+       "type": "answer",
+       "key": "how-many",
+       "expect": "{wsNumbers}"
+      },
+      "concept": "phone-number",
+      "tab": "admin",
+      "hints": [
+       "Workstreams, then {workstream}: its voice channel lists the numbers."
+      ]
+     },
+     {
+      "id": "partner-number",
+      "title": "Give {partnerWs} a phone number",
+      "do": "Get a new number that can receive calls, and set up {partnerWs} as its workstream.",
+      "check": {
+       "type": "numbers",
+       "workstream": "{partnerWs}",
+       "atLeast": 1
+      },
+      "concept": "phone-number",
+      "tab": "admin",
+      "hints": [
+       "Open Channels, then Phone numbers, and select Add ACS number.",
+       "Pick a number with the plan to receive calls. Then select it and choose Setup workstream: {partnerWs}."
+      ]
+     },
+     {
+      "id": "call-partner",
+      "title": "Call the new number",
+      "do": "On the Phone tab, call the number you just set up and read where the call goes.",
+      "check": {
+       "type": "callMade",
+       "answers": {},
+       "workstream": "{partnerWs}"
+      },
+      "done": "{partnerWs} has no IVR and no rules yet, so its calls go to its fallback queue.",
+      "concept": "workstream",
+      "tab": "phone",
+      "hints": [
+       "Numbers in this environment, on the Phone tab, lists the new number too."
+      ]
+     }
+    ]
+   },
+   "challenges": [
+    "build-5-spare-parts-line"
+   ]
   },
   {
    "id": "workstreams",
    "number": 3,
    "title": "Workstreams",
    "summary": "What a workstream does with a call: its fallback queue and how it distributes work.",
-   "status": "planned"
+   "status": "ready",
+   "learn": [
+    {
+     "title": "What a workstream does",
+     "text": [
+      "A workstream takes in work from its channels and decides where it goes. For voice: it answers the numbers on its voice channel, lets an AI agent ask questions first, routes the call to a queue and decides how the work is handed out."
+     ],
+     "concepts": [
+      "workstream"
+     ]
+    },
+    {
+     "title": "The AI agent",
+     "text": [
+      "A workstream can have an AI agent that answers every call first, like an IVR menu. Its answers become context variables on the call. Without an AI agent the call goes straight to routing."
+     ],
+     "concepts": [
+      "ai-agent"
+     ]
+    },
+    {
+     "title": "The fallback queue",
+     "text": [
+      "Every workstream has a fallback queue. Calls that no route-to-queue rule picks up go there.",
+      "Choose it with care: it should be a queue with people who can at least help the caller on."
+     ],
+     "concepts": [
+      "fallback-queue"
+     ]
+    },
+    {
+     "title": "Work distribution",
+     "text": [
+      "The workstream also says how work is handed out: which capacity profile its calls use, and in which presences representatives can get them.",
+      "In this training's voice workstreams, calls use the profile Default voice inbound, and representatives who are Available or Busy can get them."
+     ],
+     "concepts": [
+      "capacity-profile",
+      "presence"
+     ]
+    }
+   ],
+   "quiz": [
+    {
+     "id": "no-agent",
+     "question": "A voice workstream has no AI agent. What happens to its calls?",
+     "options": [
+      "They are dropped",
+      "They go straight to the route-to-queue rules",
+      "They wait for an AI agent",
+      "They go to voicemail"
+     ],
+     "answer": 1,
+     "why": "Without an AI agent nothing asks the caller first; routing starts straight away."
+    },
+    {
+     "id": "fallback-what",
+     "question": "Which calls end up in a workstream's fallback queue?",
+     "options": [
+      "Every call",
+      "Calls that no route-to-queue rule picks up",
+      "Calls outside opening hours",
+      "Calls from unknown numbers"
+     ],
+     "answer": 1,
+     "why": "The fallback queue is the safety net for calls no rule routes."
+    },
+    {
+     "id": "where-capacity",
+     "question": "Where does a workstream say which capacity profile its calls use?",
+     "options": [
+      "Work distribution",
+      "The voice channel",
+      "The fallback queue",
+      "The AI agent"
+     ],
+     "answer": 0,
+     "why": "Work distribution holds the capacity profile and the allowed presences."
+    }
+   ],
+   "do": {
+    "title": "A better safety net",
+    "company": "Contoso",
+    "summary": "See where unrouted calls go, and give a workstream a better fallback queue.",
+    "finished": "Calls nobody routes on the {techLine} now reach people who can help. Next: queues and the people in them.",
+    "story": [
+     "Technical support callers who say something the menu doesn't know end up in {techFallback}, with people who don't do technical support.",
+     "Find out what happens, then fix it."
+    ],
+    "tasks": [
+     {
+      "id": "fallback-now",
+      "title": "What's the fallback queue of {techWs}?",
+      "do": "Open the workstream in the admin center.",
+      "ask": {
+       "question": "The fallback queue",
+       "options": "queues"
+      },
+      "check": {
+       "type": "answer",
+       "key": "fallback-now",
+       "expect": "{techFallback}"
+      },
+      "concept": "fallback-queue",
+      "tab": "admin",
+      "hints": [
+       "Workstreams, then {techWs}: Fallback queue is under Route to queues."
+      ]
+     },
+     {
+      "id": "odd-call",
+      "title": "Call the {techLine} and say Printer",
+      "do": "Call {techDial}, choose Something else… in the IVR and type Printer.",
+      "check": {
+       "type": "callMade",
+       "answers": {
+        "{variable}": "Printer"
+       },
+       "dial": "{techDial}"
+      },
+      "done": "No rule knows Printer, so the call went to {techFallback}.",
+      "concept": "ai-agent",
+      "tab": "phone",
+      "hints": [
+       "On the Phone tab, type {techDial} as the number to call."
+      ]
+     },
+     {
+      "id": "set-fallback",
+      "title": "Make {techQueue1} the fallback queue",
+      "do": "Set the fallback queue of {techWs} to {techQueue1}.",
+      "check": {
+       "type": "goal",
+       "goal": {
+        "type": "fallback",
+        "workstream": "{techWs}",
+        "queue": "{techQueue1}"
+       }
+      },
+      "concept": "fallback-queue",
+      "tab": "admin",
+      "hints": [
+       "On the workstream's page, select Edit next to Fallback queue."
+      ]
+     },
+     {
+      "id": "odd-again",
+      "title": "Test it: call again and say Printer",
+      "do": "Call the {techLine} again with Printer.",
+      "check": {
+       "type": "call",
+       "dial": "{techDial}",
+       "answers": {
+        "{variable}": "Printer"
+       },
+       "expect": {
+        "queue": "{techQueue1}"
+       }
+      },
+      "done": "The call reaches {techQueue1} now.",
+      "concept": "fallback-queue",
+      "tab": "phone",
+      "hints": [
+       "If it still goes to {techFallback}, check the workstream's Fallback queue."
+      ]
+     },
+     {
+      "id": "profile",
+      "title": "Which capacity profile do {techWs} calls use?",
+      "do": "Look at the workstream's Work distribution.",
+      "ask": {
+       "question": "The capacity profile",
+       "options": "profiles"
+      },
+      "check": {
+       "type": "answer",
+       "key": "profile",
+       "expect": "{profile}"
+      },
+      "concept": "capacity-profile",
+      "tab": "admin",
+      "hints": [
+       "Work distribution is on the workstream's page."
+      ]
+     }
+    ]
+   },
+   "challenges": [
+    "build-1-safety-nets"
+   ]
   },
   {
    "id": "queues-people",
@@ -174,7 +604,11 @@
       "A queue holds calls until a representative takes them. Each queue is for one kind of work; calls need a voice queue.",
       "You create queues in the admin center under Queues, then Advanced queues."
      ],
-     "concepts": ["queue", "queue-type", "create-queue"]
+     "concepts": [
+      "queue",
+      "queue-type",
+      "create-queue"
+     ]
     },
     {
      "title": "Who is in a queue",
@@ -183,7 +617,10 @@
       "Only members of a queue get its calls. A queue without members holds calls that nobody can answer."
      ],
      "diagram": "queue-people",
-     "concepts": ["queue-users", "representative"]
+     "concepts": [
+      "queue-users",
+      "representative"
+     ]
     },
     {
      "title": "Presence",
@@ -191,7 +628,9 @@
       "Presence says whether a representative can take work right now: Available, Busy, Away, Do not disturb or Offline (in this training Do not disturb is called Busy - DND). A representative sets it at the top of the workspace.",
       "Each workstream lists the presences it assigns work to. In this training's workstreams that's Available and Busy. In the product, presence also changes by itself as a representative's capacity fills up; the training doesn't do that."
      ],
-     "concepts": ["presence"]
+     "concepts": [
+      "presence"
+     ]
     },
     {
      "title": "Capacity",
@@ -199,7 +638,9 @@
       "A capacity profile says how much work a representative can take at the same time, for example one call.",
       "After a call ends, the representative is in wrap-up. Their capacity stays in use until they close the session, so they don't get a new call in the middle of their notes."
      ],
-     "concepts": ["capacity-profile"]
+     "concepts": [
+      "capacity-profile"
+     ]
     },
     {
      "title": "Who gets the call",
@@ -207,28 +648,45 @@
       "When a call waits in a queue, the queue's assignment method picks one of the members who can take it: in an allowed presence, with capacity left.",
       "Least active is the default for voice queues: the call goes to the member who has been least active."
      ],
-     "concepts": ["assignment-method"]
+     "concepts": [
+      "assignment-method"
+     ]
     }
    ],
    "quiz": [
     {
      "id": "not-member",
      "question": "Mia is Available, but she isn't a member of the Billing queue. Can routing give her a Billing call?",
-     "options": ["Yes, because she's Available", "No: only members of a queue get its calls", "Only if she has the right skill", "Only outside operating hours"],
+     "options": [
+      "Yes, because she's Available",
+      "No: only members of a queue get its calls",
+      "Only if she has the right skill",
+      "Only outside operating hours"
+     ],
      "answer": 1,
      "why": "Assignment only looks at the queue's own members."
     },
     {
      "id": "presence",
      "question": "Which representatives can get calls from this training's voice workstreams?",
-     "options": ["Those who are Available or Busy, with capacity left", "Anyone who is signed in, whatever their presence", "Only those who are Offline", "Those who are Away"],
+     "options": [
+      "Those who are Available or Busy, with capacity left",
+      "Anyone who is signed in, whatever their presence",
+      "Only those who are Offline",
+      "Those who are Away"
+     ],
      "answer": 0,
      "why": "The workstream's allowed presences are Available and Busy, and the representative needs capacity left."
     },
     {
      "id": "wrap-up",
      "question": "A representative selected End. When is their capacity free for the next call?",
-     "options": ["Straight away", "When they close the session after wrap-up", "After an hour", "When the customer calls again"],
+     "options": [
+      "Straight away",
+      "When they close the session after wrap-up",
+      "After an hour",
+      "When the customer calls again"
+     ],
      "answer": 1,
      "why": "In wrap-up the capacity stays in use until the session is closed."
     }
@@ -247,77 +705,532 @@
       "id": "count-members",
       "title": "How many users does {queue1} have?",
       "do": "In the admin center, open Queues, then Advanced queues, then {queue1}. Count its users.",
-      "ask": { "question": "Number of users", "options": "number" },
-      "check": { "type": "answer", "key": "count-members", "expect": "{members1}" },
+      "ask": {
+       "question": "Number of users",
+       "options": "number"
+      },
+      "check": {
+       "type": "answer",
+       "key": "count-members",
+       "expect": "{members1}"
+      },
       "concept": "queue-users",
       "tab": "admin",
-      "hints": ["Queues are under Customer support in the site map.", "The Users tab on the queue's page lists them."]
+      "hints": [
+       "Queues are under Customer support in the site map.",
+       "The Users tab on the queue's page lists them."
+      ]
      },
      {
       "id": "create-queue",
       "title": "Create a voice queue named {newQueue}",
       "do": "Create an advanced queue named {newQueue}. Calls need the type Voice.",
-      "check": { "type": "row", "table": "queue", "where": { "name": "{newQueue}", "msdyn_queuetype": 192350002, "msdyn_isomnichannelqueue": true }, "close": ["name"] },
+      "check": {
+       "type": "row",
+       "table": "queue",
+       "where": {
+        "name": "{newQueue}",
+        "msdyn_queuetype": 192350002,
+        "msdyn_isomnichannelqueue": true
+       },
+       "close": [
+        "name"
+       ]
+      },
       "concept": "create-queue",
       "tab": "admin",
-      "hints": ["Under Advanced queues, select Manage, then New queue."]
+      "hints": [
+       "Under Advanced queues, select Manage, then New queue."
+      ]
      },
      {
       "id": "add-users",
       "title": "Add at least two users to {newQueue}",
       "do": "Open {newQueue} and add the people who will take its calls.",
-      "check": { "type": "members", "queue": "{newQueue}", "atLeast": 2 },
+      "check": {
+       "type": "members",
+       "queue": "{newQueue}",
+       "atLeast": 2
+      },
       "concept": "queue-users",
       "tab": "admin",
-      "hints": ["Select Add users, tick at least two people, then select Add."]
+      "hints": [
+       "Select Add users, tick at least two people, then select Add."
+      ]
      },
      {
       "id": "sign-in",
       "title": "Sign in as {rep} and be Available",
       "do": "Open the Agent tab. Under Sign in as, choose {rep}, a member of {queue1}. Their presence should be Available.",
-      "check": { "type": "did", "what": "ready:{queue1}" },
+      "check": {
+       "type": "did",
+       "what": "ready:{queue1}"
+      },
       "concept": "presence",
       "tab": "agent",
-      "hints": ["Set the presence with the button at the top right of the workspace."]
+      "hints": [
+       "Set the presence with the button at the top right of the workspace."
+      ]
      },
      {
       "id": "accept",
       "title": "Call {queue1} and accept the call",
       "do": "On the Phone tab, call the {line} and choose {choice1}. Then go back to the Agent tab and select Accept.",
-      "check": { "type": "did", "what": "accept-call" },
+      "check": {
+       "type": "did",
+       "what": "accept-call"
+      },
       "concept": "assignment-method",
       "tab": "agent",
-      "hints": ["The call is offered to {rep} because they've been least active in {queue1}.", "The notification appears at the top right of the workspace."]
+      "hints": [
+       "The call is offered to {rep} because they've been least active in {queue1}.",
+       "The notification appears at the top right of the workspace."
+      ]
      },
      {
       "id": "close",
       "title": "End the call and close the session",
       "do": "Select End in the Communication Panel. The call goes to wrap-up; then close the session.",
-      "check": { "type": "did", "what": "close-session" },
+      "check": {
+       "type": "did",
+       "what": "close-session"
+      },
       "done": "Closing the session freed {rep}'s capacity for the next call.",
       "concept": "capacity-profile",
       "tab": "agent",
-      "hints": ["Close session is on the Active Conversation form, or the ✕ on the call's tab."]
+      "hints": [
+       "Close session is on the Active Conversation form, or the ✕ on the call's tab."
+      ]
      }
     ]
    },
-   "challenges": ["fix-1-monday-morning", "build-1-safety-nets"]
+   "challenges": [
+    "fix-1-monday-morning"
+   ]
   },
   {
    "id": "assignment",
    "number": 5,
    "title": "Assignment and capacity",
    "summary": "How a queue picks a representative: assignment methods and capacity profiles.",
-   "status": "planned",
-   "challenges": ["build-4-spread-the-work"]
+   "status": "ready",
+   "challenges": [
+    "build-4-spread-the-work"
+   ],
+   "learn": [
+    {
+     "title": "Who gets the call",
+     "text": [
+      "When a call waits in a queue, the queue's assignment method picks one of its members. Only members who can take it count: in an allowed presence, with capacity left."
+     ],
+     "diagram": "queue-people",
+     "concepts": [
+      "assignment-method"
+     ]
+    },
+    {
+     "title": "The methods",
+     "text": [
+      "Least active, the default for voice queues: the member who has been least active gets the call.",
+      "Highest capacity: the member with the most free capacity. Advanced round robin: members take turns in a fixed order.",
+      "No auto assignment: nobody gets calls automatically; representatives pick them up."
+     ],
+     "concepts": [
+      "assignment-method"
+     ]
+    },
+    {
+     "title": "Capacity profiles",
+     "text": [
+      "A capacity profile says how much work of a kind a representative can take at the same time. With a work item limit of 1, a representative takes one call at a time.",
+      "Raise the limit and they can have a second call, for example one on hold."
+     ],
+     "concepts": [
+      "capacity-profile"
+     ]
+    },
+    {
+     "title": "Putting them together",
+     "text": [
+      "Presence decides who can work now, capacity decides how much, and the assignment method decides who goes first.",
+      "When nobody qualifies, the call waits in the queue and routing keeps trying."
+     ],
+     "concepts": [
+      "presence"
+     ]
+    }
+   ],
+   "quiz": [
+    {
+     "id": "default-method",
+     "question": "Which assignment method does a new voice queue get?",
+     "options": [
+      "Highest capacity",
+      "Least active",
+      "Advanced round robin",
+      "No auto assignment"
+     ],
+     "answer": 1,
+     "why": "Least active is the default selection for voice and messaging queues."
+    },
+    {
+     "id": "limit-one",
+     "question": "A representative's voice profile has a work item limit of 1 and they're on a call. Can they get a second call?",
+     "options": [
+      "Yes, if they're Available",
+      "No, not until they close the first one",
+      "Yes, it goes on hold",
+      "Only from another queue"
+     ],
+     "answer": 1,
+     "why": "The limit is reached until the first call's session is closed."
+    },
+    {
+     "id": "nobody",
+     "question": "Every member of a queue is Away. What happens to a new call?",
+     "options": [
+      "It goes to the fallback queue",
+      "It waits in the queue, and routing keeps trying",
+      "It's assigned anyway",
+      "It's dropped"
+     ],
+     "answer": 1,
+     "why": "The call stays in its queue until someone can take it."
+    }
+   ],
+   "do": {
+    "title": "Who goes first",
+    "company": "Contoso",
+    "summary": "Read a queue's assignment method, predict who gets a call, and change how work is handed out.",
+    "finished": "You've seen how presence, capacity and the assignment method decide who answers. Next: what the IVR asks.",
+    "story": [
+     "The {retailQueue2} team asks why the same people seem to get the calls, and whether they could take two calls at once."
+    ],
+    "tasks": [
+     {
+      "id": "method-now",
+      "title": "Which assignment method does {queue1} use?",
+      "do": "Open {queue1} in the admin center.",
+      "ask": {
+       "question": "The assignment method",
+       "options": [
+        "Least active",
+        "Highest capacity",
+        "Advanced round robin",
+        "No auto assignment"
+       ]
+      },
+      "check": {
+       "type": "answer",
+       "key": "method-now",
+       "expect": "{method1}"
+      },
+      "concept": "assignment-method",
+      "tab": "admin",
+      "hints": [
+       "The Assignment method card is on the queue's page."
+      ]
+     },
+     {
+      "id": "predict",
+      "title": "Who gets the next {queue1} call?",
+      "do": "Nobody has had a call yet. With Least active, the training then goes by the order people joined the queue. Who is first in {queue1} who can take a call?",
+      "ask": {
+       "question": "The representative",
+       "options": "people"
+      },
+      "check": {
+       "type": "answer",
+       "key": "predict",
+       "expect": "{next1}"
+      },
+      "concept": "assignment-method",
+      "tab": "admin",
+      "hints": [
+       "The Users tab of {queue1} lists its members in the order they joined.",
+       "Skip anyone who is Away or Offline: User management shows presence, or try the Agent tab."
+      ]
+     },
+     {
+      "id": "check-it",
+      "title": "Call {queue1} and see who takes it",
+      "do": "Call the {line} and choose {choice1}. The last step of the trace names the representative.",
+      "check": {
+       "type": "callMade",
+       "answers": {
+        "{variable}": "{value1}"
+       }
+      },
+      "done": "The trace's Assignment step says who took the call and why.",
+      "concept": "assignment-method",
+      "tab": "phone",
+      "hints": [
+       "Use the Phone tab."
+      ]
+     },
+     {
+      "id": "round-robin",
+      "title": "Hand out {retailQueue2} calls in turn",
+      "do": "Set the assignment method of {retailQueue2} to Advanced round robin.",
+      "check": {
+       "type": "goal",
+       "goal": {
+        "type": "assignment-method",
+        "queue": "{retailQueue2}",
+        "method": "Advanced round robin"
+       }
+      },
+      "concept": "assignment-method",
+      "tab": "admin",
+      "hints": [
+       "Open {retailQueue2} and select See more under Assignment method.",
+       "Choose Advanced round robin and select Save & close."
+      ]
+     },
+     {
+      "id": "limit-now",
+      "title": "What's the work item limit of {profile}?",
+      "do": "Open the capacity profile in User management.",
+      "ask": {
+       "question": "Work item limit",
+       "options": "number"
+      },
+      "check": {
+       "type": "answer",
+       "key": "limit-now",
+       "expect": "{limit}"
+      },
+      "concept": "capacity-profile",
+      "tab": "admin",
+      "hints": [
+       "User management, then Manage for Capacity profile."
+      ]
+     },
+     {
+      "id": "two-calls",
+      "title": "Let representatives take two calls at once",
+      "do": "Set the work item limit of {profile} to 2.",
+      "check": {
+       "type": "goal",
+       "goal": {
+        "type": "capacity",
+        "profile": "{profile}",
+        "limit": 2
+       }
+      },
+      "concept": "capacity-profile",
+      "tab": "admin",
+      "hints": [
+       "Open “{profile}” and set its Work item limit."
+      ]
+     }
+    ]
+   }
   },
   {
    "id": "ivr",
    "number": 6,
    "title": "The IVR and context variables",
    "summary": "What the AI agent asks, and how the answer becomes something routing can use.",
-   "status": "planned",
-   "challenges": ["route-2-the-menu"]
+   "status": "ready",
+   "challenges": [
+    "route-2-the-menu"
+   ],
+   "learn": [
+    {
+     "title": "The AI agent answers first",
+     "text": [
+      "On a workstream with an AI agent, every call is answered by the agent first. As an IVR it asks the caller what the call is about."
+     ],
+     "concepts": [
+      "ai-agent"
+     ]
+    },
+    {
+     "title": "Context variables",
+     "text": [
+      "The agent keeps the caller's answers on the call as context variables, for example SelectedMenuItem = Billing. A workstream lists the context variables its calls can have.",
+      "Routing rules read them; the representative sees them too, on the Active Conversation form."
+     ],
+     "diagram": "rules",
+     "concepts": [
+      "context-variable"
+     ]
+    },
+    {
+     "title": "Values must match",
+     "text": [
+      "A rule compares the variable with a value. The value has to be exactly what the agent sends: if the agent sends Billing and the rule checks Invoices, the rule never matches.",
+      "When a caller says something no rule checks, the call goes to the fallback queue."
+     ],
+     "concepts": [
+      "route-to-queue"
+     ]
+    },
+    {
+     "title": "Lines without an IVR",
+     "text": [
+      "Not every line has an AI agent. On such a line nobody asks the caller anything, so no menu choice reaches routing."
+     ],
+     "concepts": [
+      "workstream"
+     ]
+    }
+   ],
+   "quiz": [
+    {
+     "id": "where-answer",
+     "question": "Where does the caller's menu choice end up?",
+     "options": [
+      "In a context variable on the call",
+      "In the queue's description",
+      "In the phone number",
+      "In the representative's presence"
+     ],
+     "answer": 0,
+     "why": "The AI agent stores answers in context variables."
+    },
+    {
+     "id": "no-ivr",
+     "question": "A line has no AI agent. Can a rule on SelectedMenuItem route its calls?",
+     "options": [
+      "Yes, always",
+      "No: nobody asked, so the variable has no value",
+      "Only at night",
+      "Only with skills"
+     ],
+     "answer": 1,
+     "why": "Without an IVR the caller isn't asked, so there's nothing to compare."
+    },
+    {
+     "id": "unknown-choice",
+     "question": "A caller says something no rule checks. Where does the call go?",
+     "options": [
+      "Back to the IVR",
+      "To the fallback queue",
+      "Nowhere",
+      "To the first queue in the list"
+     ],
+     "answer": 1,
+     "why": "Calls no rule picks up go to the fallback queue."
+    }
+   ],
+   "do": {
+    "title": "What the caller said",
+    "company": "Contoso",
+    "summary": "Find the context variables, see what an unknown answer does, and read the answer as a representative.",
+    "finished": "You followed the caller's answer from the IVR to routing and to the representative's screen. Next: the rules that use it.",
+    "story": [
+     "Contoso's IVR asks callers what their call is about. Find out what it does with the answer."
+    ],
+    "tasks": [
+     {
+      "id": "variable",
+      "title": "Which context variable holds the menu choice?",
+      "do": "Open {workstream} in the admin center, or read a call's trace.",
+      "ask": {
+       "question": "The context variable",
+       "options": "variables"
+      },
+      "check": {
+       "type": "answer",
+       "key": "variable",
+       "expect": "{variable}"
+      },
+      "concept": "context-variable",
+      "tab": "admin",
+      "hints": [
+       "The trace's IVR step shows the caller's answers: variable = value."
+      ]
+     },
+     {
+      "id": "dutch-ivr",
+      "title": "Does {dutchWs} have an IVR?",
+      "do": "Call {dutchDial} and read the trace, or look at the workstream.",
+      "ask": {
+       "question": "Does it have an IVR?",
+       "options": [
+        "Yes",
+        "No"
+       ]
+      },
+      "check": {
+       "type": "answer",
+       "key": "dutch-ivr",
+       "expect": "No"
+      },
+      "concept": "ai-agent",
+      "tab": "phone",
+      "hints": [
+       "A call to a line with an IVR has an IVR step in its trace."
+      ]
+     },
+     {
+      "id": "unknown",
+      "title": "Call the {line} and say Invoice",
+      "do": "Call the {line}, choose Something else… and type Invoice.",
+      "check": {
+       "type": "callMade",
+       "answers": {
+        "{variable}": "Invoice"
+       }
+      },
+      "concept": "context-variable",
+      "tab": "phone",
+      "hints": [
+       "Something else… is the last choice in the IVR."
+      ]
+     },
+     {
+      "id": "unknown-queue",
+      "title": "Where did that call go?",
+      "do": "Pick the queue from the trace.",
+      "ask": {
+       "question": "The queue",
+       "options": "queues"
+      },
+      "check": {
+       "type": "answer",
+       "key": "unknown-queue",
+       "expect": "{fallback}"
+      },
+      "done": "No rule checks Invoice, so the call went to the fallback queue.",
+      "concept": "fallback-queue",
+      "tab": "phone",
+      "hints": [
+       "Read the newest call at the top of the Phone tab."
+      ]
+     },
+     {
+      "id": "sign-in",
+      "title": "Sign in as {rep} and be Available",
+      "do": "Open the Agent tab and choose {rep} under Sign in as.",
+      "check": {
+       "type": "did",
+       "what": "ready:{queue1}"
+      },
+      "concept": "presence",
+      "tab": "agent",
+      "hints": [
+       "The presence button is at the top right of the workspace."
+      ]
+     },
+     {
+      "id": "see-answer",
+      "title": "Take a {choice1} call and find the answer",
+      "do": "Call the {line}, choose {choice1}, and accept the call in the Agent tab. The Active Conversation form shows the caller's answer under Context from the IVR.",
+      "check": {
+       "type": "did",
+       "what": "accept-call"
+      },
+      "concept": "context-variable",
+      "tab": "agent",
+      "hints": [
+       "The notification is at the top right of the workspace."
+      ]
+     }
+    ]
+   }
   },
   {
    "id": "routing",
@@ -333,7 +1246,10 @@
       "Each rule says: if this is true about the call, send it to that queue."
      ],
      "diagram": "rules",
-     "concepts": ["context-variable", "route-to-queue"]
+     "concepts": [
+      "context-variable",
+      "route-to-queue"
+     ]
     },
     {
      "title": "Writing a rule",
@@ -341,7 +1257,9 @@
       "Open the workstream, then its ruleset under Route to queues, and select Create rule. Give the rule a name, add a condition, and pick the queue.",
       "A condition compares a field with a value, for example SelectedMenuItem Equals Billing. The value must be exactly what the IVR sends; “Billing invoice” doesn't match “Billing”."
      ],
-     "concepts": ["create-rule"]
+     "concepts": [
+      "create-rule"
+     ]
     },
     {
      "title": "When more than one rule matches",
@@ -349,7 +1267,9 @@
       "The rules are a decision list, in order. When several rules match and no queue is overflowing, the first rule in the list wins.",
       "The rule hit policy says what happens when a queue is overflowing: Hit-all moves on to the next matching rule; Hit-first stays with the first one."
      ],
-     "concepts": ["rule-hit-policy"]
+     "concepts": [
+      "rule-hit-policy"
+     ]
     },
     {
      "title": "When no rule matches",
@@ -357,72 +1277,850 @@
       "A call that no rule picks up goes to the workstream's fallback queue. A new menu choice without a rule always ends there.",
       "So when calls pile up in the fallback queue, look for a choice that has no rule, or a rule whose value doesn't match."
      ],
-     "concepts": ["fallback-queue"]
+     "concepts": [
+      "fallback-queue"
+     ]
     },
     {
      "title": "Sharing calls between queues",
      "text": [
       "One rule can share its calls between up to five queues, with a percentage for each that adds up to 100, for example 70% to one team and 30% to another."
      ],
-     "concepts": ["percentage-routing"]
+     "concepts": [
+      "percentage-routing"
+     ]
     }
    ],
    "quiz": [
     {
      "id": "exact-value",
      "question": "The IVR sends “Billing”. Your rule checks SelectedMenuItem Equals “Billing invoice”. What happens to the call?",
-     "options": ["The rule matches anyway", "The rule doesn't match, so another rule or the fallback queue takes the call", "The IVR asks again", "The call is dropped"],
+     "options": [
+      "The rule matches anyway",
+      "The rule doesn't match, so another rule or the fallback queue takes the call",
+      "The IVR asks again",
+      "The call is dropped"
+     ],
      "answer": 1,
      "why": "The value has to match what the IVR sends."
     },
     {
      "id": "two-match",
      "question": "Two rules match a call, and neither queue is overflowing. Which queue does the call go to?",
-     "options": ["The queue of the first rule in the decision list", "The queue of the last rule", "Both queues", "The queue with the most members"],
+     "options": [
+      "The queue of the first rule in the decision list",
+      "The queue of the last rule",
+      "Both queues",
+      "The queue with the most members"
+     ],
      "answer": 0,
      "why": "Learn: the system selects the queue of the first rule in the list."
     },
     {
      "id": "where-rules",
      "question": "Where do you add a route-to-queue rule?",
-     "options": ["On the queue", "On the workstream, in its route-to-queue ruleset", "On the representative", "On the phone number"],
+     "options": [
+      "On the queue",
+      "On the workstream, in its route-to-queue ruleset",
+      "On the representative",
+      "On the phone number"
+     ],
      "answer": 1,
      "why": "Routing rules belong to the workstream."
     }
    ],
-   "do": { "template": "new-menu-choice" },
-   "challenges": ["route-2-the-menu", "build-2-warranty", "fix-2-after-the-reorganisation"]
+   "do": {
+    "template": "new-menu-choice"
+   },
+   "challenges": [
+    "route-2-the-menu",
+    "build-2-warranty",
+    "fix-2-after-the-reorganisation"
+   ]
   },
   {
    "id": "classification",
    "number": 8,
    "title": "Work classification and skills",
    "summary": "Adding information to a call before routing: Priority Score, skills and skill-based routing.",
-   "status": "planned",
-   "challenges": ["build-4-returns-skills"]
+   "status": "ready",
+   "challenges": [
+    "build-4-returns-skills"
+   ],
+   "learn": [
+    {
+     "title": "Before routing: classification",
+     "text": [
+      "Unified routing first classifies a call: rules add information to it. Only then do the route-to-queue rules run, and they can use what was added."
+     ],
+     "concepts": [
+      "unified-routing",
+      "work-classification"
+     ]
+    },
+    {
+     "title": "Work classification rulesets",
+     "text": [
+      "A workstream can have up to ten work classification rulesets. They run in order. In each, the first rule that matches sets its output, for example Priority Score = 10.",
+      "You find them on the workstream, under Work classification."
+     ],
+     "concepts": [
+      "work-classification"
+     ]
+    },
+    {
+     "title": "Skills",
+     "text": [
+      "Skills, such as a language or a product, describe what a representative knows, at a proficiency like Beginner, Intermediate or Expert.",
+      "A skill attachment rule adds a skill to a call, for example Technical when the caller picks Technical."
+     ],
+     "concepts": [
+      "skill",
+      "skill-attachment"
+     ]
+    },
+    {
+     "title": "Skill matching",
+     "text": [
+      "The workstream's Default skill matching algorithm decides how skills count. Exact Match only gives the call to someone with every needed skill at the needed level; Closest Match gives it to whoever comes closest.",
+      "With Exact Match and nobody qualified, the call stays in the queue."
+     ],
+     "concepts": [
+      "skill-matching"
+     ]
+    }
+   ],
+   "quiz": [
+    {
+     "id": "order",
+     "question": "What runs first for an incoming call?",
+     "options": [
+      "Route-to-queue rules",
+      "Work classification rulesets",
+      "The assignment method",
+      "Overflow"
+     ],
+     "answer": 1,
+     "why": "Classification runs before routing, so the rules can use what it added."
+    },
+    {
+     "id": "first-rule",
+     "question": "Two rules in one classification ruleset match a call. Which output is set?",
+     "options": [
+      "Both",
+      "The first matching rule's",
+      "The last one's",
+      "Neither"
+     ],
+     "answer": 1,
+     "why": "In each ruleset, the first rule that matches sets its output."
+    },
+    {
+     "id": "exact",
+     "question": "With Exact Match, nobody in the queue has the needed skill. What happens?",
+     "options": [
+      "The call goes to anyone",
+      "The call stays unassigned in the queue",
+      "The call goes to the fallback queue",
+      "The skill is ignored"
+     ],
+     "answer": 1,
+     "why": "Exact Match waits for someone with every needed skill."
+    }
+   ],
+   "do": {
+    "title": "Priority and skills",
+    "company": "Contoso",
+    "summary": "Give complaints a higher priority, and send technical calls to people who know the work.",
+    "finished": "Complaints are marked as urgent before routing, and technical calls need the Technical skill. Next: hours and busy queues.",
+    "story": [
+     "Contoso wants complaints handled with priority, and technical questions on the {line} answered only by people who know technical work."
+    ],
+    "tasks": [
+     {
+      "id": "rulesets-now",
+      "title": "How many work classification rulesets does {workstream} have?",
+      "do": "Open {workstream} and look at Work classification.",
+      "ask": {
+       "question": "Number of rulesets",
+       "options": "number"
+      },
+      "check": {
+       "type": "answer",
+       "key": "rulesets-now",
+       "expect": "{rulesets}"
+      },
+      "concept": "work-classification",
+      "tab": "admin",
+      "hints": [
+       "Work classification (optional) is under Routing rules on the workstream's page."
+      ]
+     },
+     {
+      "id": "priority",
+      "title": "Give {choiceLast} calls a Priority Score of 10",
+      "do": "Create a work classification ruleset on {workstream} with a rule: when {variable} equals {valueLast}, set Priority Score to 10.",
+      "check": {
+       "type": "trace",
+       "dial": "{dial}",
+       "answers": {
+        "{variable}": "{valueLast}"
+       },
+       "includes": "sets Priority Score to 10"
+      },
+      "concept": "work-classification",
+      "tab": "admin",
+      "hints": [
+       "Select Create ruleset next to Work classification, then Create new.",
+       "In the ruleset, Create rule: a condition row on {variable}, and under Output, Add attribute, Priority Score, set to 10."
+      ]
+     },
+     {
+      "id": "skills",
+      "title": "Technical calls need the Technical skill",
+      "do": "On {workstream}: attach the Technical skill (Intermediate) to calls that choose {techChoice} (the IVR sends {techValue}), use Exact Match, and make sure at least two people in {techQueue} have the skill.",
+      "check": {
+       "type": "goal",
+       "goal": {
+        "type": "skills",
+        "workstream": "{workstream}",
+        "choice": "{techValue}",
+        "skill": "Technical",
+        "rating": "Intermediate",
+        "queue": "{techQueue}",
+        "members": 2
+       }
+      },
+      "concept": "skill-matching",
+      "tab": "admin",
+      "hints": [
+       "Skill-based routing has three parts: people with skills, a rule that adds a skill to the call, and the workstream's skill matching.",
+       "Give people in {techQueue} the Technical skill in User management › Skills hub, and add a skill attachment rule for {variable} = {techValue} on {workstream}.",
+       "On {workstream}, set Work distribution › Default skill matching algorithm to Exact Match."
+      ]
+     },
+     {
+      "id": "see-trace",
+      "title": "Call and read the classification",
+      "do": "Call the {line} and choose {choiceLast}. The trace shows the Work classification step.",
+      "check": {
+       "type": "callMade",
+       "answers": {
+        "{variable}": "{valueLast}"
+       }
+      },
+      "concept": "work-classification",
+      "tab": "phone",
+      "hints": [
+       "Use the Phone tab."
+      ]
+     }
+    ]
+   }
   },
   {
    "id": "hours-overflow",
    "number": 9,
    "title": "Operating hours and overflow",
    "summary": "Calls out of hours and when queues are full: voicemail, callback and transfers.",
-   "status": "planned",
-   "challenges": ["route-3-late-and-long", "build-3-evenings", "build-5-billing-callbacks"]
+   "status": "ready",
+   "challenges": [
+    "route-3-late-and-long",
+    "build-3-evenings"
+   ],
+   "learn": [
+    {
+     "title": "Operating hours",
+     "text": [
+      "Operating hours say when a queue is open, for example weekdays 9 to 5. They're set on the queue.",
+      "A queue without operating hours is always open, even when nobody is at work."
+     ],
+     "concepts": [
+      "operating-hours"
+     ]
+    },
+    {
+     "title": "Overflow",
+     "text": [
+      "Overflow handling says what happens when a queue is closed or too busy. It's set on the queue too.",
+      "Before a call is queued, conditions like Out of operation hours or a long estimated wait can send it elsewhere: voicemail, a callback, the end of the call, or another queue."
+     ],
+     "concepts": [
+      "overflow"
+     ]
+    },
+    {
+     "title": "Testing with the clock",
+     "text": [
+      "The training has its own clock. On the Phone tab, When lets you call on another day and time, to see what happens out of hours.",
+      "A call at another time only shows where it would go; it isn't given to anyone."
+     ]
+    }
+   ],
+   "quiz": [
+    {
+     "id": "no-hours",
+     "question": "A queue has no operating hours. When is it open?",
+     "options": [
+      "Never",
+      "Always",
+      "Weekdays 9 to 5",
+      "Only when someone is Available"
+     ],
+     "answer": 1,
+     "why": "Without operating hours a queue counts as open all the time."
+    },
+    {
+     "id": "where-overflow",
+     "question": "Where do you set what happens to calls out of hours?",
+     "options": [
+      "On the phone number",
+      "In the queue's overflow handling",
+      "In the capacity profile",
+      "In the AI agent"
+     ],
+     "answer": 1,
+     "why": "Overflow handling is a setting of the queue."
+    },
+    {
+     "id": "busy",
+     "question": "Which condition sends callers elsewhere when the wait is predicted to be long?",
+     "options": [
+      "Out of operation hours",
+      "Estimated wait time (average wait time)",
+      "Work item limit",
+      "Presence"
+     ],
+     "answer": 1,
+     "why": "A long predicted wait is an overflow condition before the call is queued."
+    }
+   ],
+   "do": {
+    "title": "Evenings and long waits",
+    "company": "Contoso",
+    "summary": "Give a queue office hours, send evening callers to voicemail, and offer callbacks when it's busy.",
+    "finished": "{techQueue1} keeps office hours, evening callers can leave a message, and busy callers get a callback. Next: the workspace.",
+    "story": [
+     "{techQueue1} has no operating hours: callers wait all night for nobody. And when it's busy, callers give up."
+    ],
+    "tasks": [
+     {
+      "id": "hours-now",
+      "title": "Which operating hours does {queue1} keep?",
+      "do": "Open {queue1}: Operation hours is at the bottom of its page.",
+      "ask": {
+       "question": "The operating hours",
+       "options": "hours"
+      },
+      "check": {
+       "type": "answer",
+       "key": "hours-now",
+       "expect": "{hours1}"
+      },
+      "concept": "operating-hours",
+      "tab": "admin",
+      "hints": [
+       "Queues, Advanced queues, then {queue1}."
+      ]
+     },
+     {
+      "id": "set-hours",
+      "title": "Give {techQueue1} the operating hours {hours1}",
+      "do": "Set the operation hours of {techQueue1}.",
+      "check": {
+       "type": "goal",
+       "goal": {
+        "type": "operation-hours",
+        "queue": "{techQueue1}",
+        "hours": "{hours1}"
+       }
+      },
+      "concept": "operating-hours",
+      "tab": "admin",
+      "hints": [
+       "Open {techQueue1}, then Set operation hours, and pick “{hours1}” in Name."
+      ]
+     },
+     {
+      "id": "voicemail",
+      "title": "Send evening callers to voicemail",
+      "do": "In the overflow handling of {techQueue1}, set Out of operation hours to Voicemail.",
+      "check": {
+       "type": "goal",
+       "goal": {
+        "type": "after-hours",
+        "queue": "{techQueue1}",
+        "action": "Voicemail"
+       }
+      },
+      "concept": "overflow",
+      "tab": "admin",
+      "hints": [
+       "Open Overflow handling on {techQueue1}.",
+       "Set Out of operation hours to Voicemail."
+      ]
+     },
+     {
+      "id": "callback",
+      "title": "Offer a callback when the wait is over 10 minutes",
+      "do": "Add an overflow condition to {techQueue1}: when the average wait time is over 10 minutes, Direct callback.",
+      "check": {
+       "type": "goal",
+       "goal": {
+        "type": "long-wait",
+        "queue": "{techQueue1}",
+        "minutes": 10,
+        "action": "Direct callback"
+       }
+      },
+      "concept": "overflow",
+      "tab": "admin",
+      "hints": [
+       "Under Before work items are queued, add Average wait time, 10 minutes, with Direct callback."
+      ]
+     },
+     {
+      "id": "evening-test",
+      "title": "Test it: call on Wednesday at 23:00",
+      "do": "On the Phone tab, call the {techLine} ({techDial}), choose {techValue1} in the IVR (that's {techChoice1}), and set When to Wednesday, 23:00. What happens?",
+      "ask": {
+       "question": "What happens to the call?",
+       "options": [
+        "It waits in the queue",
+        "Voicemail",
+        "Direct callback",
+        "The call ends"
+       ]
+      },
+      "check": {
+       "type": "answer",
+       "key": "evening-test",
+       "expect": "Voicemail"
+      },
+      "concept": "overflow",
+      "tab": "phone",
+      "hints": [
+       "When is below the IVR on the Phone tab."
+      ]
+     }
+    ]
+   }
   },
   {
    "id": "workspace",
    "number": 10,
    "title": "The workspace",
    "summary": "The representative's and supervisor's side: sessions, transcript, Copilot, monitoring and real-time analytics.",
-   "status": "planned"
+   "status": "ready",
+   "learn": [
+    {
+     "title": "The representative's workspace",
+     "text": [
+      "Representatives work in the Copilot Service workspace. They set their presence at the top, get a notification for each call, and work each call in its own session tab.",
+      "The Agent tab in this training is a simulation of it."
+     ],
+     "concepts": [
+      "presence"
+     ]
+    },
+    {
+     "title": "Who is calling",
+     "text": [
+      "When the caller's number matches one contact's mobile phone or one account's phone, the call is linked to that customer. The representative sees their details and earlier conversations.",
+      "When the number matches more than one record, nothing is linked and the representative searches for the customer."
+     ],
+     "concepts": [
+      "customer-identification"
+     ]
+    },
+    {
+     "title": "During the call",
+     "text": [
+      "The call controls are in the Communication Panel: Mute, Hold, Consult, Transfer and End. The live transcript shows what is said.",
+      "After End, the call is in wrap-up until the representative closes the session."
+     ],
+     "concepts": [
+      "call-controls"
+     ]
+    },
+    {
+     "title": "Copilot",
+     "text": [
+      "Copilot summarizes the conversation when the representative selects Summarize conversation, and by itself on a consult, a transfer or the end of the call. In this training the summary is written from the call's data."
+     ],
+     "concepts": [
+      "copilot-summary"
+     ]
+    },
+    {
+     "title": "The supervisor",
+     "text": [
+      "Supervisors watch the contact center in Omnichannel real-time analytics: calls offered, how fast they're answered, who is available.",
+      "On ongoing conversations they can Monitor an active call without being seen, Join call when help is needed, and assign, transfer or end conversations."
+     ],
+     "concepts": [
+      "supervisor-monitor",
+      "realtime-analytics"
+     ]
+    }
+   ],
+   "quiz": [
+    {
+     "id": "shared",
+     "question": "A caller's number belongs to two contacts. What does the representative see?",
+     "options": [
+      "The first contact",
+      "Both contacts",
+      "No linked customer: they search for the customer",
+      "The account"
+     ],
+     "answer": 2,
+     "why": "When more than one record matches, nothing is linked."
+    },
+    {
+     "id": "end",
+     "question": "A representative selected End. What's left to do?",
+     "options": [
+      "Nothing",
+      "Close the session after wrap-up",
+      "Transfer the call",
+      "Set their presence to Away"
+     ],
+     "answer": 1,
+     "why": "To end the call after End, the representative closes the session."
+    },
+    {
+     "id": "monitor",
+     "question": "A supervisor monitors a call. Who knows?",
+     "options": [
+      "The customer",
+      "The representative",
+      "Nobody, until the supervisor joins the call",
+      "Everyone in the queue"
+     ],
+     "answer": 2,
+     "why": "Monitoring is silent; joining the call tells the representative."
+    }
+   ],
+   "do": {
+    "title": "A call from a known customer",
+    "company": "Contoso",
+    "summary": "Take a call from a known customer with Copilot, then watch a colleague's call as a supervisor.",
+    "finished": "You've worked a call from both sides: as the representative and as the supervisor. One lab to go.",
+    "story": [
+     "Sophie Turner, a contact at Fabrikam Garden Supplies, is about to call the {line}. Take her call, then check on your team."
+    ],
+    "tasks": [
+     {
+      "id": "sign-in",
+      "title": "Sign in as {rep} and be Available",
+      "do": "Open the Agent tab and choose {rep} under Sign in as.",
+      "check": {
+       "type": "did",
+       "what": "ready:{queue1}"
+      },
+      "concept": "presence",
+      "tab": "agent",
+      "hints": [
+       "The presence button is at the top right of the workspace."
+      ]
+     },
+     {
+      "id": "accept",
+      "title": "Call from Sophie Turner's number and accept",
+      "do": "On the Phone tab, set Call from to Sophie Turner's mobile, call the {line} and choose {choice1}. Accept the call in the Agent tab.",
+      "check": {
+       "type": "did",
+       "what": "accept-call"
+      },
+      "concept": "customer-identification",
+      "tab": "agent",
+      "hints": [
+       "Call from is just below the number to call."
+      ]
+     },
+     {
+      "id": "company",
+      "title": "Which company does the caller work for?",
+      "do": "The Active Conversation form shows the customer.",
+      "ask": {
+       "question": "The company",
+       "options": [
+        "Fabrikam Garden Supplies",
+        "Northwind Builders",
+        "Contoso"
+       ]
+      },
+      "check": {
+       "type": "answer",
+       "key": "company",
+       "expect": "Fabrikam Garden Supplies"
+      },
+      "concept": "customer-identification",
+      "tab": "agent",
+      "hints": [
+       "Look under Customer on the Active Conversation form."
+      ]
+     },
+     {
+      "id": "summarize",
+      "title": "Ask Copilot for a summary",
+      "do": "Select Summarize conversation in the Copilot card.",
+      "check": {
+       "type": "did",
+       "what": "summarize"
+      },
+      "concept": "copilot-summary",
+      "tab": "agent",
+      "hints": [
+       "The Copilot card is next to the Active Conversation form."
+      ]
+     },
+     {
+      "id": "close",
+      "title": "End the call and close the session",
+      "do": "Select End, then close the session.",
+      "check": {
+       "type": "did",
+       "what": "close-session"
+      },
+      "concept": "call-controls",
+      "tab": "agent",
+      "hints": [
+       "Close session is on the Active Conversation form after End."
+      ]
+     },
+     {
+      "id": "monitor",
+      "title": "As the supervisor, monitor a colleague's call",
+      "do": "Call the {line} again and choose {choice2}: someone in {queue2} takes it. Then in Home, select that call on the Ongoing Conversations dashboard and select Monitor.",
+      "check": {
+       "type": "did",
+       "what": "monitor"
+      },
+      "concept": "supervisor-monitor",
+      "tab": "agent",
+      "hints": [
+       "You can't monitor your own calls, only a colleague's."
+      ]
+     },
+     {
+      "id": "join",
+      "title": "Join the call",
+      "do": "In the Monitor panel, select Join call.",
+      "check": {
+       "type": "did",
+       "what": "join-call"
+      },
+      "concept": "supervisor-monitor",
+      "tab": "agent",
+      "hints": [
+       "Join call is at the top of the Monitor panel."
+      ]
+     },
+     {
+      "id": "realtime",
+      "title": "Open real-time analytics",
+      "do": "In Home, open Omnichannel real-time analytics and read the Summary report.",
+      "check": {
+       "type": "did",
+       "what": "realtime"
+      },
+      "concept": "realtime-analytics",
+      "tab": "agent",
+      "hints": [
+       "It's the second tab in Home."
+      ]
+     }
+    ]
+   },
+   "challenges": [
+    "build-5-billing-callbacks"
+   ]
   },
   {
    "id": "together",
    "number": 11,
    "title": "Putting it together",
    "summary": "Whole requests from a customer, from interview to a working line.",
-   "status": "planned",
-   "challenges": ["interview-2-warranty", "interview-4-busy-support", "build-5-spare-parts-line", "build-5-parts-onboarding"]
+   "status": "ready",
+   "challenges": [
+    "interview-2-warranty",
+    "interview-4-busy-support",
+    "build-5-spare-parts-line",
+    "build-5-parts-onboarding"
+   ],
+   "learn": [
+    {
+     "title": "The whole path",
+     "text": [
+      "You've seen every part of a call's path: number, voice channel, workstream, AI agent, classification, route-to-queue rules, queue, overflow, assignment and the representative.",
+      "A real request touches several of them at once."
+     ],
+     "diagram": "call-path",
+     "concepts": [
+      "unified-routing"
+     ]
+    },
+    {
+     "title": "From request to setup",
+     "text": [
+      "Customers describe what they see, not settings. “Delivery questions should reach a small team in office hours” means: a queue, people in it, a rule for the menu choice, operating hours and overflow.",
+      "Ask questions until you know what they need, then build it, then test it with calls."
+     ]
+    },
+    {
+     "title": "Testing",
+     "text": [
+      "Every change can be tested with the Phone tab: call with the right choice, at the right time, and read the trace.",
+      "The Diagram shows the whole setup at once, and marks problems."
+     ]
+    }
+   ],
+   "quiz": [
+    {
+     "id": "parts",
+     "question": "“Delivery calls should reach a new team.” Which parts do you need?",
+     "options": [
+      "Only a queue",
+      "A queue with people, and a rule for the Delivery choice",
+      "Only a rule",
+      "A new phone number"
+     ],
+     "answer": 1,
+     "why": "Without people nobody answers; without a rule the calls never reach the queue."
+    },
+    {
+     "id": "test",
+     "question": "How do you check your setup works?",
+     "options": [
+      "Wait for customers to complain",
+      "Call it on the Phone tab and read the trace",
+      "Restart the environment",
+      "Ask the AI agent"
+     ],
+     "answer": 1,
+     "why": "A test call shows each step the call takes."
+    },
+    {
+     "id": "evening",
+     "question": "The team works office hours only. What else do you set?",
+     "options": [
+      "Nothing",
+      "Operating hours and what happens out of hours",
+      "A second phone number",
+      "A new workstream"
+     ],
+     "answer": 1,
+     "why": "Hours on the queue, and overflow for out-of-hours callers."
+    }
+   ],
+   "do": {
+    "title": "Delivery questions",
+    "company": "Contoso",
+    "summary": "A whole request: a new menu choice with a team, office hours, voicemail and a fair way to share the calls.",
+    "finished": "You built a whole request from the menu to the people and their hours. The challenges have more requests, some you have to ask about first.",
+    "story": [
+     "Contoso's IVR on the {line} will offer Delivery from next week, and it sends the value Delivery.",
+     "Delivery calls should reach a small team of their own, in office hours ({hours1}), with voicemail in the evening. The team wants calls shared in turn."
+    ],
+    "tasks": [
+     {
+      "id": "delivery",
+      "title": "Route Delivery calls to a Delivery queue with two people",
+      "do": "Create a voice queue named Delivery, add at least two people, and add a route-to-queue rule on {workstream} for {variable} = Delivery.",
+      "check": {
+       "type": "goal",
+       "goal": {
+        "type": "choice-queue",
+        "workstream": "{workstream}",
+        "choice": "Delivery",
+        "queue": "Delivery",
+        "members": 2
+       }
+      },
+      "concept": "route-to-queue",
+      "tab": "admin",
+      "hints": [
+       "Three things: a queue, people in it, and a rule.",
+       "The rule goes on the workstream's route-to-queue ruleset."
+      ]
+     },
+     {
+      "id": "hours",
+      "title": "Give Delivery office hours",
+      "do": "Set the operation hours of Delivery to {hours1}.",
+      "check": {
+       "type": "goal",
+       "goal": {
+        "type": "operation-hours",
+        "queue": "Delivery",
+        "hours": "{hours1}"
+       }
+      },
+      "concept": "operating-hours",
+      "tab": "admin",
+      "hints": [
+       "Operation hours are at the bottom of the queue's page."
+      ]
+     },
+     {
+      "id": "voicemail",
+      "title": "Voicemail out of hours",
+      "do": "Set Out of operation hours to Voicemail on Delivery.",
+      "check": {
+       "type": "goal",
+       "goal": {
+        "type": "after-hours",
+        "queue": "Delivery",
+        "action": "Voicemail"
+       }
+      },
+      "concept": "overflow",
+      "tab": "admin",
+      "hints": [
+       "Overflow handling on the queue."
+      ]
+     },
+     {
+      "id": "turns",
+      "title": "Share the calls in turn",
+      "do": "Set the assignment method of Delivery to Advanced round robin.",
+      "check": {
+       "type": "goal",
+       "goal": {
+        "type": "assignment-method",
+        "queue": "Delivery",
+        "method": "Advanced round robin"
+       }
+      },
+      "concept": "assignment-method",
+      "tab": "admin",
+      "hints": [
+       "See more under Assignment method on the queue's page."
+      ]
+     },
+     {
+      "id": "test",
+      "title": "Test it: call and choose Delivery",
+      "do": "Call the {line}, choose Something else… and type Delivery.",
+      "check": {
+       "type": "callMade",
+       "answers": {
+        "{variable}": "Delivery"
+       },
+       "expect": {
+        "queue": "Delivery"
+       }
+      },
+      "concept": "route-to-queue",
+      "tab": "phone",
+      "hints": [
+       "If the call goes elsewhere, check the rule's value: Delivery."
+      ]
+     }
+    ]
+   }
   }
  ]
 }

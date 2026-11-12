@@ -123,8 +123,14 @@ describe("supervisor", () => {
     routing.accept(waiting.id, at(3));
     expect(waiting.item()._msdyn_activeagentid_value).toBe(members[0]);
 
+    // Transferred to a queue where everyone is away, the call waits with nobody on it: nothing breaks.
+    transfer(store, routing, waiting.id, { kind: "queue", id: queue.queueid }, at(3, 30).getTime());
+    expect(waiting.item()).toMatchObject({ statuscode: STATUS.open, _msdyn_activeagentid_value: null });
+    expect(transcript(store, waiting.item(), at(4).getTime())).toEqual([]);
+    expect(() => sentiment(store, waiting.item(), at(4).getTime())).not.toThrow();
+    expect(() => saveSummary(store, waiting.item(), at(4).getTime())).not.toThrow();
+
     forceClose(store, routing, waiting.id, at(4).getTime());
     expect(waiting.item()).toMatchObject({ statecode: 1, statuscode: STATUS.closed });
-    void queue;
   });
 });

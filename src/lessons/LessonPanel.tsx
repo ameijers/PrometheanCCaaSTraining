@@ -77,6 +77,10 @@ function Answer({ task, answerKey }: { task: Task; answerKey: string }) {
   const ask = task.ask!;
   const options = ask.options === "queues" ? sim.store.table("queue").filter((q) => q.statecode === 0).map((q) => String(q.name))
     : ask.options === "workstreams" ? sim.store.table("msdyn_liveworkstream").map((w) => String(w.msdyn_name))
+    : ask.options === "people" ? sim.store.table("msdyn_agentstatus").map((a) => String(sim.store.find("systemuser", a._msdyn_agentid_value)?.fullname ?? ""))
+    : ask.options === "profiles" ? sim.store.table("msdyn_capacityprofile").map((p) => String(p.msdyn_name))
+    : ask.options === "hours" ? sim.store.table("msdyn_operatinghour").map((h) => String(h.msdyn_name))
+    : ask.options === "variables" ? sim.store.table("msdyn_ocliveworkstreamcontextvariable").map((v) => String(v.msdyn_name))
     : ask.options === "number" ? undefined : ask.options;
   return (
     <div className="lesson-answer">

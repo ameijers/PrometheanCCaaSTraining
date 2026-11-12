@@ -348,7 +348,7 @@ function CallSession(props: {
 
       <section className="ws-card ws-copilot" aria-label="Copilot">
         <p className="ws-card-title">✨ Copilot</p>
-        <Button size="small" onClick={() => saveSummary(store, w, now)}>Summarize conversation</Button>
+        <Button size="small" onClick={() => { saveSummary(store, w, now); record(store, "did:summarize"); }}>Summarize conversation</Button>
         {shownSummary ? (
           <div className="ws-summary">
             <ul>{shownSummary.split("\n").map((l) => <li key={l}>{l}</li>)}</ul>

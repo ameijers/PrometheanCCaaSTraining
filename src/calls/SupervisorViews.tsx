@@ -9,6 +9,8 @@ import { STATUS } from "./assignment";
 import { sentiment, transcript } from "./conversation";
 import { callInfo, customerName } from "./customers";
 import type { Routing } from "./routing";
+import { record } from "../lessons/checks";
+import { useEffect } from "react";
 import { agentRows, availability, canAssign, canMonitor, canTransfer, forceClose, joinCall, kpis, supervisorAssign, Target, transfer } from "./supervisor";
 
 // The supervisor's screens in the workspace (Learn: Monitor, assign, transfer, and end conversations as a
@@ -50,7 +52,7 @@ function Conversations({ store, routing, now, me, rows, actions }: Shared & { ro
       <div className="ws-conversations-head">
         <p className="ws-card-title">Conversations</p>
         <span className="ws-toolbar">
-          <Button size="small" appearance="subtle" disabled={!!monitorWhy} title={monitorWhy} onClick={() => setMonitoring(selected)}>Monitor</Button>
+          <Button size="small" appearance="subtle" disabled={!!monitorWhy} title={monitorWhy} onClick={() => { setMonitoring(selected); record(store, "did:monitor"); }}>Monitor</Button>
           {actions && <>
             <Button size="small" appearance="subtle" disabled={!!assignWhy} title={assignWhy} onClick={() => setDialog("assign")}>Assign</Button>
             <Button size="small" appearance="subtle" disabled={!!transferWhy} title={transferWhy} onClick={() => setDialog("transfer")}>Transfer</Button>
@@ -95,9 +97,9 @@ function Monitor({ store, w, now, close }: { store: Store; w: Row; now: number; 
   return (
     <section className="ws-monitor" aria-label="Monitor">
       <div className="ws-conversations-head">
-        <p className="ws-card-title">Monitor · {customerName(store, w)} with {String(store.find("systemuser", w._msdyn_activeagentid_value)?.fullname ?? "")}</p>
+        <p className="ws-card-title">Monitor · {customerName(store, w)} {w._msdyn_activeagentid_value ? ` with ${String(store.find("systemuser", w._msdyn_activeagentid_value)?.fullname ?? "")}` : ", waiting in a queue"}</p>
         <span className="ws-toolbar">
-          <Button size="small" appearance="primary" disabled={joined || !live} onClick={() => joinCall(store, w.activityid)}>{joined ? "Joined" : "Join call"}</Button>
+          <Button size="small" appearance="primary" disabled={joined || !live} onClick={() => { joinCall(store, w.activityid); record(store, "did:join-call"); }}>{joined ? "Joined" : "Join call"}</Button>
           <Button size="small" onClick={close}>Close</Button>
         </span>
       </div>
@@ -202,6 +204,7 @@ export function RealtimeAnalytics(props: Shared) {
   const [pausedAt, setPausedAt] = useState<number>();
   const [agentTab, setAgentTab] = useState<string>("Idle agents");
   const now = pausedAt ?? props.now;
+  useEffect(() => record(store, "did:realtime"), []);
   const k = kpis(store, routing.offers, now, queue);
   const agents = agentRows(store, queue);
   const pct = (n?: number) => (n === undefined ? "---" : `${n}%`);

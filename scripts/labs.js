@@ -95,9 +95,9 @@ async function main() {
     await shot("lab1-challenge-started");
     await click(".lab-back", `← Back to lab 1: ${lab1.title}`);
 
-    // The lab list: lab 1 done, lab 4 recommended next.
+    // The lab list: lab 1 done, lab 2 recommended next.
     await click(".training-env button", "Labs and practice");
-    await waitText(".picker-lab-next", "Lab 4");
+    await waitText(".picker-lab-next", "Lab 2");
     await shot("lab-list");
 
     // Lab 4's call, in the Agent tab.

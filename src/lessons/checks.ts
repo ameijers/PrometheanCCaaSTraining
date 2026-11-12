@@ -5,6 +5,8 @@ import { parseDecisionXml } from "@toolbox/visual-routing-tester/src/ruleXml";
 import { routeToQueueRuleset } from "../admin/actions";
 import { lineOf, placeCall } from "../calls/engine";
 import { Row, Store } from "../simulator/store";
+import { checkGoal, Goal } from "../scenarios/goals";
+import type { CallTime } from "../calls/engine";
 
 // Checks are data (manual 9.2): code decides whether a task is done, never the AI.
 //
@@ -21,13 +23,19 @@ export type Check =
   // A call with these IVR answers ends in the queue with (about) this name; the check places the call itself.
   | { type: "call"; dial: string; answers: Record<string, string>; expect: { queue: string } }
   // The learner made such a call (a recorded call with these answers, ending in that queue if given).
-  | { type: "callMade"; answers: Record<string, string>; expect?: { queue: string } }
+  | { type: "callMade"; answers: Record<string, string>; expect?: { queue: string }; dial?: string; workstream?: string }
   // The learner opened a part of the training (recorded by the app as "seen:<what>"), e.g. the diagram.
   | { type: "seen"; what: string }
   // The learner did something in the workspace (recorded as "did:<what>"), e.g. accepted a call.
   | { type: "did"; what: string }
   // The learner answered a question about the environment (the task's `ask`) with this value.
-  | { type: "answer"; key: string; expect: string };
+  | { type: "answer"; key: string; expect: string }
+  // A goal from the build exercises (src/scenarios/goals.ts), e.g. a fallback queue or operation hours.
+  | { type: "goal"; goal: Goal }
+  // The workstream answers at least this many phone numbers (voice channels with a number).
+  | { type: "numbers"; workstream: string; atLeast: number }
+  // A call with these answers (at this time, if given) has a step in its trace that contains this text.
+  | { type: "trace"; dial: string; answers: Record<string, string>; at?: CallTime; includes: string };
 
 export interface Lesson {
   id: string;
@@ -56,7 +64,7 @@ export interface Task {
   hints: string[];
   // A question the learner answers in the task (check type "answer"): pick from the environment's queues or
   // workstreams, from a list, or type a number.
-  ask?: { question: string; options: "queues" | "workstreams" | "number" | string[] };
+  ask?: { question: string; options: "queues" | "workstreams" | "people" | "profiles" | "variables" | "hours" | "number" | string[] };
 }
 
 // What the learner did, saw and answered, kept in the environment (schema.ts training_answer).
@@ -134,7 +142,9 @@ export async function runCheck(store: Store, check: Check): Promise<CheckResult>
     }
     case "callMade": {
       const wanted = check.expect ? queueNamed(store, check.expect.queue) : undefined;
+      const ws = check.workstream ? store.table("msdyn_liveworkstream").find((w) => same(w.msdyn_name, check.workstream)) : undefined;
       const calls = store.table("msdyn_ocliveworkitem").filter((call) => {
+        if (check.workstream && call._msdyn_liveworkstreamid_value !== ws?.msdyn_liveworkstreamid) return false;
         const answers = store.table("msdyn_ocliveworkitemcontextitem").filter((c) => c._msdyn_ocliveworkitemid_value === call.activityid);
         return Object.entries(check.answers).every(([k, v]) => answers.some((a) => a.msdyn_name === k && same(a.msdyn_value, v)));
       });
@@ -143,6 +153,20 @@ export async function runCheck(store: Store, check: Check): Promise<CheckResult>
       const last = calls.sort((a, b) => String(b.createdon).localeCompare(String(a.createdon)))[0];
       const lastQueue = last ? store.find("queue", last._msdyn_cdsqueueid_value)?.name : undefined;
       return { passed: false, note: lastQueue ? `Your last call like this went to ${lastQueue}.` : undefined };
+    }
+    case "goal": {
+      const results = await checkGoal(store, check.goal);
+      const failed = results.find((r) => !r.result.passed);
+      return failed ? { passed: false, note: failed.result.note } : { passed: true, note: results.map((r) => r.result.note).find(Boolean) };
+    }
+    case "numbers": {
+      const ws = store.table("msdyn_liveworkstream").find((w) => same(w.msdyn_name, check.workstream));
+      const count = ws ? store.table("msdyn_ocvoicechannelsetting").filter((c) => c._msdyn_liveworkstreamid_value === ws.msdyn_liveworkstreamid && c._msdyn_phonenumberid_value).length : 0;
+      return count >= check.atLeast ? { passed: true } : { passed: false, note: ws ? `${ws.msdyn_name} answers ${count} number${count === 1 ? "" : "s"} now.` : undefined };
+    }
+    case "trace": {
+      const result = await placeCall(store, { dial: check.dial, answers: check.answers, at: check.at }, { record: false });
+      return { passed: result.steps.some((st) => st.detail.includes(check.includes)) };
     }
     case "seen": return { passed: recorded(store, `seen:${check.what}`) !== undefined };
     case "did": return { passed: recorded(store, `did:${check.what}`) !== undefined };
