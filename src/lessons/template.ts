@@ -67,10 +67,10 @@ export function random(seed: number): () => number {
 }
 
 // "Customer Service – Voice" → "customer service line".
-const lineLabel = (workstream: string) => `${workstream.replace(/\s*–\s*Voice$/i, "").toLowerCase()} line`;
-const listOf = (items: string[]) => (items.length > 1 ? `${items.slice(0, -1).join(", ")} or ${items[items.length - 1]}` : items[0] ?? "");
+export const lineLabel = (workstream: string) => `${workstream.replace(/\s*–\s*Voice$/i, "").toLowerCase()} line`;
+export const listOf = (items: string[]) => (items.length > 1 ? `${items.slice(0, -1).join(", ")} or ${items[items.length - 1]}` : items[0] ?? "");
 
-function fill<T>(value: T, values: Record<string, string>): T {
+export function fill<T>(value: T, values: Record<string, string>): T {
   const text = (s: string) => s.replace(/\{(\w+)\}/g, (m, k) => values[k] ?? m);
   if (typeof value === "string") return text(value) as unknown as T;
   if (Array.isArray(value)) return value.map((v) => fill(v, values)) as unknown as T;

@@ -8,6 +8,7 @@ import { PRESENCE_NAMES, presenceId } from "../simulator/seeds/presence";
 import { Row, Store } from "../simulator/store";
 import { closeCall, endCall, representatives, STATUS } from "./assignment";
 import { iso } from "./clock";
+import { record } from "../lessons/checks";
 import { assignedAt, saveSummary, sentiment, summaryOf, transcript } from "./conversation";
 import { customerName, customerOfCall, earlierCalls, identificationText, identifyCaller, callInfo } from "./customers";
 import { transfer } from "./supervisor";
@@ -53,6 +54,8 @@ export function AgentView() {
   const [held, setHeld] = useState<Set<string>>(new Set());
   const [showTranscript, setShowTranscript] = useState(true);
   useEffect(() => { const t = setInterval(() => setTick((n) => n + 1), 1000); return () => clearInterval(t); }, []);
+  // A fresh start elsewhere (a lab's Do part, an exercise) signs the learner out of the routing: follow it.
+  useEffect(() => { if (routing.learnerAgent !== me) setMe(routing.learnerAgent); });
   void version;
   const store = sim.store;
   const now = clock.now().getTime();
@@ -80,12 +83,17 @@ export function AgentView() {
   const queues = me ? store.table("queuemembership").filter((m) => m.systemuserid === me).map((m) => store.find("queue", m.queueid)).filter(Boolean) as Row[] : [];
   const waiting = items.filter((w) => w.statecode === 0 && w.statuscode === STATUS.open && !w._msdyn_activeagentid_value && queues.some((q) => q.queueid === w._msdyn_cdsqueueid_value));
 
-  const accept = (id: string) => { routing.accept(id, clock.now()); setPlace({ kind: "session", id }); };
+  const accept = (id: string) => { routing.accept(id, clock.now()); record(store, "did:accept-call"); setPlace({ kind: "session", id }); };
+  // What a lab checks (src/labs): signed in and Available for a queue.
+  useEffect(() => {
+    if (signedIn && presenceName === "Available") for (const q of queues) record(store, `did:ready:${q.name}`);
+  }, [me, signedIn, presenceName, queues.map((q) => q.queueid).join()]);
   const session = place.kind === "session" ? mine.find((w) => w.activityid === place.id) : undefined;
   // A session whose call was closed or moved elsewhere goes back to the Inbox.
   useEffect(() => { if (place.kind === "session" && !session) setPlace({ kind: "inbox" }); }, [place.kind, session]);
 
   const closeSession = (w: Row) => {
+    record(store, "did:close-session");
     closeCall(store, w.activityid, iso(clock.now()));
     routing.cycle(clock.now());
     setPlace({ kind: "inbox" });

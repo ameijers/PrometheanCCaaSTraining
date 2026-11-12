@@ -250,6 +250,9 @@ const DEFS: Record<string, Def> = {
   training_assignment: ["training_assignments", "training_assignmentid", undefined, {
     queueid: G, agentid: G, workitemid: G, assignedon: D, releasedon: D
   }],
+  // NOT a Dataverse table: what a learner did or answered in a lab (src/labs), so the lab's checks can read
+  // it like the rest of the environment: "seen:diagram", "did:accept-call", "answer:<question>".
+  training_answer: ["training_answers", "training_answerid", "key", { key: S, value: S }],
   // A workstream's skill attachment rules (Learn, Configure work classification rulesets): "if defined
   // condition satisfies, then attach defined skills to the work item." Learn doesn't document how the
   // platform stores them, so the training keeps them here: one condition (variable equals value) and one

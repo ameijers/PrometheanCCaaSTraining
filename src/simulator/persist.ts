@@ -41,7 +41,7 @@ async function run<T>(mode: IDBTransactionMode, work: (store: IDBObjectStore) =>
 }
 
 // The environment's rows, and the lesson the learner is doing in it (a lesson from a template differs per run).
-export interface Session { rows: Rows; lesson?: unknown; scenario?: unknown; clock?: number }
+export interface Session { rows: Rows; lesson?: unknown; scenario?: unknown; clock?: number; lab?: unknown }
 
 export async function loadSession(): Promise<Session | undefined> {
   const saved = await run<Session | Rows>("readonly", (s) => s.get(KEY));

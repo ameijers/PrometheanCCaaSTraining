@@ -12,7 +12,10 @@ import { ClockBar } from "../calls/ClockBar";
 import { Clock, START } from "../calls/clock";
 import { Routing } from "../calls/routing";
 import { LearnStrip } from "../learn/LearnStrip";
-import { CheckResult, Lesson, runChecks, Task } from "../lessons/checks";
+import { CheckResult, Lesson, record, runChecks, Task } from "../lessons/checks";
+import { classId, doDoneId, LABS, labById, labLesson, LabPart, LabState, learnDoneId } from "../labs/labs";
+import { LabHeader, LabPanel } from "../labs/LabPanel";
+import { LabView } from "../labs/LabView";
 import { LessonPanel } from "../lessons/LessonPanel";
 import { Simulator } from "../simulator";
 import { clearSession, saveSession } from "../simulator/persist";
@@ -40,14 +43,14 @@ import { ExportDialog } from "../export/ExportDialog";
 export const NAVIGATE_EVENT = "ccaas-navigate";
 
 const template = templateJson as LessonTemplate;
-type Workspace = Task["tab"] | "agent";
+type Workspace = Task["tab"] | "lab";
 
 // The training screen: the lesson on the left, where the learner works in the middle (the simulated
 // admin center, the Environment Diagram, the phone), and the explanation from Microsoft Learn below.
 // What the learner is doing: the guided lesson, or a scenario (manual 9.1) with their answers so far.
 export interface ScenarioRun { scenario: Scenario; answers: Record<string, CallAnswer>; hints: Record<string, number>; found?: number[]; talk?: Talk[] }
 
-export function App({ sim, restored, savedLesson, savedScenario, savedClock, seed }: { sim: Simulator; restored: boolean; savedLesson?: Lesson; savedScenario?: ScenarioRun; savedClock?: number; seed?: number }) {
+export function App({ sim, restored, savedLesson, savedScenario, savedClock, seed, savedLab }: { sim: Simulator; restored: boolean; savedLesson?: Lesson; savedScenario?: ScenarioRun; savedClock?: number; seed?: number; savedLab?: LabState }) {
   // The simulated clock, and the routing that assigns calls as it runs (phase 6): one assignment cycle a second.
   const clock = useMemo(() => new Clock(savedClock), [sim]);
   const routing = useMemo(() => new Routing(sim.store), [sim]);
@@ -58,6 +61,11 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
   // This run's lesson: the saved one, or a new variant of the template (manual 9.4b).
   const [lesson, setLesson] = useState<Lesson>(() => savedLesson ?? makeLesson(template, sim.store, seed ?? newSeed()));
   const [run, setRun] = useState<ScenarioRun | undefined>(savedScenario);
+  // The lab the learner is in (src/labs). Someone new starts at the first lab; ?seed=N opens the lesson as before.
+  const [lab, setLab] = useState<LabState | undefined>(() => savedLab ?? (!restored && seed === undefined ? { labId: LABS[0].id, part: "learn", page: 0, quiz: {} } : undefined));
+  const labRef = useRef(lab);
+  labRef.current = lab;
+  const labDef = lab ? labById(lab.labId) : undefined;
   const [picking, setPicking] = useState(false);
   const [exporting, setExporting] = useState(false);
   const lessonRef = useRef(lesson);
@@ -68,7 +76,7 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
   (window as any).__ccaasTraining.scenario = run?.scenario;
   // For scripts (scripts/agent.js): the environment and the routing.
   Object.assign((window as any).__ccaasTraining, { store: sim.store, routing, clock });
-  const session = () => ({ rows: sim.store.snapshot(), lesson: lessonRef.current, scenario: runRef.current, clock: clock.now().getTime() });
+  const session = () => ({ rows: sim.store.snapshot(), lesson: lessonRef.current, scenario: runRef.current, clock: clock.now().getTime(), lab: labRef.current });
 
   // The class the learner joined, if any (phase 8), and the trainer's page.
   const params = new URLSearchParams(window.location.search);
@@ -125,8 +133,8 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
   const tour = useTrainingTour((t) => open(t));
   useEffect(() => { if (tourAsked()) tour.start(); }, []);
   // A link can open a workspace directly: #admin, #diagram or #phone.
-  const [tab, setTab] = useState<Workspace>(() => (["admin", "diagram", "phone", "agent"].find((t) => window.location.hash === `#${t}`) as Workspace) ?? "phone");
-  const [concept, setConcept] = useState<string | undefined>(lesson.tasks[0].concept);
+  const [tab, setTab] = useState<Workspace>(() => (["admin", "diagram", "phone", "agent"].find((t) => window.location.hash === `#${t}`) as Workspace) ?? (lab && lab.part !== "do" ? "lab" : "phone"));
+  const [concept, setConcept] = useState<string | undefined>(() => (labDef && lab?.part === "learn" ? labDef.learn?.[lab.page]?.concepts?.[0] : undefined) ?? lesson.tasks[0].concept);
   const [done, setDone] = useState<Record<string, CheckResult>>({});
   const [message, setMessage] = useState(restored ? "Welcome back: your work was restored." : "");
   // The diagram reads the environment when it loads: reload it when it's shown after a change.
@@ -150,11 +158,34 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
       check = setTimeout(evaluate, 150);
     });
   }, [sim, lesson, run?.scenario.id]);
+  // Where the learner is in a lab is saved too; a Learn page shows its first concept below.
+  useEffect(() => {
+    void saveSession(session());
+    const page = lab?.part === "learn" ? labDef?.learn?.[lab.page] : undefined;
+    if (page?.concepts?.[0]) setConcept(page.concepts[0]);
+  }, [lab]);
   // Answers and hints are saved as they come.
   useEffect(() => { if (run) { void saveSession(session()); syncWork(); } }, [run]);
 
   // Follow the lesson: when a task is done, show the next one's explanation.
   const current = lesson.tasks.find((t) => !done[t.id]?.passed);
+  const inLabDo = !!labDef && lab?.part === "do" && !run && lesson.id === classId(labDef);
+  // A lab's Do part is done when every task is.
+  useEffect(() => {
+    if (!inLabDo || !labDef || current || !Object.keys(done).length) return;
+    if (!finished().includes(doDoneId(labDef))) { markFinished(doDoneId(labDef)); setFinishedIds(finished()); }
+  }, [inLabDo, current?.id, done]);
+  // A lab in the learner's class reports its progress like an exercise: Learn, then each task.
+  useEffect(() => {
+    if (!member || !labDef || !classScenarios.includes(classId(labDef))) return;
+    const learned = finishedIds.includes(learnDoneId(labDef));
+    const tasks = inLabDo ? lesson.tasks.map((t) => ({ title: t.title, passed: !!done[t.id]?.passed })) : [];
+    const isDone = learned && finishedIds.includes(doDoneId(labDef));
+    clearTimeout(progressTimer.current);
+    progressTimer.current = setTimeout(() => {
+      void reportProgress(member.code, { name: member.name, scenarioId: classId(labDef), title: `Lab ${labDef.number}: ${labDef.title}`, checks: [{ title: "Learn: pages and quiz", passed: learned }, ...tasks], done: isDone, hints: 0 }).catch(() => undefined);
+    }, 1500);
+  }, [labDef?.id, finishedIds, done, inLabDo]);
   useEffect(() => { if (current && !run) setConcept(current.concept); }, [current?.id, run]);
 
   useEffect(() => {
@@ -179,7 +210,49 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
 
   const open = (next: Workspace) => {
     if (next === "diagram" && changedSinceDiagram.current) { setDiagramKey((k) => k + 1); changedSinceDiagram.current = false; }
+    // A lab's task can ask the learner to look at something: "seen:diagram".
+    if (labRef.current?.part === "do" && !runRef.current && next !== "lab") record(sim.store, `seen:${next}`);
     setTab(next);
+  };
+
+  // ---- labs ----
+  const openLab = (id: string) => {
+    setPicking(false);
+    setRun(undefined);
+    const same = labRef.current?.labId === id;
+    setLab({ labId: id, part: "learn", page: 0, quiz: same ? labRef.current!.quiz : {} });
+    setTab("lab");
+    setMessage("");
+  };
+  // The Do part starts in a fresh environment, with the lab's tasks filled in from it.
+  const startLabDo = () => {
+    const l = labRef.current && labById(labRef.current.labId);
+    if (!l) return;
+    void clearSession();
+    sim.store.load(trainingSeed());
+    clock.set(START);
+    routing.signInAs(undefined);
+    setRun(undefined);
+    const next = labLesson(l, sim.store, newSeed());
+    setLesson(next);
+    setDone({});
+    setLab({ ...labRef.current!, part: "do" });
+    setConcept(next.tasks[0].concept);
+    setTab(next.tasks[0].tab);
+    setDiagramKey((k) => k + 1);
+    setMessage(`Lab ${l.number}, hands-on: the environment is fresh for it.`);
+  };
+  const goPart = (part: LabPart) => {
+    const l = labRef.current;
+    if (!l || !labDef) return;
+    if (part === "do") {
+      if (runRef.current || lessonRef.current.id !== classId(labDef)) startLabDo();
+      else { setLab({ ...l, part }); setTab(lessonRef.current.tasks.find((t) => !done[t.id]?.passed)?.tab ?? "phone"); }
+      return;
+    }
+    setRun(undefined);
+    setLab({ ...l, part });
+    setTab("lab");
   };
 
   // A class exercise carries on from the learner's saved work, from whichever browser they used last.
@@ -227,6 +300,7 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
 
   const startLesson = () => {
     setPicking(false);
+    setLab(undefined);
     void clearSession();
     sim.store.load(trainingSeed());
     setRun(undefined);
@@ -240,6 +314,11 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
   };
 
   const restart = () => {
+    if (lab?.part === "do" && !run) {
+      if (window.confirm("Start this lab's hands-on part again? Everything you changed is undone.")) startLabDo();
+      return;
+    }
+    if (lab && !run) { setMessage("Nothing to undo here: the Learn and Challenge parts don't change the environment."); return; }
     if (run) {
       if (window.confirm("Start this exercise again? Everything you changed and answered is undone.")) startScenario(run.scenario);
       return;
@@ -287,7 +366,7 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
           <div className="training-env">
             <ClockBar />
             <span className="training-sim" title="Everything here is simulated: no Dynamics 365 environment, no real phone numbers.">Simulated environment · {sim.api.clientUrl.replace(/^https:\/\//, "")}</span>
-            <button className="training-choose" onClick={() => setPicking(true)}>Choose an exercise</button>
+            <button className="training-choose" onClick={() => setPicking(true)}>Labs and practice</button>
             {member
               ? <button className="training-class" title="Your class: your personal code, and leaving" onClick={() => setClassOpen(true)}>Class {member.code} · {member.name}</button>
               : <button onClick={() => setJoining("")}>Join a class</button>}
@@ -306,21 +385,34 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
         {message && <div className="training-message" role="status">{message}<button aria-label="Close" onClick={() => setMessage("")}>×</button></div>}
         <div className="training-body">
           {run
-            ? <ScenarioPanel key={run.scenario.id} scenario={run.scenario} answers={run.answers} hints={run.hints} onGo={open}
+            ? <div className="lab-scenario">
+              {labDef && <button className="lab-back" onClick={() => goPart("challenge")}>← Back to lab {labDef.number}: {labDef.title}</button>}
+              <ScenarioPanel key={run.scenario.id} scenario={run.scenario} answers={run.answers} hints={run.hints} onGo={open}
                 onAnswer={(id, a) => setRun((r) => r && { ...r, answers: { ...r.answers, [id]: a } })}
                 onHint={(id) => setRun((r) => r && { ...r, hints: { ...r.hints, [id]: (r.hints[id] ?? 0) + 1 } })}
                 found={run.found ?? []} talk={run.talk ?? []}
                 onTalk={(t, revealed) => setRun((r) => r && { ...r, talk: [...(r.talk ?? []), t], found: [...new Set([...(r.found ?? []), ...revealed])].sort() })}
                 onProgress={onProgress} />
-            : <LessonPanel key={lesson.variant?.seed} lesson={lesson} done={done} onGo={open} onExplain={setConcept} />}
+              </div>
+            : labDef && lab
+              ? inLabDo
+                ? <LessonPanel key={lesson.variant?.seed ?? lesson.id} lesson={lesson} done={done} onGo={open} onExplain={setConcept}
+                    header={<LabHeader lab={labDef} state={lab} finishedIds={finishedIds} go={goPart} onAll={() => setPicking(true)} />} />
+                : <LabPanel lab={labDef} state={lab} setState={(x) => { setLab(x); setTab("lab"); }} finishedIds={finishedIds} go={goPart} onAll={() => setPicking(true)} />
+              : <LessonPanel key={lesson.variant?.seed} lesson={lesson} done={done} onGo={open} onExplain={setConcept} />}
           <main className="workspace">
             <TabList selectedValue={tab} onTabSelect={(_, d) => open(d.value as Workspace)} className="workspace-tabs">
+              {labDef && <Tab value="lab">Lab</Tab>}
               <Tab value="admin">Admin center</Tab>
               <Tab value="diagram">Diagram</Tab>
               <Tab value="phone">Phone</Tab>
               <Tab value="agent">Agent</Tab>
             </TabList>
             <div className="workspace-view">
+              {labDef && lab && <div hidden={tab !== "lab"} className="workspace-pane">
+                <LabView lab={labDef} state={lab} setState={setLab} scenarios={allScenarios} finishedIds={finishedIds} onStartDo={startLabDo}
+                  onScenario={(x) => void openScenario(x)} onLearnDone={() => { markFinished(learnDoneId(labDef)); setFinishedIds(finished()); }} />
+              </div>}
               <div hidden={tab !== "admin"} className="workspace-pane"><AdminCenter request={adminRequest} /></div>
               <div hidden={tab !== "phone"} className="workspace-pane"><Phone key={run?.scenario.id ?? lesson.variant?.seed} line={run ? undefined : lesson.line} /></div>
               <div hidden={tab !== "agent"} className="workspace-pane"><AgentView /></div>
@@ -331,7 +423,7 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
           </main>
         </div>
         <LearnStrip conceptId={concept} />
-        <ExercisePicker open={picking} current={run?.scenario.id ?? "lesson"} onClose={() => setPicking(false)} onLesson={startLesson} onScenario={(s) => void openScenario(s)}
+        <ExercisePicker open={picking} current={run?.scenario.id ?? (labDef ? classId(labDef) : "lesson")} onClose={() => setPicking(false)} onLesson={startLesson} onScenario={(s) => { setLab(undefined); void openScenario(s); }} onLab={openLab}
           classInfo={member ? { name: member.className, scenarios: classScenarios } : undefined} finishedIds={finishedIds} onTrainer={() => { setPicking(false); setTrainer("home"); }} />
         {joining !== undefined && <JoinDialog initialCode={joining} onClose={() => setJoining(undefined)}
           onJoined={(m, list, rejoined) => {

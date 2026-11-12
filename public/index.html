@@ -290,6 +290,49 @@
     .tour-dim { position: fixed; inset: 0; z-index: 945; pointer-events: none; background: rgba(15, 23, 42, .5); }
     @media (prefers-reduced-motion: reduce) { .tour, .tour-spot { transition: none; } }
 
+    .phone-pad .fui-Select { width: 100%; min-width: 0; }
+    .phone-pad .fui-Select select { width: 100%; min-width: 0; text-overflow: ellipsis; }
+    /* Labs (src/labs) */
+    .lab-header { margin-bottom: 8px; }
+    .lab-header .lesson-toggle { margin: 0 0 8px; }
+    .lab-parts { display: flex; gap: 4px; margin-top: 10px; }
+    .lab-parts button { flex: 1; padding: 6px 4px; border: 1px solid var(--line); border-radius: 6px; background: #fff; font: inherit; font-size: 13px; cursor: pointer; color: var(--ink); }
+    .lab-parts button.active { border-color: var(--accent); background: #eef5fc; color: var(--accent); font-weight: 600; }
+    .lab-pages { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; counter-reset: page; }
+    .lab-pages button { width: 100%; padding: 6px 10px; border: 0; border-left: 3px solid transparent; background: none; text-align: left; font: inherit; font-size: 14px; cursor: pointer; color: var(--ink); }
+    .lab-pages button.active { border-left-color: var(--accent); background: #eef5fc; font-weight: 600; }
+    .lesson-subtitle { margin: 6px 0 0; font-size: 16px; }
+    .lesson-answer { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 8px 0; }
+    .lesson-answer label { font-weight: 600; font-size: 13px; width: 100%; }
+    .lab-view { max-width: 760px; margin: 0 auto; padding: 24px 24px 40px; line-height: 1.55; }
+    .lab-title { margin: 4px 0 12px; font-size: 24px; }
+    .lab-diagram { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; list-style: none; margin: 16px 0; padding: 0; }
+    .lab-step { padding: 6px 10px; border: 1px solid var(--accent); border-radius: 6px; background: #eef5fc; font-size: 13px; }
+    .lab-arrow { color: var(--muted); }
+    .lab-quote { margin: 14px 0; padding: 10px 14px; border-left: 4px solid var(--accent); background: #f5f7fa; }
+    .lab-quote p { margin: 0 0 6px; font-style: italic; }
+    .lab-quote footer { font-size: 12px; color: var(--muted); }
+    .lab-nav { margin-top: 20px; }
+    .lab-question { margin: 0 0 16px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; }
+    .lab-question legend { padding: 0 4px; font-weight: 600; }
+    .lab-right { margin: 6px 0 0; color: #166534; }
+    .lab-wrong { margin: 6px 0 0; color: #9a3412; }
+    .lab-challenges { list-style: none; margin: 16px 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+    .lab-challenges li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+    .lab-scenario { display: flex; flex-direction: column; flex: none; min-height: 0; }
+    .lab-scenario > .lesson { flex: 1; }
+    .lab-back { padding: 8px 18px; border: 0; border-bottom: 1px solid var(--line); background: #eef5fc; color: var(--accent); text-align: left; font: inherit; font-size: 13px; cursor: pointer; }
+    .picker-practice { margin: 20px 0 4px; font-size: 18px; }
+    .picker-lab { display: flex; align-items: center; gap: 10px; text-align: left; }
+    .picker-lab-number { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: #edebe9; font-weight: 700; flex: none; }
+    .picker-lab-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+    .picker-lab-text span { font-size: 12px; color: var(--muted); }
+    .picker-lab-next { border-color: var(--accent) !important; box-shadow: 0 0 0 1px var(--accent); }
+    .picker-lab-next .picker-lab-number { background: var(--accent); color: #fff; }
+    .picker-lab-done .picker-lab-number { background: #e6f4ea; color: #166534; }
+    .picker-lab-planned { opacity: .55; cursor: default; }
+    @media (max-width: 760px) { .lab-view { padding: 16px; } .lab-challenges li { flex-direction: column; align-items: flex-start; } }
+
     /* Scenarios: "Fix the broken contact center" and "Where does this call go?" */
     .training-env button.training-choose { background: #f2c14e; border-color: #f2c14e; color: var(--brand); font-weight: 600; }
     .training-env button.training-choose:hover { background: #f6d27a; }

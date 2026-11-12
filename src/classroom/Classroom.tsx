@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { Button, Checkbox, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Input, MessageBar, MessageBarBody } from "@fluentui/react-components";
 import { Scenario, KIND_TITLES } from "../scenarios/scenario";
+import { classId, LABS } from "../labs/labs";
 import { claimClass, classLink, classProgress, ClassSummary, ClassView, createClass, createMyClass, deleteClass, joinClass, Member, rejoinClass, myClasses, Progress, readTrainerLink, removeLearner, trainerConfig, trainerLink, updateClass } from "./client";
 import { Me, me, signIn, signOut } from "./account";
 import { markFinished, Membership, setLearnerId, setMembership } from "./identity";
@@ -242,8 +243,12 @@ function CreateClass({ all, owned, onCreated }: { all: Scenario[]; owned: boolea
           <Input type="password" value={passcode} onChange={(_, v) => setPasscode(v.value)} />
         </Field>
       )}
-      <p className="interview-label">Exercises for the class</p>
+      <p className="interview-label">Labs and exercises for the class</p>
       <div className="trainer-pick">
+        {LABS.filter((l) => l.status === "ready").map((l) => (
+          <Checkbox key={l.id} label={`Lab ${l.number} · ${l.title}`} checked={picked.has(classId(l))}
+            onChange={(_, d) => setPicked((p) => { const n = new Set(p); if (d.checked) n.add(classId(l)); else n.delete(classId(l)); return n; })} />
+        ))}
         {all.map((s) => (
           <Checkbox key={s.id} label={`${KIND_TITLES[s.kind]} · level ${s.level} · ${s.title}`} checked={picked.has(s.id)}
             onChange={(_, d) => setPicked((p) => { const n = new Set(p); if (d.checked) n.add(s.id); else n.delete(s.id); return n; })} />
@@ -289,7 +294,7 @@ function ClassProgress({ code, trainerKey, all, canClaim, onClaimed, onDeleted }
   const learners = [...new Map([...(data?.members ?? []), ...(data?.progress ?? [])].map((p) => [p.learnerId, p.name])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
   const personal = (id: string) => data?.members?.find((m) => m.learnerId === id)?.rejoinCode;
   const cell = (learner: string, scenario: string) => data?.progress.find((p) => p.learnerId === learner && p.scenarioId === scenario);
-  const title = (id: string) => all.find((s) => s.id === id)?.title ?? id;
+  const title = (id: string) => all.find((s) => s.id === id)?.title ?? LABS.filter((l) => classId(l) === id).map((l) => `Lab ${l.number}: ${l.title}`)[0] ?? id;
   return (
     <div className="trainer-body">
       <p><strong>{data?.class.name ?? "…"}</strong> · class code <span className="trainer-code">{code}</span></p>
