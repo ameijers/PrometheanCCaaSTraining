@@ -156,12 +156,69 @@
     .clock-time { font-weight: 600; font-variant-numeric: tabular-nums; min-width: 104px; }
     .clock select, .clock input { font: inherit; font-size: 12px; padding: 1px 2px; border-radius: 4px; border: 1px solid #8a9bb5; background: var(--brand); color: #fff; }
     .clock-jump { display: inline-flex; gap: 4px; }
-    .agent { display: flex; gap: 16px; padding: 16px; align-items: flex-start; flex-wrap: wrap; }
-    .agent-side { width: 300px; display: flex; flex-direction: column; gap: 12px; padding: 16px; background: #fff; border: 1px solid var(--line); border-radius: 12px; }
-    .agent-queues p { margin: 4px 0 0; }
-    .agent-main { flex: 1; min-width: 320px; display: flex; flex-direction: column; gap: 12px; }
-    .agent-offer { padding: 12px 16px; background: #eef5fc; border: 2px solid var(--accent); border-radius: 8px; }
-    .agent-offer p { margin: 4px 0 8px; }
+    .ws { display: flex; flex-direction: column; min-height: 100%; background: #f3f2f1; position: relative; }
+    .ws-training { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; padding: 8px 16px; background: #fff; border-bottom: 1px solid var(--line); font-size: 13px; }
+    .ws-queues { font-weight: 600; }
+    .ws-signin { display: inline-flex; align-items: center; gap: 8px; }
+    .ws-stage { position: relative; flex: 1; display: flex; flex-direction: column; }
+    .ws-stage > .fui-MessageBar { margin: 8px 16px 0; }
+    .ws-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 0 16px; background: #0b1f3a; color: #fff; }
+    .ws-app { font-weight: 600; }
+    .ws-top-actions { display: flex; align-items: center; gap: 10px; }
+    .ws-presence, .ws-account { display: inline-flex; align-items: center; gap: 6px; border: 1px solid transparent; background: transparent; color: #fff; font: inherit; cursor: pointer; border-radius: 4px; padding: 4px 8px; }
+    .ws-presence:hover, .ws-account:hover, .ws-presence:focus-visible, .ws-account:focus-visible { border-color: #8a9bb5; }
+    .ws-account { width: 32px; height: 32px; justify-content: center; padding: 0; border: 1px solid #fff; border-radius: 50%; font-size: 12px; }
+    .ws-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; flex: none; }
+    .ws-empty { padding: 24px 16px; }
+    .ws-sessions { display: flex; flex-wrap: wrap; gap: 6px; align-items: stretch; padding: 8px 16px; background: #edebe9; border-bottom: 1px solid var(--line); }
+    .ws-sessions > button, .ws-session { display: inline-flex; align-items: center; border: 1px solid #c8c6c4; border-radius: 4px; background: #fff; font: inherit; font-size: 13px; }
+    .ws-sessions > button, .ws-session > button { padding: 5px 12px; border: 0; background: transparent; cursor: pointer; font: inherit; color: var(--ink); }
+    .ws-sessions .active { border-color: var(--accent); box-shadow: inset 0 -2px 0 var(--accent); color: var(--accent); }
+    .ws-session > button.ws-close { padding: 5px 8px; color: var(--muted); }
+    .ws-session > button.ws-close:disabled { opacity: .35; cursor: default; }
+    .ws-body { flex: 1; padding: 12px 16px 16px; }
+    .ws-card { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+    .ws-card-title { margin: 0 0 8px; font-weight: 600; }
+    .ws-dashboard-title { margin: 0 0 10px; font-size: 18px; font-weight: 600; }
+    .ws-dashboard { display: grid; grid-template-columns: minmax(200px, 260px) 1fr; gap: 12px; align-items: start; }
+    .ws-filter-list { display: flex; flex-direction: column; max-height: 360px; overflow: auto; }
+    .ws-conversations-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .ws-table-wrap { overflow-x: auto; }
+    .ws-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .ws-table th, .ws-table td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+    .ws-table th { font-weight: 600; color: var(--muted); }
+    .ws-inbox { display: grid; grid-template-columns: minmax(240px, 340px) 1fr; gap: 12px; align-items: stretch; }
+    .ws-inbox-empty { display: flex; align-items: center; justify-content: center; min-height: 200px; }
+    .ws-item { display: flex; gap: 10px; width: 100%; padding: 10px 6px; border: 0; border-bottom: 1px solid var(--line); background: none; text-align: left; font: inherit; font-size: 13px; cursor: pointer; }
+    .ws-item:hover { background: #f5f5f5; }
+    .ws-item-icon { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #e8590c; flex: none; }
+    .ws-link { color: var(--accent); }
+    .ws-count { margin: 10px 0 0; font-size: 12px; }
+    .ws-session-body { display: grid; grid-template-columns: minmax(260px, 340px) 1fr; gap: 12px; align-items: start; }
+    .ws-caller { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; font-size: 13px; }
+    .ws-avatar { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: #4f6bed; color: #fff; font-weight: 600; flex: none; }
+    .ws-controls { display: flex; flex-wrap: wrap; gap: 2px; padding: 6px; border-radius: 6px; background: #252423; }
+    .ws-controls button { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 56px; padding: 6px 4px; border: 0; border-radius: 4px; background: transparent; color: #fff; font: inherit; font-size: 12px; cursor: pointer; }
+    .ws-controls button:hover:not(:disabled), .ws-controls button[aria-pressed=true] { background: #3b3a39; }
+    .ws-controls button:disabled { opacity: .4; cursor: default; }
+    .ws-controls button.ws-end:not(:disabled) { background: #c50f1f; }
+    .ws-controls button:focus-visible { outline: 2px solid #fff; }
+    .ws-messages { margin-top: 12px; font-size: 13px; }
+    .ws-messages p { margin: 0 0 4px; }
+    .ws-form { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+    .ws-form > * { align-self: stretch; }
+    .ws-form > .phone-badge { align-self: flex-start; }
+    .ws-form-title { margin: 0; font-size: 18px; font-weight: 600; }
+    .ws-section { margin: 6px 0 0; font-weight: 600; border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+    .ws-fields { display: grid; grid-template-columns: minmax(120px, 180px) 1fr; gap: 6px 12px; margin: 0; font-size: 13px; }
+    .ws-fields dt { color: var(--muted); }
+    .ws-fields dd { margin: 0; }
+    .ws-why { font-size: 12px; }
+    .ws-notification { position: absolute; top: 8px; right: 16px; z-index: 20; width: min(340px, calc(100% - 32px)); box-sizing: border-box; padding: 14px 16px; background: #fff; border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: 8px; box-shadow: 0 8px 28px rgba(0, 0, 0, .22); font-size: 13px; }
+    .ws-notification p { margin: 0 0 4px; }
+    .ws-notification-title { font-weight: 700; font-size: 15px; }
+    .ws-notification-actions { display: flex; gap: 8px; margin-top: 10px; }
+    @media (max-width: 760px) { .ws-dashboard, .ws-inbox, .ws-session-body { grid-template-columns: 1fr; } .ws-fields { grid-template-columns: 1fr; } .ws-fields dd { margin-bottom: 6px; } }
 
     .learn-license { color: var(--muted); font-size: 12px; }
     .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
