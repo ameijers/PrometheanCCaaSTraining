@@ -156,6 +156,13 @@
     .clock-time { font-weight: 600; font-variant-numeric: tabular-nums; min-width: 104px; }
     .clock select, .clock input { font: inherit; font-size: 12px; padding: 1px 2px; border-radius: 4px; border: 1px solid #8a9bb5; background: var(--brand); color: #fff; }
     .clock-jump { display: inline-flex; gap: 4px; }
+    .clock-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 6px 16px; background: #eef2f7; border-bottom: 1px solid var(--line); font-size: 13px; }
+    .clock-strip-label { font-weight: 600; }
+    .clock-strip-note { color: var(--muted); font-size: 12px; }
+    .clock-strip .clock { border-color: #b6c2d3; background: #fff; }
+    .clock-strip .clock select, .clock-strip .clock input { border-color: #b6c2d3; background: #fff; color: var(--ink); }
+    .clock-strip .clock button { font: inherit; font-size: 12px; padding: 2px 10px; border: 1px solid #b6c2d3; border-radius: 10px; background: #fff; color: var(--ink); cursor: pointer; }
+    .clock-strip .clock button:hover { border-color: var(--accent); }
     .ws { display: flex; flex-direction: column; min-height: 100%; background: #f3f2f1; position: relative; }
     .ws-training { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; padding: 8px 16px; background: #fff; border-bottom: 1px solid var(--line); font-size: 13px; }
     .ws-queues { font-weight: 600; }
