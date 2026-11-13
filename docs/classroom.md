@@ -12,6 +12,12 @@ Phase 8 (manual 10). How a trainer runs a class with the training, and what the 
    - a lab's cell has a bar for each part, **Learn** (pages read, then the quiz), **Do** (tasks) and **Challenge** (exercises), and what the learner is on now and for how long; an exercise's cell has one bar for its checks;
    - the cell's colour is a heat map: light to darker blue the further they are, green with **✓ Done** when finished, and an amber edge with **! May be stuck** when they've been on the same thing for over 10 minutes and are still around;
    - hover over a cell for all of it in words.
+   - Select a learner's name, or a cell, for **the learner's page**. For each lab and exercise of the class:
+     - a **timeline** of what they did (pages read, quiz checks, tasks done, wrong answers, hints, predictions, questions asked), with the time of each;
+     - the **quiz**: a block per question (right first time, right after tries, not right yet) and their answer;
+     - the **tasks**: done or not, when and how long it took, hints, and their answer or the check's note;
+     - for "Where does this call go?" their **predictions** next to where the call goes; for an interview the **questions they asked**;
+     - **Open their environment** loads their saved work (a class lab's hands-on part, or a class exercise) in the training, read-only: a banner says whose work it is, nothing you change is saved or sent, and **Back to the class** brings your own session back.
 5. Manage the class on the same page:
    - **Last day**: set, change or remove it. After that day learners can't join or send progress; you still see what they did.
    - **Close the class** stops joining and progress straight away; **Reopen the class** undoes it.
@@ -61,7 +67,7 @@ How it works: progress (what the trainer sees) and your work on the class's exer
 ## What's kept (decision 15.5)
 
 - In the learner's browser: a random id, the class code, the display name and personal code, which exercises they finished, and the current session.
-- In the backend ([backend/src/classes.ts](../backend/src/classes.ts)): each class (name, exercises, the trainer's key, and the user id of the trainer who owns it) and each learner's progress per exercise: the display name, each check passed or not, done, and how many hints they used; each learner's personal code, and their work on the class's exercises (the simulated environment, their answers and hints, compressed). Removing a learner or deleting the class deletes these too.
+- In the backend ([backend/src/classes.ts](../backend/src/classes.ts)): each class (name, exercises, the trainer's key, and the user id of the trainer who owns it) and each learner's progress per lab and exercise: the display name, each check passed or not, done, how many hints they used, each lab part's progress, what they're on now, and for the learner's page their quiz answers and tries, their task answers, predictions and interview questions, and a timeline of at most 80 events (all capped and cleaned up by the backend); each learner's personal code, and their work on the class's exercises (the simulated environment, their answers and hints, compressed). Removing a learner or deleting the class deletes these too.
 - For trainers, only the user id Static Web Apps gives them (unique to this site). Their name or email comes with each request and is shown to them, but not kept. Static Web Apps itself keeps who has which role (Role Management).
 - No accounts for learners, no email addresses, nothing else about a learner. Locally the backend keeps it in `backend/.data/` (ignored by git); hosted, in Azure Table Storage (phase 9).
 

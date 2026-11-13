@@ -31,7 +31,15 @@ export interface Lab {
 export type LabPart = "learn" | "do" | "challenge";
 
 // Where the learner is in a lab: kept with the session.
-export interface LabState { labId: string; part: LabPart; page: number; quiz: Record<string, number>; seen?: number }
+// Kept for the trainer's learner page: quiz tries and which answers were right when checked, hints and
+// done-times per task, and a timeline of events.
+export interface LabEvent { at: string; what: string; kind: "read" | "quiz" | "done" | "hint" | "wrong" | "answer" | "ask" | "start" }
+export interface LabState {
+  labId: string; part: LabPart; page: number; quiz: Record<string, number>; seen?: number;
+  tries?: Record<string, number>; quizRight?: Record<string, boolean>;
+  hints?: Record<string, number>; passedAt?: Record<string, string>;
+  events?: LabEvent[];
+}
 
 export const LABS = (labsJson.labs as Lab[]).sort((a, b) => a.number - b.number);
 export const labById = (id: string) => LABS.find((l) => l.id === id);

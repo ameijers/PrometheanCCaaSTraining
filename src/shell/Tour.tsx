@@ -85,12 +85,12 @@ export function Welcome({ tour, member, restored, current, onJoin, onClass, onOw
             ? <button className="welcome-choice" autoFocus onClick={() => close(onClass)}>
                 <strong>Carry on with my class</strong>
                 <span>{member.className}, as {member.name}.</span>
-                <span className="welcome-save">✓ Your work on the class's labs and exercises is saved with the class. Carry on in any browser with your personal code.</span>
+                <span className="welcome-save">✓ Your work on the class's labs and exercises is saved with the class. Carry on in any browser with your personal code. Your trainer sees your progress and your answers.</span>
               </button>
             : <button className="welcome-choice" autoFocus onClick={() => close(onJoin)}>
                 <strong>Join a class</strong>
                 <span>You have a class code from your trainer.</span>
-                <span className="welcome-save">✓ Your work on the class's labs and exercises is saved with the class, and your trainer sees how you're doing.</span>
+                <span className="welcome-save">✓ Your work on the class's labs and exercises is saved with the class. Your trainer sees your progress and your answers.</span>
               </button>}
           <button className="welcome-choice" onClick={() => close(() => onOwn(carryOn))}>
             <strong>{carryOn ? "Carry on on my own" : "Work on my own"}</strong>

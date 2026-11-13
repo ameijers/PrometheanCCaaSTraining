@@ -49,6 +49,15 @@ export interface LabParts {
   do?: { passed: number; tasks: number; done: boolean };
   challenge?: { done: number; of: number };
 }
+// The detail a trainer sees on a learner's page: their quiz answers, each task, their predictions and
+// questions, and a timeline. Capped and cleaned up here, whatever the browser sends.
+export interface Detail {
+  quiz?: { question: string; answer?: string; right: boolean; tries: number }[];
+  tasks?: { title: string; passed: boolean; at?: string; hints: number; answer?: string; note?: string }[];
+  calls?: { caller: string; predicted: string; actual: string; right: boolean }[];
+  asked?: string[];
+  events?: { at: string; what: string; kind: string }[];
+}
 export interface Progress {
   learnerId: string; name: string; scenarioId: string; title: string;
   checks: CheckProgress[]; done: boolean; hints: number; updatedOn: string;
@@ -56,6 +65,7 @@ export interface Progress {
   parts?: LabParts;
   // What the learner is on now, and since when (for "may be stuck").
   current?: { title: string; since: string };
+  detail?: Detail;
 }
 
 // No letters that look alike (I and 1, O and 0).
@@ -81,6 +91,34 @@ function currentOf(current: any, now: Date): { current?: { title: string; since:
   const since = Date.parse(String(current?.since ?? ""));
   const ok = Number.isFinite(since) && since <= now.getTime() && since > now.getTime() - 7 * 86_400_000;
   return { current: { title, since: new Date(ok ? since : now.getTime()).toISOString() } };
+}
+
+// Short text from the browser: one line, at most max characters, or undefined when empty.
+const line = (value: unknown, max = 200): string | undefined => {
+  const t = String(value ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+  return t || undefined;
+};
+const when = (value: unknown, now: Date): string | undefined => {
+  const t = Date.parse(String(value ?? ""));
+  return Number.isFinite(t) && t <= now.getTime() && t > now.getTime() - 30 * 86_400_000 ? new Date(t).toISOString() : undefined;
+};
+const list = (value: unknown, max: number): any[] => (Array.isArray(value) ? value.slice(-max) : []);
+const EVENT_KINDS = ["read", "quiz", "done", "hint", "wrong", "answer", "ask", "start"];
+function detailOf(detail: any, now: Date): { detail?: Detail } {
+  if (!detail || typeof detail !== "object") return {};
+  const d: Detail = {};
+  const quiz = list(detail.quiz, 12).map((q) => ({ question: line(q?.question) ?? "?", answer: line(q?.answer), right: q?.right === true, tries: count(q?.tries) }));
+  const tasks = list(detail.tasks, 20).map((t) => ({ title: line(t?.title) ?? "?", passed: t?.passed === true, at: when(t?.at, now), hints: count(t?.hints), answer: line(t?.answer, 100), note: line(t?.note) }));
+  const calls = list(detail.calls, 15).map((c) => ({ caller: line(c?.caller) ?? "?", predicted: line(c?.predicted, 100) ?? "?", actual: line(c?.actual, 100) ?? "?", right: c?.right === true }));
+  const asked = list(detail.asked, 30).map((a) => line(a)).filter((a): a is string => !!a);
+  const events = list(detail.events, 80).map((e) => ({ at: when(e?.at, now), what: line(e?.what, 160), kind: EVENT_KINDS.includes(e?.kind) ? e.kind : "start" }))
+    .filter((e): e is { at: string; what: string; kind: string } => !!e.at && !!e.what);
+  if (quiz.length) d.quiz = quiz;
+  if (tasks.length) d.tasks = tasks;
+  if (calls.length) d.calls = calls;
+  if (asked.length) d.asked = asked;
+  if (events.length) d.events = events;
+  return Object.keys(d).length ? { detail: d } : {};
 }
 
 const text = (value: unknown, what: string, max: number): string => {
@@ -186,6 +224,13 @@ export class Classes {
     return { work: (await this.store.get<Work>(`work:${c.code}`, `${id}:${this.classExercise(c, scenarioId)}`)) ?? null };
   }
 
+  // A learner's saved work, for their trainer to look at (read-only, in the trainer's own browser).
+  async learnerWork(code: string, who: Who, learnerId: unknown, scenarioId: unknown): Promise<{ work: Work | null }> {
+    const c = await this.asTrainer(code, who);
+    if (!isLearnerId(learnerId)) throw new AiError("Not a valid learner.", 400);
+    return { work: (await this.store.get<Work>(`work:${c.code}`, `${learnerId}:${this.classExercise(c, scenarioId)}`)) ?? null };
+  }
+
   private async asMember(code: string, learnerId: unknown): Promise<{ c: ClassRecord; id: string }> {
     const c = await this.find(code);
     if (!isLearnerId(learnerId)) throw new AiError("Not a valid learner.", 400);
@@ -212,7 +257,7 @@ export class Classes {
     const p: Progress = {
       learnerId: body.learnerId, name: text(body?.name, "Your name", 40), scenarioId, title: text(body?.title, "The exercise title", 100),
       checks, done: body?.done === true, hints: Math.max(0, Math.min(99, Number(body?.hints) || 0)), updatedOn: now.toISOString(),
-      ...labParts(body?.parts), ...currentOf(body?.current, now)
+      ...labParts(body?.parts), ...currentOf(body?.current, now), ...detailOf(body?.detail, now)
     };
     await this.store.put(`progress:${c.code}`, `${p.learnerId}:${scenarioId}`, p);
     // Learners who joined before joining was recorded show up once they report.

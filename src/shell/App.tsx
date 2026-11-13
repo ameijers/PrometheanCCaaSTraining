@@ -12,8 +12,10 @@ import { ClockBar } from "../calls/ClockBar";
 import { Clock, START } from "../calls/clock";
 import { Routing } from "../calls/routing";
 import { LearnStrip } from "../learn/LearnStrip";
-import { CheckResult, Lesson, record, runChecks, Task } from "../lessons/checks";
-import { classId, doDone, doDoneId, LABS, labById, labLesson, LabPart, LabState, learnDone, learnDoneId } from "../labs/labs";
+import { CheckResult, Lesson, record, recorded, runChecks, Task } from "../lessons/checks";
+import type { Detail } from "../classroom/client";
+import { classId, doDone, doDoneId, LabEvent, LABS, labById, labLesson, LabPart, LabState, learnDone, learnDoneId } from "../labs/labs";
+import type { Answer } from "../scenarios/scenario";
 import { LabHeader, LabPanel } from "../labs/LabPanel";
 import { LabView } from "../labs/LabView";
 import { LessonPanel } from "../lessons/LessonPanel";
@@ -48,7 +50,7 @@ type Workspace = Task["tab"] | "lab";
 // The training screen: the lesson on the left, where the learner works in the middle (the simulated
 // admin center, the Environment Diagram, the phone), and the explanation from Microsoft Learn below.
 // What the learner is doing: the guided lesson, or a scenario (manual 9.1) with their answers so far.
-export interface ScenarioRun { scenario: Scenario; answers: Record<string, CallAnswer>; hints: Record<string, number>; found?: number[]; talk?: Talk[] }
+export interface ScenarioRun { scenario: Scenario; answers: Record<string, CallAnswer>; hints: Record<string, number>; found?: number[]; talk?: Talk[]; events?: LabEvent[] }
 
 export function App({ sim, restored, savedLesson, savedScenario, savedClock, seed, savedLab }: { sim: Simulator; restored: boolean; savedLesson?: Lesson; savedScenario?: ScenarioRun; savedClock?: number; seed?: number; savedLab?: LabState }) {
   // The simulated clock, and the routing that assigns calls as it runs (phase 6): one assignment cycle a second.
@@ -136,17 +138,44 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
     onNow.current.set(id, now);
     return now;
   };
-  const onProgress = (checks: { title: string; passed: boolean }[], isDone: boolean) => {
-    const r = runRef.current;
-    if (!r) return;
-    if (isDone) { markFinished(r.scenario.id); setFinishedIds(finished()); }
-    if (!member) return;
+  // A timeline for the trainer's learner page: what happened, when. Kept with the exercise or lab (and its
+  // saved session), at most the last 80 events. Not while a trainer looks at a learner's work.
+  const viewingRef = useRef(false);
+  const event = (what: string, kind: LabEvent["kind"]): LabEvent => ({ at: new Date().toISOString(), what, kind });
+  const addEvent = (what: string, kind: LabEvent["kind"]) => {
+    if (viewingRef.current) return;
+    if (runRef.current) setRun((r) => r && { ...r, events: [...(r.events ?? []), event(what, kind)].slice(-80) });
+    else if (labRef.current) setLab((l) => l && { ...l, events: [...(l.events ?? []), event(what, kind)].slice(-80) });
+  };
+  // "Waits in Billing", "Voicemail from Returns", "Not connected".
+  const answerText = (a: Answer) => (a.outcome === "Agent" && a.queue ? `Waits in ${a.queue}` : a.queue ? `${a.outcome} from ${a.queue}` : String(a.outcome));
+  // What an exercise sends besides its checks: predictions, questions asked, the timeline.
+  const scenarioDetail = (r: ScenarioRun): Detail => ({
+    calls: (r.scenario.questions ?? []).flatMap((q) => {
+      const a = r.answers[q.id];
+      return a ? [{ caller: q.caller, predicted: answerText(a.picked), actual: answerText(a.actual), right: a.correct }] : [];
+    }),
+    asked: (r.talk ?? []).map((t) => t.q),
+    events: r.events
+  });
+  // The last checks an exercise reported, so a new answer or question can be sent with them.
+  const lastChecks = useRef<{ id: string; checks: { title: string; passed: boolean }[]; done: boolean } | undefined>(undefined);
+  const reportScenario = () => {
+    const r = runRef.current, m = memberRef.current, last = lastChecks.current;
+    if (!r || !m || !last || last.id !== r.scenario.id || viewingRef.current) return;
     clearTimeout(progressTimer.current);
     progressTimer.current = setTimeout(() => {
       const hints = Object.values(r.hints).reduce((a, b) => a + b, 0);
-      const current = currentFor(r.scenario.id, isDone ? undefined : checks.find((c) => !c.passed)?.title);
-      void reportProgress(member.code, { name: member.name, scenarioId: r.scenario.id, title: r.scenario.title, checks, done: isDone, hints, current }).catch(() => undefined);
+      const current = currentFor(r.scenario.id, last.done ? undefined : last.checks.find((c) => !c.passed)?.title);
+      void reportProgress(m.code, { name: m.name, scenarioId: r.scenario.id, title: r.scenario.title, checks: last.checks, done: last.done, hints, current, detail: scenarioDetail(runRef.current ?? r) }).catch(() => undefined);
     }, 1500);
+  };
+  const onProgress = (checks: { title: string; passed: boolean }[], isDone: boolean) => {
+    const r = runRef.current;
+    if (!r || viewingRef.current) return;
+    if (isDone) { markFinished(r.scenario.id); setFinishedIds(finished()); }
+    lastChecks.current = { id: r.scenario.id, checks, done: isDone };
+    reportScenario();
   };
   const tour = useTrainingTour((t) => open(t));
   useEffect(() => { if (tourAsked()) tour.start(); }, []);
@@ -169,6 +198,8 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
     void saveSession(session());
     return sim.store.onChange(() => {
       changedSinceDiagram.current = true;
+      // A trainer looking at a learner's work: nothing is saved, here or with the class.
+      if (viewingRef.current) { clearTimeout(check); check = setTimeout(evaluate, 150); return; }
       clearTimeout(save);
       save = setTimeout(() => void saveSession(session()), 400);
       syncWork();
@@ -178,24 +209,40 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
   }, [sim, lesson, run?.scenario.id]);
   // Where the learner is in a lab is saved too; a Learn page shows its first concept below.
   useEffect(() => {
-    void saveSession(session());
+    if (!viewingRef.current) void saveSession(session());
     const page = lab?.part === "learn" ? labDef?.learn?.[lab.page] : undefined;
     if (page?.concepts?.[0]) setConcept(page.concepts[0]);
   }, [lab]);
-  // Answers and hints are saved as they come.
-  useEffect(() => { if (run) { void saveSession(session()); syncWork(); } }, [run]);
+  // Answers and hints are saved as they come, and go to the class with the exercise's detail.
+  useEffect(() => { if (run && !viewingRef.current) { void saveSession(session()); syncWork(); reportScenario(); } }, [run]);
 
   // Follow the lesson: when a task is done, show the next one's explanation.
   const current = lesson.tasks.find((t) => !done[t.id]?.passed);
   const inLabDo = !!labDef && lab?.part === "do" && !run && lesson.id === classId(labDef);
   // A lab's Do part is done when every task is.
   useEffect(() => {
-    if (!inLabDo || !labDef || current || !Object.keys(done).length) return;
+    if (!inLabDo || !labDef || current || !Object.keys(done).length || viewingRef.current) return;
     if (!finished().includes(doDoneId(labDef))) { markFinished(doDoneId(labDef)); setFinishedIds(finished()); }
   }, [inLabDo, current?.id, done]);
+  // In a lab's Do part: when each task was done, and a wrong answer, for the timeline.
+  const wrongSeen = useRef(new Map<string, string>());
+  useEffect(() => {
+    if (!inLabDo || !lab || viewingRef.current) return;
+    const passedAt = { ...(lab.passedAt ?? {}) };
+    const fresh: LabEvent[] = [];
+    for (const t of lesson.tasks) {
+      const r = done[t.id];
+      if (r?.passed && !passedAt[t.id]) { passedAt[t.id] = new Date().toISOString(); fresh.push(event(`Done: ${t.title}`, "done")); }
+      if (!r?.passed && r?.note && t.check.type === "answer" && wrongSeen.current.get(t.id) !== r.note) {
+        wrongSeen.current.set(t.id, r.note);
+        fresh.push(event(`Not right yet: ${t.title} (${r.note})`, "wrong"));
+      }
+    }
+    if (fresh.length) setLab({ ...lab, passedAt, events: [...(lab.events ?? []), ...fresh].slice(-80) });
+  }, [done, inLabDo]);
   // A lab in the learner's class reports its progress like an exercise: Learn, then each task.
   useEffect(() => {
-    if (!member || !labDef || !classScenarios.includes(classId(labDef))) return;
+    if (!member || !labDef || !classScenarios.includes(classId(labDef)) || viewingRef.current) return;
     const learned = learnDone(labDef, finishedIds);
     const tasks = inLabDo ? lesson.tasks.map((t) => ({ title: t.title, passed: !!done[t.id]?.passed })) : [];
     const didAll = doDone(labDef, finishedIds);
@@ -217,13 +264,45 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
     progressTimer.current = setTimeout(() => {
       void reportProgress(member.code, {
         name: member.name, scenarioId: classId(labDef), title: `Lab ${labDef.number}: ${labDef.title}`, checks: [{ title: "Learn: pages and quiz", passed: learned }, ...tasks],
-        done: isDone, hints: 0, parts, current: currentFor(classId(labDef), nowOn)
+        done: isDone, hints: Object.values(lab?.hints ?? {}).reduce((a, b) => a + b, 0), parts, current: currentFor(classId(labDef), nowOn),
+        detail: {
+          quiz: (labDef.quiz ?? []).map((q) => ({
+            question: q.question, answer: lab?.quiz[q.id] === undefined ? undefined : q.options[lab.quiz[q.id]],
+            right: !!lab?.quizRight?.[q.id], tries: lab?.tries?.[q.id] ?? 0
+          })),
+          tasks: inLabDo ? lesson.tasks.map((t) => ({
+            title: t.title, passed: !!done[t.id]?.passed, at: lab?.passedAt?.[t.id], hints: lab?.hints?.[t.id] ?? 0,
+            answer: t.check.type === "answer" ? recorded(sim.store, `answer:${t.check.key}`) : undefined, note: done[t.id]?.note
+          })) : undefined,
+          events: lab?.events
+        }
       }).catch(() => undefined);
     }, 1500);
-  }, [labDef?.id, finishedIds, done, inLabDo, lab?.part, lab?.page]);
-  // The furthest Learn page the learner has opened, for the trainer's "3 of 5 pages".
+  }, [labDef?.id, finishedIds, done, inLabDo, lab?.part, lab?.page, lab?.events?.length]);
+  // The quiz was checked: a try for each question not right before, and which are right now.
+  const quizChecked = () => {
+    const l = labRef.current, d = l && labById(l.labId);
+    if (!l || !d) return;
+    const tries = { ...(l.tries ?? {}) }, quizRight = { ...(l.quizRight ?? {}) };
+    for (const q of d.quiz ?? []) {
+      if (!quizRight[q.id]) tries[q.id] = (tries[q.id] ?? 0) + 1;
+      quizRight[q.id] = l.quiz[q.id] === q.answer;
+    }
+    const right = (d.quiz ?? []).filter((q) => quizRight[q.id]).length;
+    setLab({ ...l, tries, quizRight, events: [...(l.events ?? []), event(`Quiz: ${right} of ${d.quiz?.length ?? 0} right`, "quiz")].slice(-80) });
+  };
+  // A hint in a lab's Do part.
+  const taskHint = (t: Task) => {
+    const l = labRef.current;
+    if (!l || viewingRef.current) return;
+    setLab({ ...l, hints: { ...(l.hints ?? {}), [t.id]: (l.hints?.[t.id] ?? 0) + 1 }, events: [...(l.events ?? []), event(`Hint: ${t.title}`, "hint")].slice(-80) });
+  };
+  // The furthest Learn page the learner has opened, for the trainer's "3 of 5 pages", and the timeline.
   useEffect(() => {
-    if (lab?.part === "learn" && lab.page > (lab.seen ?? -1)) setLab({ ...lab, seen: lab.page });
+    if (!lab || !labDef || viewingRef.current || lab.part !== "learn" || lab.page <= (lab.seen ?? -1)) return;
+    const pages = labDef.learn ?? [];
+    const what = lab.page >= pages.length ? "Opened the quiz" : `Read: ${pages[lab.page].title}`;
+    setLab({ ...lab, seen: lab.page, events: [...(lab.events ?? []), event(what, "read")].slice(-80) });
   }, [lab?.part, lab?.page]);
   useEffect(() => { if (current && !run) setConcept(current.concept); }, [current?.id, run]);
 
@@ -255,6 +334,44 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
   };
 
   // ---- labs ----
+  // A trainer looks at a learner's saved work: it's loaded here, nothing is saved or sent while it's on
+  // screen, and Back puts the trainer's own session back and reopens the class.
+  const [viewing, setViewing] = useState<{ who: string; what: string; before: Session; back: TrainerOpen }>();
+  const viewWork = async (who: string, what: string, data: string, back: TrainerOpen) => {
+    const saved = await unpack<Session>(data);
+    const before = session();
+    viewingRef.current = true;
+    clearTimeout(workTimer.current);
+    clearTimeout(progressTimer.current);
+    sim.store.load(saved.rows);
+    routing.signInAs(undefined);
+    setRun(saved.scenario as ScenarioRun | undefined);
+    if (saved.lesson) setLesson(saved.lesson as Lesson);
+    setLab(saved.lab as LabState | undefined);
+    clock.set(typeof saved.clock === "number" ? saved.clock : START);
+    setDone({});
+    setDiagramKey((k) => k + 1);
+    setTrainer(undefined);
+    setViewing({ who, what, before, back });
+    setTab(saved.scenario ? "admin" : "lab");
+    setMessage("");
+  };
+  const stopViewing = () => {
+    const v = viewing;
+    if (!v) return;
+    sim.store.load(v.before.rows);
+    routing.signInAs(undefined);
+    setRun(v.before.scenario as ScenarioRun | undefined);
+    if (v.before.lesson) setLesson(v.before.lesson as Lesson);
+    setLab(v.before.lab as LabState | undefined);
+    clock.set(typeof v.before.clock === "number" ? v.before.clock : START);
+    setDone({});
+    setDiagramKey((k) => k + 1);
+    viewingRef.current = false;
+    setViewing(undefined);
+    setTrainer(v.back);
+  };
+
   const openLab = (id: string) => {
     setPicking(false);
     setRun(undefined);
@@ -463,15 +580,19 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
             ? <div className="lab-scenario">
               {labDef && <button className="lab-back" onClick={() => goPart("challenge")}>← Back to lab {labDef.number}: {labDef.title}</button>}
               <ScenarioPanel key={run.scenario.id} scenario={run.scenario} answers={run.answers} hints={run.hints} onGo={open}
-                onAnswer={(id, a) => setRun((r) => r && { ...r, answers: { ...r.answers, [id]: a } })}
-                onHint={(id) => setRun((r) => r && { ...r, hints: { ...r.hints, [id]: (r.hints[id] ?? 0) + 1 } })}
+                onAnswer={(id, a) => {
+                  const q = run.scenario.questions?.find((x) => x.id === id);
+                  setRun((r) => r && { ...r, answers: { ...r.answers, [id]: a } });
+                  addEvent(`${q?.caller ?? "A caller"}: predicted ${answerText(a.picked)} (${a.correct ? "right" : `wrong: ${answerText(a.actual)}`})`, a.correct ? "answer" : "wrong");
+                }}
+                onHint={(id) => { setRun((r) => r && { ...r, hints: { ...r.hints, [id]: (r.hints[id] ?? 0) + 1 } }); addEvent("Used a hint", "hint"); }}
                 found={run.found ?? []} talk={run.talk ?? []}
-                onTalk={(t, revealed) => setRun((r) => r && { ...r, talk: [...(r.talk ?? []), t], found: [...new Set([...(r.found ?? []), ...revealed])].sort() })}
+                onTalk={(t, revealed) => { setRun((r) => r && { ...r, talk: [...(r.talk ?? []), t], found: [...new Set([...(r.found ?? []), ...revealed])].sort() }); addEvent(`Asked: ${t.q}`, "ask"); }}
                 onProgress={onProgress} />
               </div>
             : labDef && lab
               ? inLabDo
-                ? <LessonPanel key={lesson.variant?.seed ?? lesson.id} lesson={lesson} done={done} onGo={open} onExplain={setConcept}
+                ? <LessonPanel key={lesson.variant?.seed ?? lesson.id} lesson={lesson} done={done} onGo={open} onExplain={setConcept} onHint={taskHint}
                     header={<LabHeader lab={labDef} state={lab} finishedIds={finishedIds} go={goPart} onAll={() => setPicking(true)} />} />
                 : <LabPanel lab={labDef} state={lab} setState={(x) => { setLab(x); setTab("lab"); }} finishedIds={finishedIds} go={goPart} onAll={() => setPicking(true)} />
               : <LessonPanel key={lesson.variant?.seed} lesson={lesson} done={done} onGo={open} onExplain={setConcept} />}
@@ -494,7 +615,7 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
             <div className="workspace-view">
               {labDef && lab && <div hidden={tab !== "lab"} className="workspace-pane">
                 <LabView lab={labDef} state={lab} setState={setLab} scenarios={allScenarios} finishedIds={finishedIds} onStartDo={() => void startLabDo(false)}
-                  onScenario={(x) => void openScenario(x)} onLearnDone={() => { markFinished(learnDoneId(labDef)); setFinishedIds(finished()); }} />
+                  onScenario={(x) => void openScenario(x)} onLearnDone={() => { if (viewingRef.current) return; markFinished(learnDoneId(labDef)); setFinishedIds(finished()); }} onQuizChecked={quizChecked} />
               </div>}
               <div hidden={tab !== "admin"} className="workspace-pane"><AdminCenter request={adminRequest} /></div>
               <div hidden={tab !== "phone"} className="workspace-pane">{/* The lesson's line (with its new menu choice) only while doing that lesson; otherwise the real menus. */}<Phone key={run?.scenario.id ?? (labDef && !inLabDo ? `learn-${labDef.id}` : lesson.variant?.seed ?? lesson.id)} line={run || (labDef && !inLabDo) ? undefined : lesson.line} /></div>
@@ -517,7 +638,13 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
           }} />}
         {classOpen && member && <ClassDialog member={member} onClose={() => setClassOpen(false)}
           onLeave={() => { setMembership(undefined); setMember(undefined); setClassScenarios([]); setClassOpen(false); }} />}
-        {trainer && <TrainerView all={allScenarios} initial={trainer} onClose={() => setTrainer(undefined)} />}
+        {trainer && <TrainerView all={allScenarios} initial={trainer} onClose={() => setTrainer(undefined)} onViewWork={(who, what, data, back) => void viewWork(who, what, data, back)} />}
+        {viewing && (
+          <div className="viewing-bar" role="status">
+            <span><strong>Looking at {viewing.who}'s work</strong> on {viewing.what}, as they left it. Read-only: nothing you change here is saved.</span>
+            <button onClick={stopViewing}>Back to the class</button>
+          </div>
+        )}
         <TourCard tour={tour} />
         {/* The welcome is for learners. Not for someone who came with a class link (they go straight to the
             code box), nor for trainers: not on the trainer pages, not for a signed-in trainer. It waits until
