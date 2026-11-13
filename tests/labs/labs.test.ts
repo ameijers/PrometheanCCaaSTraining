@@ -40,6 +40,11 @@ describe("lab content", () => {
     expect([s.get(first.id), s.get("numbers"), s.get(fourth.id), s.get("routing")]).toEqual(["done", "next", "started", "open"]);
   });
 
+  test("a lab finished for a class counts as done in any browser", () => {
+    const [first] = LABS;
+    expect(labStatuses(["lab-" + first.id]).get(first.id)).toBe("done");
+  });
+
   test("the quiz passes only with every answer right", () => {
     const lab = labById("orientation")!;
     const right = Object.fromEntries(lab.quiz!.map((q) => [q.id, q.answer]));

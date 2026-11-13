@@ -43,6 +43,11 @@ export const doDoneId = (lab: Lab) => `lab-${lab.id}-do`;
 
 export type LabStatus = "done" | "started" | "next" | "open" | "planned";
 
+// Learn and Do done, in this browser, or done for the class (the class reports a whole lab as done, so
+// that counts for both in another browser).
+export const learnDone = (lab: Lab, finished: string[]) => finished.includes(learnDoneId(lab)) || finished.includes(classId(lab));
+export const doDone = (lab: Lab, finished: string[]) => finished.includes(doDoneId(lab)) || finished.includes(classId(lab));
+
 // Done, started, the recommended next one, or just open. The recommended next lab is the first ready lab
 // that isn't done; the learner can open any ready lab.
 export function labStatuses(finished: string[]): Map<string, LabStatus> {
@@ -50,7 +55,7 @@ export function labStatuses(finished: string[]): Map<string, LabStatus> {
   let next = false;
   for (const lab of LABS) {
     if (lab.status !== "ready") { out.set(lab.id, "planned"); continue; }
-    const learn = finished.includes(learnDoneId(lab)), done = finished.includes(doDoneId(lab));
+    const learn = learnDone(lab, finished), done = doDone(lab, finished);
     if (learn && done) { out.set(lab.id, "done"); continue; }
     if (!next) { next = true; out.set(lab.id, "next"); continue; }
     out.set(lab.id, learn || done ? "started" : "open");
