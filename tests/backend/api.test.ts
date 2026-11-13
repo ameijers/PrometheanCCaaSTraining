@@ -43,6 +43,24 @@ describe("classes", () => {
     expect(seen.progress).toEqual([expect.objectContaining({ name: "Sam", scenarioId: "build-2-warranty", done: true, hints: 1 })]);
   });
 
+  test("a lab's parts and what the learner is on now are kept, cleaned up", async () => {
+    const { code, trainerKey } = (await a.handle(req("POST", "/classes", { name: "Labs", scenarios: ["lab-queues-people"] }))).body as { code: string; trainerKey: string };
+    const since = new Date(Date.now() - 12 * 60_000).toISOString();
+    await a.handle(req("POST", `/classes/${code}/progress`, {
+      learnerId: learner, name: "Sam", scenarioId: "lab-queues-people", title: "Lab 4", checks: [], done: false, hints: 0,
+      parts: { learn: { read: 5, pages: 5, done: true }, do: { passed: 2.7, tasks: 500, done: "yes" }, challenge: { done: -3, of: 1 }, extra: { x: 1 } },
+      current: { title: "  Add at least two users   to Priority Customers ", since }
+    }));
+    const p = ((await a.handle(req("GET", `/classes/${code}/progress?key=${trainerKey}`))).body as any).progress[0];
+    expect(p.parts).toEqual({ learn: { read: 5, pages: 5, done: true }, do: { passed: 2, tasks: 99, done: false }, challenge: { done: 0, of: 1 } });
+    expect(p.current).toEqual({ title: "Add at least two users to Priority Customers", since });
+    // A "since" in the future becomes now.
+    await a.handle(req("POST", `/classes/${code}/progress`, { learnerId: learner, name: "Sam", scenarioId: "lab-queues-people", title: "Lab 4", checks: [], done: false, hints: 0, current: { title: "Quiz", since: "2999-01-01T00:00:00Z" } }));
+    const later = ((await a.handle(req("GET", `/classes/${code}/progress?key=${trainerKey}`))).body as any).progress[0];
+    expect(Date.parse(later.current.since)).toBeLessThanOrEqual(Date.now());
+    expect(later.parts).toBeUndefined();
+  });
+
   test("bad input is refused in plain words", async () => {
     expect((await a.handle(req("POST", "/classes", { name: "", scenarios: ["x"] }))).body).toEqual({ error: "The class name must be 1 to 60 characters." });
     expect((await a.handle(req("POST", "/classes", { name: "A", scenarios: [] }))).status).toBe(400);

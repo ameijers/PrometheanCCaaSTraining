@@ -126,6 +126,16 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
   };
   // Progress goes to the class a moment after it changes, so a burst of changes is sent once.
   const progressTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // What the learner is on now in each class item, and since when: the trainer sees who may be stuck.
+  const onNow = useRef(new Map<string, { title: string; since: string }>());
+  const currentFor = (id: string, title: string | undefined) => {
+    if (!title) { onNow.current.delete(id); return undefined; }
+    const was = onNow.current.get(id);
+    if (was?.title === title) return was;
+    const now = { title, since: new Date().toISOString() };
+    onNow.current.set(id, now);
+    return now;
+  };
   const onProgress = (checks: { title: string; passed: boolean }[], isDone: boolean) => {
     const r = runRef.current;
     if (!r) return;
@@ -134,7 +144,8 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
     clearTimeout(progressTimer.current);
     progressTimer.current = setTimeout(() => {
       const hints = Object.values(r.hints).reduce((a, b) => a + b, 0);
-      void reportProgress(member.code, { name: member.name, scenarioId: r.scenario.id, title: r.scenario.title, checks, done: isDone, hints }).catch(() => undefined);
+      const current = currentFor(r.scenario.id, isDone ? undefined : checks.find((c) => !c.passed)?.title);
+      void reportProgress(member.code, { name: member.name, scenarioId: r.scenario.id, title: r.scenario.title, checks, done: isDone, hints, current }).catch(() => undefined);
     }, 1500);
   };
   const tour = useTrainingTour((t) => open(t));
@@ -187,12 +198,33 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
     if (!member || !labDef || !classScenarios.includes(classId(labDef))) return;
     const learned = learnDone(labDef, finishedIds);
     const tasks = inLabDo ? lesson.tasks.map((t) => ({ title: t.title, passed: !!done[t.id]?.passed })) : [];
-    const isDone = learned && doDone(labDef, finishedIds);
+    const didAll = doDone(labDef, finishedIds);
+    const isDone = learned && didAll;
+    const pages = labDef.learn?.length ?? 0;
+    const challenges = labDef.challenges ?? [];
+    // Where they are: a Learn page or the quiz, a Do task, or the Challenge part.
+    const nowOn = isDone && lab?.part !== "challenge" ? undefined
+      : lab?.part === "learn" ? (lab.page >= pages ? "Learn: the quiz" : `Learn: ${labDef.learn?.[lab.page]?.title ?? ""}`)
+      : lab?.part === "do" ? (tasks.find((t) => !t.passed)?.title ?? (didAll ? undefined : "Do"))
+      : lab?.part === "challenge" ? "Challenge" : undefined;
+    const parts = {
+      learn: { read: learned ? pages : Math.min(pages, Math.max(lab?.seen ?? -1, lab?.part === "learn" ? lab.page : -1) + 1), pages, done: learned },
+      // Outside the Do part the tasks aren't known here; done says enough then.
+      do: { passed: tasks.filter((t) => t.passed).length, tasks: tasks.length, done: didAll },
+      challenge: { done: challenges.filter((c) => finishedIds.includes(c)).length, of: challenges.length }
+    };
     clearTimeout(progressTimer.current);
     progressTimer.current = setTimeout(() => {
-      void reportProgress(member.code, { name: member.name, scenarioId: classId(labDef), title: `Lab ${labDef.number}: ${labDef.title}`, checks: [{ title: "Learn: pages and quiz", passed: learned }, ...tasks], done: isDone, hints: 0 }).catch(() => undefined);
+      void reportProgress(member.code, {
+        name: member.name, scenarioId: classId(labDef), title: `Lab ${labDef.number}: ${labDef.title}`, checks: [{ title: "Learn: pages and quiz", passed: learned }, ...tasks],
+        done: isDone, hints: 0, parts, current: currentFor(classId(labDef), nowOn)
+      }).catch(() => undefined);
     }, 1500);
-  }, [labDef?.id, finishedIds, done, inLabDo]);
+  }, [labDef?.id, finishedIds, done, inLabDo, lab?.part, lab?.page]);
+  // The furthest Learn page the learner has opened, for the trainer's "3 of 5 pages".
+  useEffect(() => {
+    if (lab?.part === "learn" && lab.page > (lab.seen ?? -1)) setLab({ ...lab, seen: lab.page });
+  }, [lab?.part, lab?.page]);
   useEffect(() => { if (current && !run) setConcept(current.concept); }, [current?.id, run]);
 
   useEffect(() => {
