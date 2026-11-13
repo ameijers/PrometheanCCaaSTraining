@@ -62,14 +62,16 @@ Signed-in trainers may create classes (30 a day each). Without signing in: anyon
 
 **Every visit starts with a welcome** that asks how the learner wants to work, and says where their work is kept:
 - **Join a class** (or **Carry on with my class** once they're in one): work on the class's labs and exercises is saved with the class, and they can carry on in any browser with their personal code.
-- **Work on my own** (or **Carry on on my own** when there's earlier work): their work is kept in this browser only; **Files › Save to a file** keeps a copy or moves it to another computer.
+- **Work on my own** (or **Continue on my own** when there's earlier work): their work is kept in this browser only; **Files › Save to a file** keeps a copy or moves it to another computer.
 - **First, show me around the screen** starts the tour.
 
 Someone who opens a class link goes straight to the code box. Browser scripts don't get the welcome; `?welcome=1` shows it anyway, `?welcome=0` leaves it out.
 
 **Join a class** in the header, or the class link. Enter the code and a name. Right after joining, a dialog shows your **personal code** (six letters and digits), large, with **Copy**: keep it. It's also on the welcome and under **Class** in the header, and your trainer sees it next to your name. The class's labs and exercises come first in **Labs and practice**. Progress is sent as you work. Finished exercises get a tick, in or out of a class.
 
-**Another browser or computer:** Join a class, tick **I joined this class before, in another browser**, and enter the class code and your personal code. You carry on as the same learner: your ticks come back, and opening a class exercise, or a class lab's hands-on part, carries on where you left off, from whichever browser you used last. **Start again** undoes it. Lost the personal code? Your trainer can see it.
+**Joining asks first:** "Have you joined this class before?", with nothing chosen: **No, this is my first time** (class code and name) or **Yes, I joined before** (class code and personal code). Someone who picks "first time" with a name that's already in the class (capitals and spaces don't count) is told "Someone called Sam is already in this class" and offered **That's me: use my personal code**, so nobody joins twice as two learners by mistake. Two different people with the same first name add a letter of their last name.
+
+**Another browser or computer:** Join a class, choose **Yes, I joined before**, and enter the class code and your personal code. You carry on as the same learner: your ticks come back, and opening a class exercise, or a class lab's hands-on part, carries on where you left off, from whichever browser you used last. **Start again** undoes it. Lost the personal code? Your trainer can see it.
 
 How it works: progress (what the trainer sees) and your work on the class's exercises and labs' hands-on parts (the environment, your answers and hints, compressed to about 10 KB) are kept by the training's backend, a few seconds after each change. The personal code gives a new browser your random learner id. Work outside the class's labs and exercises stays in the browser it was done in; **Files › Save to a file** downloads it as a file.
 

@@ -226,6 +226,10 @@ describe("managing a class", () => {
     expect(back.you).toEqual({ learnerId: learner, name: "Sam", rejoinCode: personal, done: ["x"] });
     expect(((await a.handle(req("GET", `/classes/${code}/work/x`, undefined, { learner }))).body as any).work).toMatchObject({ data });
     expect((await a.handle(req("POST", `/classes/${code}/rejoin`, { rejoinCode: "ZZZZZZ" }))).status).toBe(404);
+    // Joining as new with a name that's already in the class (any capitals or spaces) points to the personal code.
+    const twice = await a.handle(req("POST", `/classes/${code}/join`, { learnerId: other, name: " sam " }));
+    expect(twice.status).toBe(409);
+    expect((twice.body as any).error).toMatch(/already in this class.*personal code/);
     expect((await seen(code, trainerKey)).members).toEqual([expect.objectContaining({ name: "Sam", rejoinCode: personal })]);
 
     // Removed: the code, the work and the learner go.

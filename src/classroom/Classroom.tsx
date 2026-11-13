@@ -22,7 +22,10 @@ const today = () => new Date().toISOString().slice(0, 10);
 export function JoinDialog({ initialCode, onJoined, onClose }: { initialCode?: string; onJoined(m: Membership, scenarios: string[], rejoined: boolean): void; onClose(): void }) {
   const [code, setCode] = useState(initialCode ?? "");
   const [name, setName] = useState("");
-  const [before, setBefore] = useState(false);
+  // First time in this class, or joined before (in another browser): asked first, nothing chosen for them,
+  // so nobody joins a second time as a new learner by accident.
+  const [mode, setMode] = useState<"new" | "before" | undefined>();
+  const before = mode === "before";
   const [personal, setPersonal] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -43,7 +46,8 @@ export function JoinDialog({ initialCode, onJoined, onClose }: { initialCode?: s
       setBusy(false);
     }
   };
-  const ready = code.trim().length === 6 && (before ? personal.trim().length === 6 : !!name.trim());
+  const ready = !!mode && code.trim().length === 6 && (before ? personal.trim().length === 6 : !!name.trim());
+  const choose = (m: "new" | "before") => { setMode(m); setError(""); };
   return (
     <Dialog open onOpenChange={(_, d) => { if (!d.open) onClose(); }}>
       <DialogSurface>
@@ -51,16 +55,32 @@ export function JoinDialog({ initialCode, onJoined, onClose }: { initialCode?: s
           <DialogTitle>Join a class</DialogTitle>
           <DialogContent>
             <div className="admin-form">
-              <Field label="Class code" hint="Your trainer gives you this: six letters and digits."><Input value={code} onChange={(_, v) => setCode(v.value.toUpperCase())} maxLength={6} /></Field>
-              <Checkbox label="I joined this class before, in another browser" checked={before} onChange={(_, d) => setBefore(!!d.checked)} />
-              {before
-                ? <Field label="Your personal code" hint="You got it when you joined. It's under Class in the header of that browser, and your trainer can see it.">
-                    <Input value={personal} onChange={(_, v) => setPersonal(v.value.toUpperCase())} maxLength={6} />
-                  </Field>
-                : <Field label="Your name" hint="What your trainer sees next to your progress. A first name is enough."><Input value={name} onChange={(_, v) => setName(v.value)} maxLength={40} /></Field>}
-              <p className="admin-muted">The training keeps only your name, a random id and your work on the class's exercises. No account, no email.</p>
+              <p className="join-ask">Have you joined this class before?</p>
+              <div className="join-choices" role="radiogroup" aria-label="Have you joined this class before?">
+                <button type="button" role="radio" aria-checked={mode === "new"} className={`join-choice${mode === "new" ? " join-chosen" : ""}`} onClick={() => choose("new")}>
+                  <strong>No, this is my first time</strong>
+                  <span>You get a personal code to keep.</span>
+                </button>
+                <button type="button" role="radio" aria-checked={mode === "before"} className={`join-choice${mode === "before" ? " join-chosen" : ""}`} onClick={() => choose("before")}>
+                  <strong>Yes, I joined before</strong>
+                  <span>In another browser or on another computer. You need your personal code; your work comes with you.</span>
+                </button>
+              </div>
+              {mode && <>
+                <Field label="Class code" hint="Your trainer gives you this: six letters and digits."><Input value={code} onChange={(_, v) => setCode(v.value.toUpperCase())} maxLength={6} /></Field>
+                {before
+                  ? <Field label="Your personal code" hint="You got it when you joined. It's under Class at the top of the browser you joined with, and your trainer can see it.">
+                      <Input value={personal} onChange={(_, v) => setPersonal(v.value.toUpperCase())} maxLength={6} />
+                    </Field>
+                  : <Field label="Your name" hint="What your trainer sees next to your progress. A first name is enough."><Input value={name} onChange={(_, v) => setName(v.value)} maxLength={40} /></Field>}
+                {before
+                  ? <p className="admin-muted">Lost your personal code? Ask your trainer: they see it next to your name.</p>
+                  : <p className="admin-muted">The training keeps only your name, a random id and your work on the class's exercises. No account, no email.</p>}
+              </>}
             </div>
-            {error && <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>}
+            {error && <MessageBar intent="error"><MessageBarBody>{error}
+              {!before && /already in this class/.test(error) && <> <Button size="small" onClick={() => choose("before")}>That's me: use my personal code</Button></>}
+            </MessageBarBody></MessageBar>}
           </DialogContent>
           <DialogActions>
             <Button appearance="primary" disabled={busy || !ready} onClick={() => void join()}>{before ? "Carry on" : "Join"}</Button>
@@ -110,7 +130,7 @@ export function ClassDialog({ member, onLeave, onClose }: { member: Membership; 
             {member.rejoinCode
               ? <p>Your personal code: <span className="trainer-code" aria-label={`Your personal code ${member.rejoinCode.split("").join(" ")}`}>{member.rejoinCode}</span></p>
               : <p className="admin-muted">Your personal code shows here once the class is reached.</p>}
-            <p className="admin-muted">To carry on in another browser or on another computer: Join a class, tick "I joined this class before", and enter the class code and your personal code. Your work on the class's exercises comes with you.</p>
+            <p className="admin-muted">To carry on in another browser or on another computer: Join a class, choose "Yes, I joined before", and enter the class code and your personal code. Your work on the class's exercises comes with you.</p>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => { if (window.confirm(`Leave the class ${member.className}? Your work here stays. To come back, you need your personal code.`)) onLeave(); }}>Leave the class</Button>
