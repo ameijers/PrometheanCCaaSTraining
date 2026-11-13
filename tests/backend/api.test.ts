@@ -61,6 +61,32 @@ describe("classes", () => {
     expect(later.parts).toBeUndefined();
   });
 
+  test("the detail for the learner's page is kept within limits, and only the trainer sees a learner's work", async () => {
+    const { code, trainerKey } = (await a.handle(req("POST", "/classes", { name: "Detail", scenarios: ["lab-orientation"] }))).body as { code: string; trainerKey: string };
+    const at = new Date(Date.now() - 60_000).toISOString();
+    await a.handle(req("POST", `/classes/${code}/progress`, {
+      learnerId: learner, name: "Sam", scenarioId: "lab-orientation", title: "Lab 1", checks: [], done: false, hints: 1,
+      detail: {
+        quiz: [{ question: "What decides the queue?", answer: "The rules", right: true, tries: 2 }],
+        tasks: [{ title: "Which queue?", passed: false, hints: 1, answer: "Overflow", note: "“Overflow” isn't it." }],
+        events: [...Array.from({ length: 100 }, (_, i) => ({ at, what: `Read page ${i}`, kind: "read" })), { at: "not a date", what: "x", kind: "read" }, { at, what: "Odd", kind: "hacked" }],
+        extra: "ignored"
+      }
+    }));
+    const p = ((await a.handle(req("GET", `/classes/${code}/progress?key=${trainerKey}`))).body as any).progress[0];
+    expect(p.detail.quiz).toEqual([{ question: "What decides the queue?", answer: "The rules", right: true, tries: 2 }]);
+    expect(p.detail.tasks[0]).toMatchObject({ title: "Which queue?", passed: false, hints: 1, answer: "Overflow" });
+    expect(p.detail.events).toHaveLength(79); // the last 80, less the one without a time
+    expect(p.detail.events.at(-1)).toEqual({ at, what: "Odd", kind: "start" });
+    expect(p.detail.extra).toBeUndefined();
+
+    // The learner's work: the trainer may read it with the key; nobody else.
+    await a.handle(req("POST", `/classes/${code}/work`, { scenarioId: "lab-orientation", data: "SGVsbG8=" }, { learner }));
+    expect((await a.handle(req("GET", `/classes/${code}/work/${learner}/lab-orientation?key=${trainerKey}`))).body).toMatchObject({ work: { data: "SGVsbG8=" } });
+    expect((await a.handle(req("GET", `/classes/${code}/work/${learner}/lab-orientation?key=wrong`))).status).toBe(403);
+    expect((await a.handle(req("GET", `/classes/${code}/work/${learner}/build-2-warranty?key=${trainerKey}`))).status).toBe(400);
+  });
+
   test("bad input is refused in plain words", async () => {
     expect((await a.handle(req("POST", "/classes", { name: "", scenarios: ["x"] }))).body).toEqual({ error: "The class name must be 1 to 60 characters." });
     expect((await a.handle(req("POST", "/classes", { name: "A", scenarios: [] }))).status).toBe(400);

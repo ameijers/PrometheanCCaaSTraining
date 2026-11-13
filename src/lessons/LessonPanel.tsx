@@ -8,8 +8,10 @@ import { CheckResult, Lesson, record, recorded, Task } from "./checks";
 
 // The lesson: the story, and the tasks as a checklist that ticks itself off as the checks pass.
 
-export function LessonPanel({ lesson, done, onGo, onExplain, header }: {
+export function LessonPanel({ lesson, done, onGo, onExplain, header, onHint }: {
   lesson: Lesson;
+  // A hint was shown for this task (for the trainer's learner page).
+  onHint?(task: Task): void;
   // A lab's header (src/labs/LabPanel.tsx) in place of the lesson's own eyebrow.
   header?: ReactNode;
   done: Record<string, CheckResult>;
@@ -50,7 +52,7 @@ export function LessonPanel({ lesson, done, onGo, onExplain, header }: {
                   {t.hints.slice(0, shown).map((h, i) => <p key={i} className="lesson-hint">Hint: {h}</p>)}
                   <div className="lesson-actions">
                     <Button size="small" appearance={t.ask ? "secondary" : "primary"} onClick={() => onGo(t.tab)}>{t.tab === "phone" ? "Open the phone" : t.tab === "admin" ? "Open the admin center" : t.tab === "agent" ? "Open the Agent tab" : "Open the diagram"}</Button>
-                    {shown < t.hints.length && <Button size="small" onClick={() => setHints((h) => ({ ...h, [t.id]: shown + 1 }))}>Hint</Button>}
+                    {shown < t.hints.length && <Button size="small" onClick={() => { setHints((h) => ({ ...h, [t.id]: shown + 1 })); onHint?.(t); }}>Hint</Button>}
                     <Button size="small" appearance="subtle" onClick={() => onExplain(t.concept)}>Explain</Button>
                   </div>
                 </div>

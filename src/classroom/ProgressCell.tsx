@@ -70,24 +70,29 @@ export function describe(p: Progress, now: number): string {
   return lines.join("\n");
 }
 
-export function ProgressCell({ p, now }: { p: Progress | undefined; now: number }) {
+// A lab's three bars, or an exercise's one bar for its checks.
+export function PartBars({ p }: { p: Progress }) {
+  const parts = p.parts;
+  if (!parts) return <span className="tp-parts"><Bar label="Checks" value={p.checks.filter((c) => c.passed).length} of={p.checks.length} done={p.done} /></span>;
+  return (
+    <span className="tp-parts">
+      <Bar label="Learn" value={parts.learn?.read ?? 0} of={parts.learn?.pages ?? 0} done={!!parts.learn?.done} />
+      <Bar label="Do" value={parts.do?.passed ?? 0} of={parts.do?.tasks ?? 0} done={!!parts.do?.done} />
+      {!!parts.challenge?.of && <Bar label="Challenge" value={parts.challenge.done} of={parts.challenge.of} done={parts.challenge.done >= parts.challenge.of} />}
+    </span>
+  );
+}
+
+export function ProgressCell({ p, now, onOpen }: { p: Progress | undefined; now: number; onOpen?(): void }) {
   const { state, fraction } = cellOf(p, now);
   if (!p) return <td className="tp-cell"><span className="admin-muted">Not started</span></td>;
-  const parts = p.parts;
-  const passed = p.checks.filter((c) => c.passed).length;
   return (
-    <td className={`tp-cell ${shade(state, fraction)}${state === "stuck" ? " tp-stuck" : ""}`} title={describe(p, now)}>
+    <td className={`tp-cell ${shade(state, fraction)}${state === "stuck" ? " tp-stuck" : ""}${onOpen ? " tp-clickable" : ""}`} title={describe(p, now)}
+      onClick={onOpen} onKeyDown={(e) => { if (onOpen && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); onOpen(); } }}
+      tabIndex={onOpen ? 0 : undefined} aria-label={onOpen ? `${p.name}, ${p.title}: open the details` : undefined}>
       {state === "done" && <span className="tp-status tp-status-done">✓ Done</span>}
       {state === "stuck" && <span className="tp-status tp-status-stuck">! May be stuck</span>}
-      {parts ? (
-        <span className="tp-parts">
-          <Bar label="Learn" value={parts.learn?.read ?? 0} of={parts.learn?.pages ?? 0} done={!!parts.learn?.done} />
-          <Bar label="Do" value={parts.do?.passed ?? 0} of={parts.do?.tasks ?? 0} done={!!parts.do?.done} />
-          {!!parts.challenge?.of && <Bar label="Challenge" value={parts.challenge.done} of={parts.challenge.of} done={parts.challenge.done >= parts.challenge.of} />}
-        </span>
-      ) : state !== "done" && (
-        <span className="tp-parts"><Bar label="Checks" value={passed} of={p.checks.length} done={false} /></span>
-      )}
+      {(p.parts || state !== "done") && <PartBars p={p} />}
       {p.current && state !== "done" && <span className="tp-now">Now: {p.current.title} · {minutes(p.current.since, now)} min</span>}
       {p.hints > 0 && <span className="tp-hints">{p.hints} hint{p.hints === 1 ? "" : "s"}</span>}
     </td>

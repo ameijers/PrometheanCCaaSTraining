@@ -20,7 +20,8 @@ const DIAGRAMS: Record<NonNullable<LearnPage["diagram"]>, string[]> = {
   rules: ["Caller's answer", "Context variable", "Rule: if … then queue", "Queue", "No rule matches: fallback queue"]
 };
 
-export function LabView({ lab, state, setState, scenarios, finishedIds, onStartDo, onScenario, onLearnDone }: {
+export function LabView({ lab, state, setState, scenarios, finishedIds, onStartDo, onScenario, onLearnDone, onQuizChecked }: {
+  onQuizChecked?(): void;
   lab: Lab;
   state: LabState;
   setState(s: LabState): void;
@@ -73,7 +74,7 @@ export function LabView({ lab, state, setState, scenarios, finishedIds, onStartD
     );
   }
 
-  if (onQuiz) return <Quiz lab={lab} state={state} setState={setState} onStartDo={onStartDo} onLearnDone={onLearnDone} />;
+  if (onQuiz) return <Quiz lab={lab} state={state} setState={setState} onStartDo={onStartDo} onLearnDone={onLearnDone} onChecked={onQuizChecked} />;
 
   return (
     <article className="lab-view">
@@ -99,7 +100,7 @@ export function LabView({ lab, state, setState, scenarios, finishedIds, onStartD
   );
 }
 
-function Quiz({ lab, state, setState, onStartDo, onLearnDone }: { lab: Lab; state: LabState; setState(s: LabState): void; onStartDo(): void; onLearnDone(): void }) {
+function Quiz({ lab, state, setState, onStartDo, onLearnDone, onChecked }: { lab: Lab; state: LabState; setState(s: LabState): void; onStartDo(): void; onLearnDone(): void; onChecked?(): void }) {
   const questions = lab.quiz ?? [];
   // Answers are marked once the learner checks them; changing an answer hides its mark again.
   const [checked, setChecked] = useState<Set<string>>(() => new Set(quizPassed(lab, state.quiz) ? questions.map((q) => q.id) : []));
@@ -129,7 +130,7 @@ function Quiz({ lab, state, setState, onStartDo, onLearnDone }: { lab: Lab; stat
       })}
       <div className="lesson-actions lab-nav">
         <Button onClick={() => setState({ ...state, page: (lab.learn?.length ?? 1) - 1 })}>Back to the pages</Button>
-        {!passed && <Button appearance="primary" disabled={!answered} onClick={() => { setChecked(new Set(questions.map((q) => q.id))); if (quizPassed(lab, state.quiz)) onLearnDone(); }}>Check my answers</Button>}
+        {!passed && <Button appearance="primary" disabled={!answered} onClick={() => { setChecked(new Set(questions.map((q) => q.id))); onChecked?.(); if (quizPassed(lab, state.quiz)) onLearnDone(); }}>Check my answers</Button>}
         {passed && <Button appearance="primary" onClick={onStartDo}>Start the hands-on part</Button>}
       </div>
       {passed && <MessageBar intent="success"><MessageBarBody>All right. Next: do it yourself in the environment.</MessageBarBody></MessageBar>}

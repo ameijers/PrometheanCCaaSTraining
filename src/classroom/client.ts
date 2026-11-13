@@ -24,10 +24,20 @@ export interface LabParts {
   do?: { passed: number; tasks: number; done: boolean };
   challenge?: { done: number; of: number };
 }
+// What the trainer sees on a learner's page (backend/src/classes.ts Detail).
+export type EventKind = "read" | "quiz" | "done" | "hint" | "wrong" | "answer" | "ask" | "start";
+export interface Detail {
+  quiz?: { question: string; answer?: string; right: boolean; tries: number }[];
+  tasks?: { title: string; passed: boolean; at?: string; hints: number; answer?: string; note?: string }[];
+  calls?: { caller: string; predicted: string; actual: string; right: boolean }[];
+  asked?: string[];
+  events?: { at: string; what: string; kind: EventKind }[];
+}
 export interface Progress {
   learnerId: string; name: string; scenarioId: string; title: string; checks: CheckProgress[]; done: boolean; hints: number; updatedOn: string;
   parts?: LabParts;
   current?: { title: string; since: string };
+  detail?: Detail;
 }
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
@@ -76,6 +86,11 @@ export const classProgress = (code: string, key?: string) =>
 const manage = <T>(code: string, key: string | undefined, action: string, body: object) =>
   key ? post<T>(`/classes/${enc(code)}/${action}`, { key, ...body }) : post<T>(`/manage/classes/${enc(code)}/${action}`, body);
 export const updateClass = (code: string, key: string | undefined, changes: { openUntil?: string; closed?: boolean }) => manage<ClassView>(code, key, "settings", changes);
+// A learner's saved work on a class lab or exercise, for their trainer.
+export const learnerWork = (code: string, key: string | undefined, learnerId: string, scenarioId: string) =>
+  call<{ work: { data: string; savedOn: string } | null }>(key
+    ? `/classes/${enc(code)}/work/${learnerId}/${encodeURIComponent(scenarioId)}?key=${encodeURIComponent(key)}`
+    : `/manage/classes/${enc(code)}/work/${learnerId}/${encodeURIComponent(scenarioId)}`);
 export const removeLearner = (code: string, key: string | undefined, learnerId: string) => manage<{ removed: boolean }>(code, key, "remove", { learnerId });
 export const deleteClass = (code: string, key: string | undefined) => manage<{ deleted: boolean }>(code, key, "delete", {});
 

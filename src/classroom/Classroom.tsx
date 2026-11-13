@@ -6,6 +6,7 @@ import { Button, Checkbox, Dialog, DialogActions, DialogBody, DialogContent, Dia
 import { Scenario, KIND_TITLES } from "../scenarios/scenario";
 import { classId, LABS } from "../labs/labs";
 import { Activity, Legend, ProgressCell } from "./ProgressCell";
+import { LearnerView } from "./LearnerView";
 import { claimClass, classLink, classProgress, ClassSummary, ClassView, createClass, createMyClass, deleteClass, joinClass, Member, rejoinClass, myClasses, Progress, readTrainerLink, removeLearner, trainerConfig, trainerLink, updateClass } from "./client";
 import { Me, me, signIn, signOut } from "./account";
 import { markFinished, Membership, setLearnerId, setMembership } from "./identity";
@@ -97,9 +98,13 @@ export function ClassDialog({ member, onLeave, onClose }: { member: Membership; 
 // The trainer's pages. A signed-in trainer gets their classes: create one, open one, add one made with a
 // trainer link. Without signing in, a class can still be created and followed with its trainer link
 // (?trainer=CODE&key=KEY).
-export type TrainerOpen = "home" | { code: string; key: string };
+export type TrainerOpen = "home" | { code: string; key?: string };
 
-export function TrainerView({ all, initial, onClose }: { all: Scenario[]; initial: TrainerOpen; onClose(): void }) {
+export function TrainerView({ all, initial, onClose, onViewWork }: {
+  all: Scenario[]; initial: TrainerOpen; onClose(): void;
+  // Look at a learner's saved work in the training itself (read-only); back reopens this class.
+  onViewWork?(who: string, what: string, data: string, back: TrainerOpen): void;
+}) {
   const [who, setWho] = useState<Me | undefined>();
   // The class on screen: with its key (a trainer link), or the signed-in trainer's own (no key).
   const [open, setOpen] = useState<{ code: string; key?: string } | undefined>(initial === "home" ? undefined : initial);
@@ -120,6 +125,7 @@ export function TrainerView({ all, initial, onClose }: { all: Scenario[]; initia
       </div>
       {!who ? <div className="trainer-body"><p className="admin-muted">Loading…</p></div>
         : open ? <ClassProgress code={open.code} trainerKey={open.key} all={all} canClaim={who.trainer && !!open.key}
+            onViewWork={onViewWork && ((name, what, data) => onViewWork(name, what, data, { code: open.code, key: open.key }))}
             onClaimed={() => setOpen({ code: open.code })} onDeleted={() => setOpen(undefined)} />
         : creating ? <CreateClass all={all} owned={who.trainer} onCreated={(c) => { setCreating(false); setOpen(c); }} />
         : who.trainer ? <TrainerHome onOpen={(code) => setOpen({ code })} onCreate={() => setCreating(true)} />
@@ -262,7 +268,12 @@ function CreateClass({ all, owned, onCreated }: { all: Scenario[]; owned: boolea
 }
 
 // One class: its progress and its settings. With trainerKey, through the trainer link; without, as its owner.
-function ClassProgress({ code, trainerKey, all, canClaim, onClaimed, onDeleted }: { code: string; trainerKey?: string; all: Scenario[]; canClaim: boolean; onClaimed(): void; onDeleted(): void }) {
+function ClassProgress({ code, trainerKey, all, canClaim, onClaimed, onDeleted, onViewWork }: {
+  code: string; trainerKey?: string; all: Scenario[]; canClaim: boolean; onClaimed(): void; onDeleted(): void;
+  onViewWork?(name: string, what: string, data: string): void;
+}) {
+  // One learner's page, at one lab or exercise.
+  const [learner, setLearner] = useState<{ id: string; focus?: string }>();
   const [data, setData] = useState<{ class: ClassView; members?: Member[]; progress: Progress[] } | undefined>();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -298,6 +309,16 @@ function ClassProgress({ code, trainerKey, all, canClaim, onClaimed, onDeleted }
   const personal = (id: string) => data?.members?.find((m) => m.learnerId === id)?.rejoinCode;
   const cell = (learner: string, scenario: string) => data?.progress.find((p) => p.learnerId === learner && p.scenarioId === scenario);
   const title = (id: string) => all.find((s) => s.id === id)?.title ?? LABS.filter((l) => classId(l) === id).map((l) => `Lab ${l.number}: ${l.title}`)[0] ?? id;
+  const shown = learner && learners.find(([id]) => id === learner.id);
+  if (shown && data) {
+    return (
+      <div className="trainer-body">
+        <LearnerView code={code} trainerKey={trainerKey} learnerId={shown[0]} name={shown[1]} progress={data.progress} focus={learner!.focus}
+          items={data.class.scenarios.map((id) => ({ id, title: title(id) }))} onBack={() => setLearner(undefined)}
+          onViewWork={(what, work) => onViewWork?.(shown[1], what, work)} />
+      </div>
+    );
+  }
   return (
     <div className="trainer-body">
       <p><strong>{data?.class.name ?? "…"}</strong> · class code <span className="trainer-code">{code}</span></p>
@@ -332,11 +353,11 @@ function ClassProgress({ code, trainerKey, all, canClaim, onClaimed, onDeleted }
             {learners.map(([id, name]) => (
               <tr key={id}>
                 <td className="tp-learner">
-                  <strong>{name}</strong>{personal(id) && <span className="admin-muted tp-code" title="Their personal code, to carry on in another browser">Personal code {personal(id)}</span>}
+                  <button className="tp-name" onClick={() => setLearner({ id })}>{name}</button>{personal(id) && <span className="admin-muted tp-code" title="Their personal code, to carry on in another browser">Personal code {personal(id)}</span>}
                   <Activity updates={(data?.progress ?? []).filter((p) => p.learnerId === id).map((p) => p.updatedOn)} now={now} />
                   <Button size="small" appearance="subtle" disabled={busy} aria-label={`Remove ${name}`} onClick={() => remove(id, name)}>Remove</Button>
                 </td>
-                {data!.class.scenarios.map((s) => <ProgressCell key={s} p={cell(id, s)} now={now} />)}
+                {data!.class.scenarios.map((s) => <ProgressCell key={s} p={cell(id, s)} now={now} onOpen={() => setLearner({ id, focus: s })} />)}
               </tr>
             ))}
           </tbody>
@@ -344,7 +365,7 @@ function ClassProgress({ code, trainerKey, all, canClaim, onClaimed, onDeleted }
         </div>
         </>
       )}
-      <p className="admin-muted">Hover over a cell for the details. Hints are noted, not counted against anyone. The page updates every 10 seconds.</p>
+      <p className="admin-muted">Select a name or a cell for the learner's page: their timeline, answers and tasks, and their environment. Hints are noted, not counted against anyone. The page updates every 10 seconds.</p>
     </div>
   );
 }

@@ -35,6 +35,7 @@ import conceptsJson from "../../content/concepts.json";
 //   POST /classes/<code>/rejoin       { rejoinCode }: the same learner in another browser; answers their learner id
 //   POST /classes/<code>/work         { scenarioId, data }: the learner's work on a class exercise (header X-Learner)
 //   GET  /classes/<code>/work/<id>    that work, for the learner (header X-Learner)
+//   GET  /classes/<code>/work/<learner>/<id>?key=   a learner's work, for the trainer (or /manage/classes/... signed in)
 //   POST /classes/<code>/progress     a learner's progress on an exercise, while the class is open
 //   GET  /classes/<code>/progress?key the class's progress, for its trainer
 //   POST /classes/<code>/settings     { key, openUntil?, closed? }: the trainer sets an end date, or closes or reopens it
@@ -168,6 +169,10 @@ export function createApi(o: ApiOptions) {
       if (p === "/trainer") return ok({ passcodeRequired: !!o.settings.trainerPasscode });
       if (p === "/me") return ok(r.user ? { signedIn: true, name: r.user.name, trainer: r.user.roles.includes(TRAINER_ROLE) } : { signedIn: false, trainer: false });
       if (p === "/manage/classes") return ok({ classes: await classes.ownedBy(trainer(r).id) });
+      const theirs = p.match(/^\/manage\/classes\/(\w+)\/work\/(\w+)\/([\w-]+)$/);
+      if (theirs) return ok(await classes.learnerWork(theirs[1], { owner: trainer(r).id }, theirs[2], theirs[3]));
+      const theirsByKey = p.match(/^\/classes\/(\w+)\/work\/(\w+)\/([\w-]+)$/);
+      if (theirsByKey) return ok(await classes.learnerWork(theirsByKey[1], { key: r.query.get("key") }, theirsByKey[2], theirsByKey[3]));
       const mine = p.match(/^\/manage\/classes\/(\w+)$/);
       if (mine) return ok(await classes.progress(mine[1], { owner: trainer(r).id }));
       const cls = p.match(/^\/classes\/(\w+)$/);
