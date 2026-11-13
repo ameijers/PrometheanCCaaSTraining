@@ -4,7 +4,7 @@ Phase 8 (manual 10). How a trainer runs a class with the training, and what the 
 
 ## For a trainer
 
-1. Select **Trainer sign-in** in the header and sign in with your Microsoft account. You land on **Your classes**: every class you created, with its code, status, number of exercises and learners. (**Labs and practice** > **For trainers** gets you there too.)
+1. Select **Sign in** in the header (it's for trainers and admins) and sign in with your Microsoft account. You land on **Your classes**: every class you created, with its code, status, number of exercises and learners. (**Labs and practice** > **For trainers** gets you there too.)
 2. Select **Create a class**. Name it, give it a **last day** if you like, and tick the labs and exercises it does. Select **Create the class**.
 3. Hand out the **class code** (six letters and digits), or the class link (`?class=CODE`).
 4. **Open** a class in your list to follow it. At the top, **the class at a glance**:
@@ -52,7 +52,7 @@ To stop someone being a trainer: Role Management, tick their row, **Delete**. It
 
 Anyone with a Microsoft account can sign in, but without the trainer role they only see "You're signed in, but not as a trainer". Learners never sign in.
 
-On this computer (`npm run backend`) there's no Static Web Apps: **Trainer sign-in** asks for a name and signs you in as a trainer with that name, on this computer only.
+On this computer (`npm run backend`) there's no Static Web Apps: **Sign in** asks for a name and signs you in as a trainer and admin with that name, on this computer only.
 
 ## Who may create classes
 

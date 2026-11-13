@@ -3,7 +3,7 @@
 
 import { BACKEND } from "../learn/client";
 
-// Trainer sign-in (docs/classroom.md). On the hosted site, Azure Static Web Apps signs people in with a
+// Sign in, for trainers and admins (docs/classroom.md, docs/feedback.md). On the hosted site, Azure Static Web Apps signs people in with a
 // Microsoft account (/.auth/login/aad) and tells the backend who they are; the "trainer" role comes from an
 // invitation in the Azure portal. On this computer there's no Static Web Apps, so signing in asks for a name
 // and sends a made-up principal to the local backend (backend/src/server.ts), with the trainer and admin roles, so both can be tried here.
