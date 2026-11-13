@@ -401,26 +401,27 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
             {member
               ? <button className="training-class" title="Your class: your personal code, and leaving" onClick={() => setClassOpen(true)}>Class {member.code} · {member.name}</button>
               : <button onClick={() => setJoining("")}>Join a class</button>}
-            {account?.signedIn
-              ? <button className="training-trainer" title="Your classes" onClick={() => setTrainer("home")}>{account.trainer ? "Trainer" : "Signed in"} · {account.name}</button>
-              : <button className="training-trainer" title="For trainers: sign in to manage your classes" onClick={signIn}>Trainer sign-in</button>}
-            <button onClick={() => tour.start()}>Tour</button>
-            {/* Everything about the learner's own work, in one menu; Start again last, as it undoes changes. */}
+            {/* Files on the learner's own computer, separate from the class (which saves by itself). Start again
+                last, as it undoes changes. */}
             <Menu>
               <MenuTrigger disableButtonEnhancement>
-                <button className="training-mywork" aria-haspopup="menu">My work ▾</button>
+                <button className="training-files" aria-haspopup="menu" title="Save your work to a file on this computer, or open one. Separate from your class.">Files ▾</button>
               </MenuTrigger>
               <MenuPopover>
                 <MenuList>
-                  <MenuItem onClick={download}>Save my work</MenuItem>
-                  <MenuItem onClick={() => upload.current?.click()}>Open saved work</MenuItem>
-                  <MenuItem onClick={() => setExporting(true)} title="Export for the Toolbox: download what you built as the Toolbox's CSV templates">Export</MenuItem>
+                  <MenuItem onClick={download}>Save to a file</MenuItem>
+                  <MenuItem onClick={() => upload.current?.click()}>Open a saved file</MenuItem>
+                  <MenuItem onClick={() => setExporting(true)} title="Download what you built as the Toolbox's CSV templates">Export for the Toolbox</MenuItem>
                   <MenuDivider />
                   <MenuItem onClick={restart}>Start again</MenuItem>
                 </MenuList>
               </MenuPopover>
             </Menu>
             <input ref={upload} type="file" accept="application/json,.json" hidden onChange={(e) => void onUpload(e.target.files?.[0])} />
+            <button onClick={() => tour.start()}>Tour</button>
+            {account?.signedIn
+              ? <button className="training-trainer" title="Your classes" onClick={() => setTrainer("home")}>{account.trainer ? "Trainer" : "Signed in"} · {account.name}</button>
+              : <button className="training-trainer" title="For trainers: sign in to manage your classes" onClick={signIn}>Trainer sign-in</button>}
           </div>
         </header>
         {exporting && <ExportDialog store={sim.store} start={new Store(run ? scenarioRows(run.scenario) : trainingSeed())} onClose={() => setExporting(false)} />}

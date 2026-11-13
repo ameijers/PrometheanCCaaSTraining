@@ -95,7 +95,7 @@ export function Welcome({ tour, member, restored, current, onJoin, onClass, onOw
           <button className="welcome-choice" onClick={() => close(() => onOwn(carryOn))}>
             <strong>{carryOn ? "Carry on on my own" : "Work on my own"}</strong>
             <span>{carryOn ? `Pick up where you left off: ${current}.` : "Follow the labs in order, starting with lab 1, or pick practice exercises."}</span>
-            <span className="welcome-save welcome-save-own">! Your work is kept in this browser only. To keep a copy, or to carry on on another computer, use My work › Save my work.</span>
+            <span className="welcome-save welcome-save-own">! Your work is kept in this browser only. To keep a copy, or to carry on on another computer, use Files › Save to a file.</span>
           </button>
         </div>
         <div className="tour-controls">
