@@ -13,7 +13,7 @@ import { Clock, START } from "../calls/clock";
 import { Routing } from "../calls/routing";
 import { LearnStrip } from "../learn/LearnStrip";
 import { CheckResult, Lesson, record, runChecks, Task } from "../lessons/checks";
-import { classId, doDoneId, LABS, labById, labLesson, LabPart, LabState, learnDoneId } from "../labs/labs";
+import { classId, doDone, doDoneId, LABS, labById, labLesson, LabPart, LabState, learnDone, learnDoneId } from "../labs/labs";
 import { LabHeader, LabPanel } from "../labs/LabPanel";
 import { LabView } from "../labs/LabView";
 import { LessonPanel } from "../lessons/LessonPanel";
@@ -32,7 +32,7 @@ import { canPack, pack, unpack } from "../classroom/work";
 import { Session } from "../simulator/persist";
 import { aiScenarios } from "../scenarios/client";
 import { tourAsked } from "@toolbox/environment-3d-explorer/src/tour";
-import { TourCard, useTrainingTour } from "./Tour";
+import { TourCard, useTrainingTour, Welcome } from "./Tour";
 import { CallAnswer, ScenarioPanel } from "../scenarios/ScenarioPanel";
 import { Talk } from "../scenarios/BuildExercise";
 import { Scenario } from "../scenarios/scenario";
@@ -102,19 +102,26 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
     }).catch(() => undefined);
   }, [member?.code]);
   const [classOpen, setClassOpen] = useState(false);
-  // The learner's work on a class exercise goes to the class a few seconds after it changes, so another
-  // browser carries on from it (src/classroom/work.ts).
+  // The learner's work on a class exercise or a class lab's hands-on part goes to the class a few seconds
+  // after it changes, so another browser carries on from it (src/classroom/work.ts).
   const memberRef = useRef(member);
   memberRef.current = member;
   const classRef = useRef(classScenarios);
   classRef.current = classScenarios;
   const workTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // What the learner is working on, as the class knows it: an exercise, or a lab's hands-on part.
+  const workingOn = (): string | undefined => {
+    const r = runRef.current, l = labRef.current;
+    if (r) return r.scenario.id;
+    const d = l?.part === "do" ? labById(l.labId) : undefined;
+    return d && lessonRef.current.id === classId(d) ? classId(d) : undefined;
+  };
   const syncWork = () => {
-    const m = memberRef.current, r = runRef.current;
-    if (!m || !r || !classRef.current.includes(r.scenario.id) || !canPack()) return;
+    const m = memberRef.current, id = workingOn();
+    if (!m || !id || !classRef.current.includes(id) || !canPack()) return;
     clearTimeout(workTimer.current);
     workTimer.current = setTimeout(() => {
-      void pack(session()).then((data) => saveWork(m.code, r.scenario.id, data)).catch(() => undefined);
+      void pack(session()).then((data) => saveWork(m.code, id, data)).catch(() => undefined);
     }, 3000);
   };
   // Progress goes to the class a moment after it changes, so a burst of changes is sent once.
@@ -178,9 +185,9 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
   // A lab in the learner's class reports its progress like an exercise: Learn, then each task.
   useEffect(() => {
     if (!member || !labDef || !classScenarios.includes(classId(labDef))) return;
-    const learned = finishedIds.includes(learnDoneId(labDef));
+    const learned = learnDone(labDef, finishedIds);
     const tasks = inLabDo ? lesson.tasks.map((t) => ({ title: t.title, passed: !!done[t.id]?.passed })) : [];
-    const isDone = learned && finishedIds.includes(doDoneId(labDef));
+    const isDone = learned && doDone(labDef, finishedIds);
     clearTimeout(progressTimer.current);
     progressTimer.current = setTimeout(() => {
       void reportProgress(member.code, { name: member.name, scenarioId: classId(labDef), title: `Lab ${labDef.number}: ${labDef.title}`, checks: [{ title: "Learn: pages and quiz", passed: learned }, ...tasks], done: isDone, hints: 0 }).catch(() => undefined);
@@ -224,10 +231,35 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
     setTab("lab");
     setMessage("");
   };
-  // The Do part starts in a fresh environment, with the lab's tasks filled in from it.
-  const startLabDo = () => {
+  // The Do part starts in a fresh environment, with the lab's tasks filled in from it. A class lab carries on
+  // from the learner's saved work instead, from whichever browser they used last (unless they start again).
+  const startLabDo = async (fresh = true) => {
     const l = labRef.current && labById(labRef.current.labId);
     if (!l) return;
+    const m = memberRef.current;
+    if (!fresh && m && classRef.current.includes(classId(l)) && canPack()) {
+      try {
+        const { work } = await loadWork(m.code, classId(l));
+        const saved = work ? await unpack<Session>(work.data) : undefined;
+        const savedLesson = saved?.lesson as Lesson | undefined;
+        if (work && saved?.rows && savedLesson?.id === classId(l)) {
+          clearTimeout(workTimer.current);
+          sim.store.load(saved.rows);
+          routing.signInAs(undefined);
+          setRun(undefined);
+          setLesson(savedLesson);
+          setDone({});
+          setLab({ ...labRef.current!, part: "do" });
+          clock.set(typeof saved.clock === "number" ? saved.clock : START);
+          setTab(savedLesson.tasks[0].tab);
+          setDiagramKey((k) => k + 1);
+          setMessage(`Carrying on with lab ${l.number} where you left off (saved ${new Date(work.savedOn).toLocaleString()}). Start again undoes it.`);
+          return;
+        }
+      } catch {
+        // The class can't be reached: start fresh here.
+      }
+    }
     void clearSession();
     sim.store.load(trainingSeed());
     clock.set(START);
@@ -246,7 +278,7 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
     const l = labRef.current;
     if (!l || !labDef) return;
     if (part === "do") {
-      if (runRef.current || lessonRef.current.id !== classId(labDef)) startLabDo();
+      if (runRef.current || lessonRef.current.id !== classId(labDef)) void startLabDo(false);
       else { setLab({ ...l, part }); setTab(lessonRef.current.tasks.find((t) => !done[t.id]?.passed)?.tab ?? "phone"); }
       return;
     }
@@ -315,7 +347,7 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
 
   const restart = () => {
     if (lab?.part === "do" && !run) {
-      if (window.confirm("Start this lab's hands-on part again? Everything you changed is undone.")) startLabDo();
+      if (window.confirm("Start this lab's hands-on part again? Everything you changed is undone.")) void startLabDo(true);
       return;
     }
     if (lab && !run) { setMessage("Nothing to undo here: the Learn and Challenge parts don't change the environment."); return; }
@@ -428,7 +460,7 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
             )}
             <div className="workspace-view">
               {labDef && lab && <div hidden={tab !== "lab"} className="workspace-pane">
-                <LabView lab={labDef} state={lab} setState={setLab} scenarios={allScenarios} finishedIds={finishedIds} onStartDo={startLabDo}
+                <LabView lab={labDef} state={lab} setState={setLab} scenarios={allScenarios} finishedIds={finishedIds} onStartDo={() => void startLabDo(false)}
                   onScenario={(x) => void openScenario(x)} onLearnDone={() => { markFinished(learnDoneId(labDef)); setFinishedIds(finished()); }} />
               </div>}
               <div hidden={tab !== "admin"} className="workspace-pane"><AdminCenter request={adminRequest} /></div>
@@ -454,6 +486,12 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
           onLeave={() => { setMembership(undefined); setMember(undefined); setClassScenarios([]); setClassOpen(false); }} />}
         {trainer && <TrainerView all={allScenarios} initial={trainer} onClose={() => setTrainer(undefined)} />}
         <TourCard tour={tour} />
+        {/* Someone who came with a class link goes straight to the code box instead. */}
+        {!params.get("class") && <Welcome tour={tour} restored={restored} current={run ? run.scenario.title : labDef ? `Lab ${labDef.number}: ${labDef.title}` : lesson.title}
+          member={member ? { className: member.className, name: member.name } : undefined}
+          onJoin={() => setJoining("")}
+          onClass={() => { const id = workingOn() ?? (labDef ? classId(labDef) : undefined); if (!id || !classScenarios.includes(id)) setPicking(true); }}
+          onOwn={(carryOn) => { if (!carryOn) setPicking(true); }} />}
       </div>
       </FluentProvider>
     </TrainingContext.Provider>

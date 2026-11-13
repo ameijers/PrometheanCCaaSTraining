@@ -6,7 +6,7 @@ import { Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface
 import { aiScenarios, AiStatus, aiStatus, writeAiScenario } from "./client";
 import { KIND_TITLES, LEVELS, Scenario, ScenarioKind } from "./scenario";
 import readyMade from "../../content/scenarios/ready-made.json";
-import { classId, doDoneId, LABS, labById, labStatuses, LabStatus, learnDoneId } from "../labs/labs";
+import { classId, doDone, LABS, labById, labStatuses, LabStatus, learnDone } from "../labs/labs";
 import { readyAfter, subjectsOf } from "../labs/practice";
 
 // Choosing what to do: a lab, in the recommended order (src/labs), or practice: the guided lesson, a
@@ -66,7 +66,7 @@ export function ExercisePicker({ open, current, onClose, onLesson, onScenario, o
     }
   };
 
-  const labDone = (n: number) => { const l = LABS.find((x) => x.number === n); return !!l && finishedIds.includes(learnDoneId(l)) && finishedIds.includes(doDoneId(l)); };
+  const labDone = (n: number) => { const l = LABS.find((x) => x.number === n); return !!l && learnDone(l, finishedIds) && doDone(l, finishedIds); };
   const item = (s: Scenario, byLab = false) => (
     <button key={s.id} className={`picker-item${s.id === current ? " current" : ""}`} onClick={() => onScenario(s)} title={`Covers: ${subjectsOf(s)}`}>
       <span>{finishedIds.includes(s.id) ? "✓ " : ""}{s.title}{byLab && <span className="picker-item-sub">{KIND_TITLES[s.kind]} · level {s.level} · covers {subjectsOf(s)}</span>}</span>

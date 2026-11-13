@@ -8,7 +8,8 @@ import { Tour, TourStep, tourAsked, useTour } from "@toolbox/environment-3d-expl
 // The training's own guided tour (manual 10, "Help and tour"), on the Toolbox's tour engine
 // (environment-3d-explorer/src/tour.tsx: useTour for the steps). The learner moves on at their own pace:
 // each step lights up one part of the screen with a card next to it (Back, Next, Skip the tour).
-// "Tour" in the header starts it, and ?tour=1 in the address. First-time visitors are offered it.
+// "Tour" in the header starts it, and ?tour=1 in the address. First-time visitors get the Welcome below,
+// which offers it.
 
 type Tab = "admin" | "diagram" | "phone" | "agent";
 
@@ -36,19 +37,13 @@ export function useTrainingTour(open: (tab: Tab) => void): Tour {
   return useTour(trainingTour(open), () => undefined);
 }
 
-// First visit: offer the tour once. Remembered in this browser only; without storage it's offered each time.
-const SEEN = "training-tour-offered";
-function offeredBefore(): boolean {
-  try { return localStorage.getItem(SEEN) === "yes"; } catch { return false; }
-}
-function rememberOffered(): void {
-  try { localStorage.setItem(SEEN, "yes"); } catch { /* offered again next time */ }
-}
-// Not for browser scripts (they'd find a dialog in the way), unless ?welcome=1 asks for it.
-function shouldOffer(): boolean {
+// The welcome opens every visit: the learner says whether they carry on in their class or work on their
+// own. Not for browser scripts (they'd find a dialog in the way), unless ?welcome=1 asks for it; ?welcome=0
+// leaves it out.
+function shouldWelcome(): boolean {
   const asked = new URLSearchParams(window.location.search).get("welcome");
   if (asked !== null) return !/^(0|false|no|off)$/i.test(asked);
-  return !navigator.webdriver && !tourAsked() && !offeredBefore();
+  return !navigator.webdriver && !tourAsked();
 }
 
 const CARD_WIDTH = 360;
@@ -64,8 +59,55 @@ function place(target: DOMRect | undefined, card: { width: number; height: numbe
   return { left, top: Math.max(16, Math.min(target.bottom, vh) - card.height - GAP) };
 }
 
+// Every visit: in a class (carry on with it, or join one with the code) or on their own (carry on, or start
+// with the labs), and where their work is kept either way. A tour for anyone who wants to see the screen.
+export function Welcome({ tour, member, restored, current, onJoin, onClass, onOwn }: {
+  tour: Tour;
+  member?: { className: string; name: string };
+  restored: boolean;
+  current: string;
+  onJoin(): void;
+  onClass(): void;
+  onOwn(carryOn: boolean): void;
+}): React.ReactElement | null {
+  const [open, setOpen] = useState(shouldWelcome);
+  if (!open || tour.active) return null;
+  const close = (then: () => void) => { setOpen(false); then(); };
+  const carryOn = restored && !member;
+  return (
+    <div className="tour-backdrop">
+      <div className="tour tour-welcome" role="dialog" aria-modal="true" aria-labelledby="tour-welcome-title"
+        onKeyDown={(e) => { if (e.key === "Escape") close(() => onOwn(carryOn)); }}>
+        <p className="tour-title" id="tour-welcome-title">{restored || member ? "Welcome back" : "Welcome to the Contact Center training"}</p>
+        <p className="tour-text">How do you want to work today?</p>
+        <div className="welcome-choices">
+          {member
+            ? <button className="welcome-choice" autoFocus onClick={() => close(onClass)}>
+                <strong>Carry on with my class</strong>
+                <span>{member.className}, as {member.name}.</span>
+                <span className="welcome-save">✓ Your work on the class's labs and exercises is saved with the class. Carry on in any browser with your personal code.</span>
+              </button>
+            : <button className="welcome-choice" autoFocus onClick={() => close(onJoin)}>
+                <strong>Join a class</strong>
+                <span>You have a class code from your trainer.</span>
+                <span className="welcome-save">✓ Your work on the class's labs and exercises is saved with the class, and your trainer sees how you're doing.</span>
+              </button>}
+          <button className="welcome-choice" onClick={() => close(() => onOwn(carryOn))}>
+            <strong>{carryOn ? "Carry on on my own" : "Work on my own"}</strong>
+            <span>{carryOn ? `Pick up where you left off: ${current}.` : "Follow the labs in order, starting with lab 1, or pick practice exercises."}</span>
+            <span className="welcome-save welcome-save-own">! Your work is kept in this browser only. To keep a copy, or to carry on on another computer, use My work › Save my work.</span>
+          </button>
+        </div>
+        <div className="tour-controls">
+          <button className="tour-skip" onClick={() => close(() => tour.start())}>First, show me around the screen</button>
+        </div>
+        <p className="tour-text welcome-later">You can switch any time with {member ? "Class" : "Join a class"} and Labs and practice at the top.</p>
+      </div>
+    </div>
+  );
+}
+
 export function TourCard({ tour }: { tour: Tour }): React.ReactElement | null {
-  const [offer, setOffer] = useState(shouldOffer);
   const step = tour.step as TrainingStep | undefined;
   const card = useRef<HTMLDivElement>(null);
   const [style, setStyle] = useState<React.CSSProperties>(() => place(undefined, { width: CARD_WIDTH, height: 200 }));
@@ -112,21 +154,6 @@ export function TourCard({ tour }: { tour: Tour }): React.ReactElement | null {
   const nextButton = useRef<HTMLButtonElement>(null);
   useEffect(() => { if (tour.active) nextButton.current?.focus({ preventScroll: true }); }, [tour.active, tour.index]);
 
-  if (offer && !tour.active) {
-    const close = (start: boolean) => { rememberOffered(); setOffer(false); if (start) tour.start(); };
-    return (
-      <div className="tour-backdrop">
-        <div className="tour tour-welcome" role="dialog" aria-modal="true" aria-labelledby="tour-welcome-title">
-          <p className="tour-title" id="tour-welcome-title">Welcome to the Contact Center training</p>
-          <p className="tour-text">New here? A short tour shows you around: nine steps, at your own pace. You can start it again any time with Tour at the top.</p>
-          <div className="tour-controls">
-            <button className="tour-skip" onClick={() => close(false)}>Not now</button>
-            <button className="tour-primary" autoFocus onClick={() => close(true)}>Show me around</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
   if (!step) return null;
   const last = tour.index === tour.count - 1;
   return (
