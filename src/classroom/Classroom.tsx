@@ -7,6 +7,7 @@ import { Scenario, KIND_TITLES } from "../scenarios/scenario";
 import { classId, LABS } from "../labs/labs";
 import { Activity, Legend, ProgressCell } from "./ProgressCell";
 import { LearnerView } from "./LearnerView";
+import { ClassOverview } from "./ClassOverview";
 import { claimClass, classLink, classProgress, ClassSummary, ClassView, createClass, createMyClass, deleteClass, joinClass, Member, rejoinClass, myClasses, Progress, readTrainerLink, removeLearner, trainerConfig, trainerLink, updateClass } from "./client";
 import { Me, me, signIn, signOut } from "./account";
 import { markFinished, Membership, setLearnerId, setMembership } from "./identity";
@@ -328,23 +329,11 @@ function ClassProgress({ code, trainerKey, all, canClaim, onClaimed, onDeleted, 
         : <p className="admin-muted">This class is in your list: sign in to come back to it.</p>}
       {canClaim && trainerKey && <div className="lesson-actions"><Button disabled={busy} onClick={() => void act(async () => { await claimClass(code, trainerKey); onClaimed(); })}>Add to your classes</Button></div>}
       {error && <MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar>}
-      {c && (
-        <section className="trainer-manage" aria-label="Manage the class">
-          <p className={c.open ? "trainer-status" : "trainer-status trainer-status-off"}><strong>{status}</strong></p>
-          <div className="trainer-manage-row">
-            <Field label="Last day">
-              <Input type="date" value={end} onChange={(_, v) => setEndDraft(v.value)} />
-            </Field>
-            <Button disabled={busy || end === (c.openUntil ?? "")} onClick={() => void act(async () => { await updateClass(code, trainerKey, { openUntil: end }); setEndDraft(undefined); })}>{end ? "Save the last day" : "Remove the last day"}</Button>
-            {c.closed
-              ? <Button disabled={busy} onClick={() => void act(() => updateClass(code, trainerKey, { closed: false }))}>Reopen the class</Button>
-              : <Button disabled={busy} onClick={() => void act(() => updateClass(code, trainerKey, { closed: true }))}>Close the class</Button>}
-            <Button disabled={busy} className="trainer-delete" onClick={() => void destroy()}>Delete the class</Button>
-          </div>
-        </section>
-      )}
       {!learners.length ? <p className="admin-muted">Nobody has joined yet. Learners show here when they join, and their progress as they work. The page updates every 10 seconds.</p> : (
         <>
+        <ClassOverview now={now} learners={learners.length} progress={data!.progress}
+          items={data!.class.scenarios.map((id) => ({ id, title: title(id), lab: id.startsWith("lab-") }))} />
+        <h3 className="tp-heading">Each learner</h3>
         <Legend />
         <div className="tp-wrap">
         <table className="trainer-table tp-table">
@@ -366,6 +355,22 @@ function ClassProgress({ code, trainerKey, all, canClaim, onClaimed, onDeleted, 
         </>
       )}
       <p className="admin-muted">Select a name or a cell for the learner's page: their timeline, answers and tasks, and their environment. Hints are noted, not counted against anyone. The page updates every 10 seconds.</p>
+      {c && (
+        <section className="trainer-manage" aria-label="Manage the class">
+          <h3 className="tp-heading">The class</h3>
+          <p className={c.open ? "trainer-status" : "trainer-status trainer-status-off"}><strong>{status}</strong></p>
+          <div className="trainer-manage-row">
+            <Field label="Last day">
+              <Input type="date" value={end} onChange={(_, v) => setEndDraft(v.value)} />
+            </Field>
+            <Button disabled={busy || end === (c.openUntil ?? "")} onClick={() => void act(async () => { await updateClass(code, trainerKey, { openUntil: end }); setEndDraft(undefined); })}>{end ? "Save the last day" : "Remove the last day"}</Button>
+            {c.closed
+              ? <Button disabled={busy} onClick={() => void act(() => updateClass(code, trainerKey, { closed: false }))}>Reopen the class</Button>
+              : <Button disabled={busy} onClick={() => void act(() => updateClass(code, trainerKey, { closed: true }))}>Close the class</Button>}
+            <Button disabled={busy} className="trainer-delete" onClick={() => void destroy()}>Delete the class</Button>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

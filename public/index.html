@@ -309,6 +309,35 @@
     .tp-clickable { cursor: pointer; }
     .tp-clickable:hover, .tp-clickable:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
     .tp-name { padding: 0; border: 0; background: none; font: inherit; font-weight: 700; color: var(--accent); text-decoration: underline; cursor: pointer; text-align: left; }
+    /* The class at a glance (src/classroom/ClassOverview.tsx) */
+    .cs { margin: 16px 0 8px; }
+    .cs-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; }
+    .cs-tile { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+    .cs-tile-value { font-size: 28px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .cs-tile-name { font-weight: 600; font-size: 13px; }
+    .cs-tile-hint { font-size: 12px; color: var(--muted); }
+    .cs-tile-stuck { box-shadow: inset 4px 0 0 #fab219; }
+    .cs-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 12px; align-items: start; }
+    .cs-card { padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+    .cs-card h3 { margin: 0 0 8px; font-size: 15px; }
+    .cs-key { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0 0 8px; font-size: 12px; color: var(--muted); }
+    .cs-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+    .cs-funnel { margin-bottom: 10px; }
+    .cs-item { margin: 0 0 4px; font-size: 13px; font-weight: 600; }
+    .cs-row, .cs-q { display: grid; grid-template-columns: 96px 1fr auto; align-items: center; gap: 8px; margin: 2px 0; font-size: 12px; }
+    .cs-q { grid-template-columns: 1fr; gap: 2px; margin: 0 0 8px; }
+    .cs-q .cs-track { width: 100%; }
+    .cs-label { color: var(--muted); }
+    .cs-value { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .cs-track { display: flex; gap: 2px; height: 10px; border-radius: 3px; background: #efeee9; overflow: hidden; }
+    .cs-bar { display: block; height: 100%; border-radius: 3px; min-width: 2px; }
+    .cs-working { background: #2a78d6; }
+    .cs-stuck { background: #fab219; }
+    .cs-now { display: grid; grid-template-columns: 1fr; gap: 2px; margin: 0 0 8px; font-size: 12px; }
+    .cs-step { overflow: hidden; text-overflow: ellipsis; }
+    .cs-who { color: var(--muted); }
+    .cs-question { font-size: 12px; }
+    .tp-heading { margin: 16px 0 0; font-size: 15px; }
     /* A learner's page (src/classroom/LearnerView.tsx) */
     .lv-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-bottom: 12px; }
     .lv-head h2 { margin: 0; font-size: 20px; }
