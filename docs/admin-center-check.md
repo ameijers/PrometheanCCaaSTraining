@@ -1,6 +1,6 @@
 # Admin center check, 2026-11-02
 
-The simulated admin pages were compared with the real Copilot Service admin center in academyexperiment (read-only, nothing saved). Only the Contact Center parts; Customer Service parts were left alone. The page definitions in [content/admin-pages/pages.json](../content/admin-pages/pages.json) now follow what the real admin center shows. Screenshots of the real screens were used for comparison only and aren't in the repo.
+The simulated admin pages were compared with the real Copilot Service admin center in a Microsoft demo environment (read-only, nothing saved). Only the Contact Center parts; Customer Service parts were left alone. The page definitions in [content/admin-pages/pages.json](../content/admin-pages/pages.json) now follow what the real admin center shows. Screenshots of the real screens were used for comparison only and aren't in the repo.
 
 ## What changed in the training
 
@@ -26,11 +26,11 @@ Left out of the editor, because the training can't evaluate them: the operators 
 ## Where Learn and the admin center differ
 
 - Learn says **New** and **Create Rule**; the admin center shows **New queue** and **Create rule**. The training follows the admin center.
-- Learn lists the queue types Messaging, Record and Voice; academyexperiment offers Record and Voice (no messaging channel there). The training keeps all three.
+- Learn lists the queue types Messaging, Record and Voice; the demo environment offers Record and Voice (no messaging channel there). The training keeps all three.
 
 ## Condition builder, checked 2026-11-11
 
-Looked at in academyexperiment, read-only: the workstream Contoso Flags Retail, its route-to-queue ruleset and **Create route to queue rule**, filled in without saving and closed. Afterwards the decision list still had its two rules.
+Looked at in the demo environment, read-only: a voice workstream, its route-to-queue ruleset and **Create route to queue rule**, filled in without saving and closed. Afterwards the decision list still had its two rules.
 
 - **Workstream page:** **Rule hit policy** shows **Hit-all** with **Edit**. Under Route to queues: "If there are no matching queues available based on your routing rules, we will send work to your fallback queue, bypassing any overflow settings for that queue."
 - **Decision list notice:** "Before sending a work item to a queue, we'll match rules and overflow actions in priority order. If we don't find any queue that have not overflowed, work items will be sent to the earliest operating queue or follow the rule's overflow action."
@@ -43,7 +43,7 @@ Looked at in academyexperiment, read-only: the workstream Contoso Flags Retail, 
   - number (Escalation Count): Equals, Does not equal, Is greater than, Is greater than or equal to, Is less than, Is less than or equal to, Contains data, Does not contain data;
   - date (Created On): the number ones, and On, Not on, On or after, On or before, After, Before;
   - lookup and choice (Issue, Sentiment Category): Equals, Does not equal, Contains data, Does not contain data.
-- **Route to queues:** **Add queue** and a ⋮ menu; **Queue**\* ("Select queue"), each queue listed with its number of users, such as "Contoso Flags Service (1 user)". Buttons: **Create** and **Cancel** (when editing: **Save and close** and **Cancel**).
+- **Route to queues:** **Add queue** and a ⋮ menu; **Queue**\* ("Select queue"), each queue listed with its number of users, such as "Billing (1 user)". Buttons: **Create** and **Cancel** (when editing: **Save and close** and **Cancel**).
 
 ## Work classification, checked 2026-11-11
 

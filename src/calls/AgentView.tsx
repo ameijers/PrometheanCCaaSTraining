@@ -15,7 +15,7 @@ import { transfer } from "./supervisor";
 import { duration, OngoingDashboard, RealtimeAnalytics, STATUS_NAME, TargetDialog, Transcript } from "./SupervisorViews";
 
 // The representative's and supervisor's app (manual 5.3), shaped like the Copilot Service workspace
-// (looked at in academyexperiment, 2026-11-12; docs/workspace-check.md), Contact Center parts only:
+// (looked at in a Microsoft demo environment, 2026-11-12; docs/workspace-check.md), Contact Center parts only:
 // - a top bar with presence and the account menu; session tabs (Home, Inbox, one per call);
 // - the Inbox (My work items) and the calls waiting in the representative's queues;
 // - an incoming call notification (Accept, Reject) with the identified customer;

@@ -1,5 +1,5 @@
 {
-  "about": "The simulated Copilot Service admin center's pages. Menu path, page, section, button and field names as the real admin center shows them (checked in academyexperiment on 2026-11-02), with the Learn article for each page. Our own look. Only the Contact Center parts; the Customer Service parts (basic queues, routing dialogs, case and email settings) are left out. Descriptions are our own words or quoted from Learn.",
+  "about": "The simulated Copilot Service admin center's pages. Menu path, page, section, button and field names as the real admin center shows them (checked in a Microsoft demo environment on 2026-11-02), with the Learn article for each page. Our own look. Only the Contact Center parts; the Customer Service parts (basic queues, routing dialogs, case and email settings) are left out. Descriptions are our own words or quoted from Learn.",
   "checkedInAdminCenter": "2026-11-02",
   "notice": "Omnichannel configuration changes take up to 15 minutes to reflect.",
   "noticeTraining": "In the training, changes take effect straight away.",

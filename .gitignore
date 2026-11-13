@@ -14,3 +14,6 @@ backend/.cache/
 backend/.data/
 api/dist/
 api/node_modules/
+
+# Local rules for Claude Code, not published
+CLAUDE.local.md
