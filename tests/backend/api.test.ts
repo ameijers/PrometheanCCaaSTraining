@@ -291,6 +291,8 @@ test("Static Web Apps' client principal is read, and anything else is ignored", 
   const encode = (o: unknown) => Buffer.from(JSON.stringify(o)).toString("base64");
   expect(readPrincipal(encode({ identityProvider: "aad", userId: "abc123", userDetails: "ann@contoso.example", userRoles: ["anonymous", "authenticated", "trainer"] })))
     .toEqual({ id: "abc123", name: "ann@contoso.example", roles: ["anonymous", "authenticated", "trainer"] });
+  // Roles typed with capitals or spaces in Role management still count.
+  expect(readPrincipal(encode({ userId: "abc123", userRoles: ["anonymous", "Trainer", " Admin "] }))?.roles).toEqual(["anonymous", "trainer", "admin"]);
   expect(readPrincipal(undefined)).toBeUndefined();
   expect(readPrincipal("not base64 json")).toBeUndefined();
   expect(readPrincipal(encode({ userId: "a/b", userRoles: ["trainer"] }))).toBeUndefined();

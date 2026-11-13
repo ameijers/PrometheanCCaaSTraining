@@ -73,12 +73,13 @@ export const TRAINER_ROLE = "trainer";
 export const ADMIN_ROLE = "admin";
 
 // Reads Static Web Apps' client principal: Base64 JSON with userId, userDetails and userRoles.
+// Role names compare without capitals or stray spaces: "Trainer" or " admin" typed in Role management still count.
 export function readPrincipal(header: string | null | undefined): User | undefined {
   if (!header) return undefined;
   try {
     const p = JSON.parse(Buffer.from(header, "base64").toString("utf8"));
     if (typeof p?.userId !== "string" || !/^[\w-]{1,100}$/.test(p.userId)) return undefined;
-    return { id: p.userId, name: String(p.userDetails ?? "").slice(0, 200), roles: Array.isArray(p.userRoles) ? p.userRoles.map(String) : [] };
+    return { id: p.userId, name: String(p.userDetails ?? "").slice(0, 200), roles: Array.isArray(p.userRoles) ? p.userRoles.map((r: unknown) => String(r).trim().toLowerCase()).filter(Boolean) : [] };
   } catch {
     return undefined;
   }
