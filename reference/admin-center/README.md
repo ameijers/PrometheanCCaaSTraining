@@ -2,7 +2,7 @@
 
 Screenshots of the real Copilot Service admin center, used only to check the training's simulated pages
 (menu paths, page names, field labels, layout). They are never committed or shipped: this folder is in
-.gitignore, apart from this file. Take them in academyexperiment, never in pt-ccaas-dev.
+.gitignore, apart from this file. Take them in the demo environment, never in the development environment.
 
 Save each one with the number and name below (PNG), for example `05-queue-page.png`.
 

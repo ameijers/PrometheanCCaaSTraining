@@ -132,7 +132,7 @@ From `tools/toolbox-home/src/tools.ts`, which is the master list:
   2. merge it there only when Alexander asks (he decides on pushes and solution versions);
   3. move the submodule to the new commit.
 - Toolbox changes made for the training must keep every Toolbox tool working in a real Dataverse environment.
-- The Toolbox's own rules still apply when working in it. Its deploy script (`scripts/deploy.ps1`) deploys only to the environment in `deploy.config.json` (academyexperiment), and only when Alexander asks. The environment `pt-ccaas-dev` is never written to and never added to that file.
+- The Toolbox's own rules still apply when working in it. Its deploy script (`scripts/deploy.ps1`) deploys only to the demo environment in `deploy.config.json`, and only when Alexander asks. The development environment is never written to and never added to that file.
 
 ### 2.5 The Toolbox is a head start, not the subject
 
@@ -610,7 +610,7 @@ Each phase ends with a short demo for Alexander: screenshots and what to try. Do
 
 ## 14. Ground rules
 
-- **No real environments.** The training never connects to a real Dataverse environment. In particular, `pt-ccaas-dev` (https://pt-ccaas-dev.crm4.dynamics.com) is never written to or added to any configuration, in either project.
+- **No real environments.** The training never connects to a real Dataverse environment. In particular, the development environment is never written to or added to any configuration, in either project.
 - **The Toolbox stays safe.** Changes to the Toolbox go on a branch in the Toolbox repo, keep its tests green, and keep every tool working in a real environment. Deploy the Toolbox only when Alexander asks.
 - **Git:** branch first when on `main`. Commit and push only when Alexander asks. Commit messages end with:
   ```
