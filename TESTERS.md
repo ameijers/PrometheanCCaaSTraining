@@ -7,11 +7,11 @@ Thank you for testing! The training teaches Dynamics 365 Contact Center without 
 | | |
 | --- | --- |
 | **The training** | https://gray-mushroom-00ea8790f.4.azurestaticapps.net |
-| **Class code** | `______` |
-| **Test until** | ______ |
+| **Class code** | `A2PVUB` |
+| **Test until** | December 31, 2026 |
 | **Questions** | Use **Feedback** in the training, and leave your email for an answer |
 
-**To start:** open the training, choose **Join a class** › **No, this is my first time**, and enter the class code and your first name. Keep the **personal code** you get.
+**To start:** open the training, choose **Join a class** › **No, this is my first time**, and enter the class code `A2PVUB` and your first name. Keep the **personal code** you get.
 
 ---
 
