@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 import { Rows } from "../../src/simulator/store";
 import { demoSeed } from "../../src/simulator/seeds/demo";

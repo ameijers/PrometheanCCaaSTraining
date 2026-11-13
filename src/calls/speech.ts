@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Speech for the phone (manual 5.5, optional): the browser's own speech synthesis reads the IVR, the AI caller
 // and the outcome aloud. Off by default, and the training works the same without it. Speech recognition isn't

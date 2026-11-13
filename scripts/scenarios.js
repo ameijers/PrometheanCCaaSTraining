@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Plays one "Fix the broken contact center" and one "Where does this call go?" scenario in a real browser,
 // the way a learner would, and saves a screenshot of each step. Proves both exercise kinds can be

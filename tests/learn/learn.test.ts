@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Phase 4: explanations from Microsoft Learn. The backend's pure parts (no network), the cache's offline
 // fallback, and every Diagram shape kind having an explanation.

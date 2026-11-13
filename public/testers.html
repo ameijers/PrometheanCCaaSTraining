@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Testers' guide · Promethean CCaaS Training</title>
+  <link rel="icon" href="data:," />
+  <!-- The guide for people testing the training (docs/testers.md). Static: no scripts, so it fits the site's
+       Content Security Policy. -->
+  <style>
+    :root { --ink: #1f2328; --muted: #5d6670; --line: #dfe3e8; --brand: #1b2a41; --accent: #0f6cbd; --ok: #107c41; --gold: #f2c14e; --warn: #fff8e1; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; font-size: 16px; line-height: 1.55; color: var(--ink); background: #f3f4f6; }
+    header { background: var(--brand); color: #fff; }
+    .bar { max-width: 880px; margin: 0 auto; padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+    .bar strong { font-size: 17px; }
+    .bar span { color: #b8c4d6; font-size: 14px; }
+    .open { display: inline-block; padding: 6px 14px; border-radius: 6px; background: var(--gold); color: var(--brand); font-weight: 600; text-decoration: none; }
+    .open:hover, .open:focus-visible { background: #f5cf73; }
+    .hero { max-width: 880px; margin: 0 auto; padding: 28px 16px 8px; }
+    h1 { margin: 0 0 8px; font-size: 30px; line-height: 1.2; }
+    .lead { margin: 0; font-size: 18px; color: var(--muted); max-width: 680px; }
+    main { max-width: 880px; margin: 0 auto; padding: 8px 16px 48px; }
+    nav.toc { margin: 16px 0 8px; display: flex; flex-wrap: wrap; gap: 8px; }
+    nav.toc a { padding: 4px 12px; border: 1px solid var(--line); border-radius: 16px; background: #fff; color: var(--accent); text-decoration: none; font-size: 14px; }
+    nav.toc a:hover { border-color: var(--accent); }
+    section { margin-top: 16px; padding: 20px 24px; background: #fff; border: 1px solid var(--line); border-radius: 12px; }
+    h2 { margin: 0 0 10px; font-size: 21px; }
+    h3 { margin: 18px 0 6px; font-size: 17px; }
+    p { margin: 8px 0; }
+    ul, ol { margin: 8px 0; padding-left: 22px; }
+    li { margin: 4px 0; }
+    a { color: var(--accent); }
+    .ui { padding: 1px 6px; border: 1px solid #c8ced6; border-radius: 4px; background: #f6f7f9; font-size: 14px; white-space: nowrap; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+    .card { padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; }
+    .card h3 { margin-top: 0; }
+    .saved { color: var(--ok); font-weight: 600; }
+    .own { color: #8a5a00; font-weight: 600; }
+    .note { margin-top: 12px; padding: 10px 14px; border-left: 4px solid var(--gold); background: var(--warn); border-radius: 0 8px 8px 0; }
+    .steps { counter-reset: s; list-style: none; padding: 0; }
+    .steps > li { counter-increment: s; position: relative; padding: 2px 0 8px 40px; }
+    .steps > li::before { content: counter(s); position: absolute; left: 0; top: 2px; width: 28px; height: 28px; border-radius: 50%; background: var(--brand); color: #fff; font-weight: 600; font-size: 14px; display: grid; place-items: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 15px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { font-weight: 600; color: var(--muted); font-size: 14px; }
+    footer { max-width: 880px; margin: 0 auto; padding: 0 16px 32px; color: var(--muted); font-size: 14px; }
+    @media (max-width: 640px) {
+      h1 { font-size: 25px; }
+      section { padding: 16px; }
+      .two { grid-template-columns: 1fr; }
+      th:nth-child(3), td:nth-child(3) { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="bar">
+      <div><strong>Promethean CCaaS Training</strong> <span>Testers' guide</span></div>
+      <a class="open" href="/">Open the training</a>
+    </div>
+  </header>
+
+  <div class="hero">
+    <h1>Thank you for testing</h1>
+    <p class="lead">The training teaches Dynamics 365 Contact Center without a Dynamics 365 environment and without real phone numbers. Everything you set up, call and answer happens in a simulation in your browser. This page tells you how to get started, what to try and how to tell us what you found.</p>
+    <nav class="toc" aria-label="On this page">
+      <a href="#start">Getting started</a>
+      <a href="#class">In a class or on your own</a>
+      <a href="#try">What to try</a>
+      <a href="#feedback">Sending feedback</a>
+      <a href="#data">Your data</a>
+      <a href="#limits">Good to know</a>
+    </nav>
+  </div>
+
+  <main>
+    <section id="start">
+      <h2>Getting started</h2>
+      <ul>
+        <li><strong>Use a computer</strong> with a recent Edge, Chrome, Firefox or Safari. A large screen works best. Testing on Firefox or Safari is especially welcome, because we've tried those the least.</li>
+        <li><strong>Plan about an hour</strong> for a first session. You can stop at any time and carry on later.</li>
+        <li><strong>No account needed.</strong> You don't sign in. The <span class="ui">Sign in</span> button at the top is for trainers only.</li>
+      </ul>
+      <ol class="steps">
+        <li>Open the training. A welcome screen asks how you want to work today.</li>
+        <li>Choose <span class="ui">Join a class</span> if you got a class code, or <span class="ui">Work on my own</span> if not (see the next section).</li>
+        <li>Not sure where things are? Choose <span class="ui">First, show me around the screen</span> on the welcome screen, or <span class="ui">Tour</span> at the top at any time. The tour shows each part of the screen; use <span class="ui">Next</span>, or <span class="ui">Skip</span> to stop.</li>
+      </ol>
+    </section>
+
+    <section id="class">
+      <h2>In a class or on your own</h2>
+      <p>Where your work is kept depends on this choice.</p>
+      <div class="two">
+        <div class="card">
+          <h3>In a class</h3>
+          <p>You have a <strong>class code</strong> (six letters and digits) from the person who runs the test.</p>
+          <ol>
+            <li>Choose <span class="ui">Join a class</span>.</li>
+            <li>The first time: choose <span class="ui">No, this is my first time</span>, enter the class code and your first name, and select <span class="ui">Join</span>.</li>
+            <li>You get a <strong>personal code</strong>. Write it down or copy it: you need it to carry on in another browser or on another computer.</li>
+          </ol>
+          <p class="saved">✓ Your work on the class's labs and exercises is saved with the class.</p>
+          <p>The person running the test sees your progress and your answers.</p>
+          <p><strong>Another browser or computer later?</strong> Choose <span class="ui">Join a class</span> › <span class="ui">Yes, I joined before</span>, and enter the class code and your personal code. Don't join again as new: you'd start over as a second person.</p>
+        </div>
+        <div class="card">
+          <h3>On your own</h3>
+          <p>No code needed. Choose <span class="ui">Work on my own</span> and follow the labs in order, or pick practice exercises.</p>
+          <p class="own">! Your work is kept in this browser only.</p>
+          <ul>
+            <li>Coming back in the same browser: choose <span class="ui">Continue on my own</span> and you carry on where you left off.</li>
+            <li>To keep a copy, or to move to another computer: <span class="ui">Files</span> › <span class="ui">Save to a file</span>, and later <span class="ui">Files</span> › <span class="ui">Open a saved file</span>.</li>
+            <li>Clearing your browser's data, or using a private window, loses this work.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="try">
+      <h2>What to try</h2>
+      <p>Open <span class="ui">Labs and practice</span> at the top. There are 11 labs, in a recommended order, from <em>How a call finds its way</em> to <em>Putting it together</em>. Each lab has three parts:</p>
+      <table>
+        <thead><tr><th>Part</th><th>What you do</th><th>What to look out for</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Learn</strong></td><td>A few short pages with quotes from Microsoft Learn, and a quiz.</td><td>Is it clear? Is anything wrong, missing or too long?</td></tr>
+          <tr><td><strong>Do</strong></td><td>Tasks in the simulated admin center, step by step, with checks that tick off.</td><td>Do the checks tick off when you did it right? Are the steps clear?</td></tr>
+          <tr><td><strong>Challenge</strong></td><td>A task without step-by-step help.</td><td>Too easy, too hard, or unclear what's asked?</td></tr>
+        </tbody>
+      </table>
+      <h3>A good first route</h3>
+      <ol>
+        <li>Lab 1, all three parts.</li>
+        <li>Labs 2 to 4, to set up a phone number, a workstream and a queue.</li>
+        <li>Make a call on the <span class="ui">Phone</span> tab and answer it as a representative on the <span class="ui">Agent</span> tab.</li>
+        <li>Look at the <span class="ui">Diagram</span> tab to see how your setup hangs together.</li>
+        <li>If you have time: the later labs, or a practice exercise from <span class="ui">Labs and practice</span>.</li>
+      </ol>
+      <p>The tabs: <strong>Lab</strong> (the lab you're on), <strong>Admin center</strong> (where you set things up), <strong>Diagram</strong> (your environment as a picture), <strong>Phone</strong> (a simulated phone to call in) and <strong>Agent</strong> (the representative's and supervisor's workspace). On the Phone, Agent and Diagram tabs a bar shows the contact center's time; operating hours and waiting times follow that clock.</p>
+      <p>Something odd? <span class="ui">Files</span> › <span class="ui">Start again</span> undoes everything you changed in the environment for the lab or exercise you're on.</p>
+    </section>
+
+    <section id="feedback">
+      <h2>Sending feedback</h2>
+      <p>Select <span class="ui">Feedback</span> at the top, any time, as often as you like. Small things are welcome too: a confusing word, a button in the wrong place.</p>
+      <ol>
+        <li><strong>What is it about?</strong> Something doesn't work · Something in the content is wrong or unclear · An idea or a wish · A question · Something else.</li>
+        <li><strong>Your feedback</strong>: what you did, what you expected, and what happened. Up to 2000 characters.</li>
+        <li><strong>Your name and email</strong> are optional. Leave your email if you'd like an answer.</li>
+        <li><strong>Include what I was doing in the training</strong> is on: it sends the lab and part, the tab, your class code and your browser and screen size. The form shows exactly what's sent; untick it if you prefer.</li>
+        <li><strong>Attach my environment</strong> (off unless you tick it) sends what you set up in the training, so we can see what you see. Very helpful when a check doesn't tick off.</li>
+      </ol>
+      <p>You get a reference, such as <code>20261113132602-n6qpcw</code>. Mention it if you contact us about it.</p>
+      <div class="note">Send feedback from the screen where it happened, so the context that's sent is right.</div>
+    </section>
+
+    <section id="data">
+      <h2>Your data</h2>
+      <ul>
+        <li><strong>In a class</strong> the training keeps your name, a random id, your personal code and your work on the class's labs and exercises. No account, no email.</li>
+        <li><strong>On your own</strong> your work stays in your browser. Nothing is sent, except feedback you choose to send.</li>
+        <li><strong>Feedback</strong> is kept with what you chose to include. Only the training's admins read it.</li>
+        <li>Nothing connects to a real Dynamics 365 environment, and all phone numbers are ones reserved for fiction. Don't enter real customer data or real phone numbers.</li>
+      </ul>
+    </section>
+
+    <section id="limits">
+      <h2>Good to know</h2>
+      <ul>
+        <li><strong>It's a simulation.</strong> Menu and field names follow Microsoft's, but the screens are our own and only cover what the labs need. Not every button of the real product is there.</li>
+        <li><strong>It's a test version.</strong> Things may change or break. If you get stuck, send feedback and try <span class="ui">Files</span> › <span class="ui">Start again</span>, or another lab.</li>
+        <li><strong>Feedback limit:</strong> up to 20 a day from one browser.</li>
+        <li><strong>Product facts</strong> come from Microsoft Learn, quoted with a link. If something seems different from what you know of the product, please tell us.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>Promethean CCaaS Training is an independent training simulation, not a Microsoft product. Quotes from Microsoft Learn are © Microsoft, under CC BY 4.0.</p>
+  </footer>
+</body>
+</html>

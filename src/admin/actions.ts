@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 import { ASSIGNMENT_METHODS, AssignmentMethod, QUEUE_TYPES, QueueType } from "@toolbox/queue-builder/src/queueSchema";
 import { appendRules, emptyDefinition, ruleXml } from "@toolbox/route-to-queue-builder/src/rules";

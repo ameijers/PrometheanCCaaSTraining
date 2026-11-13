@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Toolbox code finds Xrm as a global (resolveXrm in tools/shared/src/xrm.ts). Tests put the
 // simulator's there, the way the shell puts it on window.

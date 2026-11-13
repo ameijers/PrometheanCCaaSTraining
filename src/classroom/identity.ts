@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Who the learner is, as far as the training knows: a random id made in this browser, and, when they've
 // joined a class, the class code and the display name they chose (decision 15.5). Nothing else.

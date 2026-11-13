@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // AI-written scenarios kept in content/scenarios/generated (scripts/ai-generate-live.js, npm run ai:generate)
 // keep passing every check of manual 8.3 with the current code, like the ready-made ones.

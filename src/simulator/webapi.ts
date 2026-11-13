@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 import { evaluate, filterColumns, parseQuery, Query, UnsupportedError } from "./odata";
 import { Column, storageKey, Table, TABLES, tableByEntitySet } from "./schema";

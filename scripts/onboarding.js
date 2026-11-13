@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Plays the level 5 onboarding exercise in a real browser: a business unit and an owner team with three
 // members, in the simulated Power Platform admin center. Saves a screenshot of each step.

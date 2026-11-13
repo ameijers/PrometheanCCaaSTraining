@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // The workspace beyond taking a call: who is calling (customer identification), what is said (simulated
 // transcript, sentiment, Copilot summary), and the supervisor's side (real-time analytics and the actions

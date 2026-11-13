@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 import { Store } from "../simulator/store";
 import { Assignment, assign, assignmentFor, closeCall, endCall, STATUS } from "./assignment";

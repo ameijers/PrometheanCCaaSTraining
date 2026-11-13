@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Grading by code: a fix scenario is solved through the admin center's own actions, and the health
 // checks see each fault go; a call question is graded by the call engine. And the checks of manual 8.3

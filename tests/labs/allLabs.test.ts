@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Every ready lab's hands-on part, done task by task the way a learner does it (the admin center's
 // actions, the phone, the workspace's events), in a fresh environment. Before a question is answered,

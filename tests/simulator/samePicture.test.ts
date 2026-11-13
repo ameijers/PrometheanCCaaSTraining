@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Manual 4.5 "Same picture both ways": the Toolbox's own loadRaw(), reading the simulator, must give
 // the same graph as buildGraph() on the demo rows directly.

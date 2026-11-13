@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Manual phase 2: every Toolbox tool loads without an error. Each test calls what the tool's App.tsx
 // calls when it opens, against the training environment. (The pages themselves are checked in the

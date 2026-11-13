@@ -83,4 +83,4 @@ The training never connects to a real Dataverse environment, and it only uses ph
 
 ## License
 
-MIT, see [LICENSE](LICENSE).
+All rights reserved, see [LICENSE](LICENSE). The source is public to read, but you may not use, copy, host or build on it without written permission from Alexander Meijers. Microsoft Learn quotations keep their CC BY 4.0 license, and the Toolbox in `vendor/toolbox` keeps its own license.

@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Operating hours and overflow on calls (manual 5.2 steps 3 and 6): the queue's calendar decides
 // whether out-of-hours overflow fires, and the queue's state feeds the wait-time rules.

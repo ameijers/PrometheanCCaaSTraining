@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Writes docs/webapi-surface.md: every Web API call in the Toolbox (vendor/toolbox/tools/*/src), per
 // tool, with the line, the method, the table and the query as written in the code.

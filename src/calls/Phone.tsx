@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 import { useEffect, useState } from "react";
 import { Button, Field, Input, MessageBar, MessageBarBody, Radio, RadioGroup, Select, Switch } from "@fluentui/react-components";

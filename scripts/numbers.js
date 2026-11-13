@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Plays the number pool in a real browser (phase 6): Channels › Phone numbers › Add ACS number, find and
 // purchase a fictional number, set it up on a voice workstream, and call it. Saves a screenshot of each step.

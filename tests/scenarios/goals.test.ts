@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // "Build to requirements" (manual 9.1): goals are graded by code, and check 5 of manual 8.3 catches goals
 // that are met already, can't be built, or don't fit the level.

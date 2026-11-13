@@ -519,7 +519,7 @@ Promethean CCaaS Training/
 - Every source file starts with the Toolbox's header:
   ```
   // Copyright (c) 2026 Alexander Meijers
-  // SPDX-License-Identifier: MIT
+  // SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
   ```
   (MIT, decided 2026-11-02.)
 - Pure logic (OData, call engine, checks, layout) in plain `.ts` files with unit tests; React only for showing things.

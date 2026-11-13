@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Plays the skills exercise (level 4) and the outbound profile exercise (level 5) in a real browser:
 // Skills hub, a skill attachment rule, Exact Match on the workstream, then Productivity › Outbound and inbound

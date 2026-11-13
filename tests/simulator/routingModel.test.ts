@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Manual 4.5 "Routing model": the Visual Routing Tester's own loadRoutingModel() runs against the
 // simulator and gives the model the demo seed describes.

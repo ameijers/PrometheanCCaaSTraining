@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // The simulated clock (manual 5.4): runs in real time or faster, stands still, jumps; and a call made
 // at the clock's time follows operating hours.

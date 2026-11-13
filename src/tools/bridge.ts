@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Loaded first in every Toolbox tool page the training opens in an iframe. It gives the tool the
 // simulator's Xrm and a fetch that answers the simulated address, both from the shell (the parent

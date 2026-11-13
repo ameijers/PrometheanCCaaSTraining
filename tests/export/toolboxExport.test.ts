@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // The export to the Toolbox's CSV templates (manual 9.5): build every ready-made exercise with its reference
 // solution, export, and read each file back the way the Toolbox reads it.

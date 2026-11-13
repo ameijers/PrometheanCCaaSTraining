@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // OData query options: parsing and filter evaluation. Only what the Toolbox uses is supported
 // (docs/webapi-surface.md); anything else throws UnsupportedError with the request in the message,

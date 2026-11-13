@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Practice by lab: each exercise is placed after the last lab it needs, worked out from its goals,
 // faults or calls (src/labs/practice.ts).

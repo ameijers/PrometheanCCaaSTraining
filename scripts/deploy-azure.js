@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Deploys the training to Azure Static Web Apps from this computer (decision 15.4, phase 9), without
 // GitHub: the static web app's source is "Other", and this uses its deployment token. Run it only when

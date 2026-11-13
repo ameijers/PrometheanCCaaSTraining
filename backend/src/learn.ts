@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Microsoft Learn, read by the backend (manual 7): an article's text and its own date, and whether a
 // passage the training quotes is still in it. Learn serves an article as Markdown when asked with

@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 import { PRESENCE_NAMES } from "../simulator/seeds/presence";
 import { Row, Store } from "../simulator/store";

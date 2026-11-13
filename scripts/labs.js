@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Goes through the labs in a real browser the way a new learner does: lab 1 from its first Learn page
 // through the quiz and every hands-on task to the challenge list, the lab list, and lab 4's call taken in

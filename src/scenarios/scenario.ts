@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 import { Outcome } from "@toolbox/visual-routing-tester/src/model";
 import { CallTime } from "../calls/engine";

@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 import { loadRoutingModel } from "@toolbox/visual-routing-tester/src/dataverse";
 import { simulate } from "@toolbox/visual-routing-tester/src/evaluator";

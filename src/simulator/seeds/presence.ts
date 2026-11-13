@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 import { ASSIGNMENT_METHODS, QUEUE_TYPES } from "@toolbox/queue-builder/src/queueSchema";
 import { PRESENCES } from "@toolbox/voice-workstream-builder/src/voiceSchema";

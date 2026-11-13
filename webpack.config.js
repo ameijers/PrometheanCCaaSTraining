@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 const fs = require("fs");
 const path = require("path");
@@ -84,6 +84,8 @@ module.exports = {
     // Azure Static Web Apps reads its configuration from the root of what is deployed (phase 9).
     { apply: (compiler) => compiler.hooks.thisCompilation.tap("SwaConfig", (compilation) => compilation.hooks.processAssets.tap({ name: "SwaConfig", stage: compiler.webpack.Compilation.PROCESS_ASSETS_STAGE_ADDITIONAL }, () => {
       compilation.emitAsset("staticwebapp.config.json", new compiler.webpack.sources.RawSource(fs.readFileSync(path.resolve(__dirname, "public/staticwebapp.config.json"))));
+      // The testers' guide: a page of its own, without scripts (docs/testers.md).
+      compilation.emitAsset("testers.html", new compiler.webpack.sources.RawSource(fs.readFileSync(path.resolve(__dirname, "public/testers.html"))));
     })) }
   ]
 };

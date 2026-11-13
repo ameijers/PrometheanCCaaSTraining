@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // The AI providers: Claude sends each model only the options it takes, Azure OpenAI is called the way
 // Microsoft Learn documents it, and the backend picks a provider from its settings. No network: Azure's

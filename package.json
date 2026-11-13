@@ -2,7 +2,7 @@
   "name": "promethean-ccaas-training",
   "version": "0.1.0",
   "private": true,
-  "license": "MIT",
+  "license": "UNLICENSED",
   "scripts": {
     "build": "webpack --config webpack.config.js",
     "test": "jest --runInBand",

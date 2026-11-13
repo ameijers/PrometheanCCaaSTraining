@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Assignment to a representative (manual 5.2 step 7), as Microsoft Learn describes the out-of-the-box
 // methods, and the routing runtime that moves calls on as the clock runs. The Toolbox's Live view reads

@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // The number pool (manual 5.1): a new number comes from a range reserved for fiction, is written as a
 // phone number record, and rings the workstream it's set up on.
