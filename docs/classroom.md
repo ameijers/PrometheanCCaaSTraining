@@ -43,7 +43,7 @@ Signed-in trainers may create classes (30 a day each). Without signing in: anyon
 
 **Every visit starts with a welcome** that asks how the learner wants to work, and says where their work is kept:
 - **Join a class** (or **Carry on with my class** once they're in one): work on the class's labs and exercises is saved with the class, and they can carry on in any browser with their personal code.
-- **Work on my own** (or **Carry on on my own** when there's earlier work): their work is kept in this browser only; **My work › Save my work** keeps a copy or moves it to another computer.
+- **Work on my own** (or **Carry on on my own** when there's earlier work): their work is kept in this browser only; **Files › Save to a file** keeps a copy or moves it to another computer.
 - **First, show me around the screen** starts the tour.
 
 Someone who opens a class link goes straight to the code box. Browser scripts don't get the welcome; `?welcome=1` shows it anyway, `?welcome=0` leaves it out.
@@ -52,7 +52,7 @@ Someone who opens a class link goes straight to the code box. Browser scripts do
 
 **Another browser or computer:** Join a class, tick **I joined this class before, in another browser**, and enter the class code and your personal code. You carry on as the same learner: your ticks come back, and opening a class exercise, or a class lab's hands-on part, carries on where you left off, from whichever browser you used last. **Start again** undoes it. Lost the personal code? Your trainer can see it.
 
-How it works: progress (what the trainer sees) and your work on the class's exercises and labs' hands-on parts (the environment, your answers and hints, compressed to about 10 KB) are kept by the training's backend, a few seconds after each change. The personal code gives a new browser your random learner id. Work outside the class's labs and exercises stays in the browser it was done in; **My work › Save my work** downloads it as a file.
+How it works: progress (what the trainer sees) and your work on the class's exercises and labs' hands-on parts (the environment, your answers and hints, compressed to about 10 KB) are kept by the training's backend, a few seconds after each change. The personal code gives a new browser your random learner id. Work outside the class's labs and exercises stays in the browser it was done in; **Files › Save to a file** downloads it as a file.
 
 ## What's kept (decision 15.5)
 
