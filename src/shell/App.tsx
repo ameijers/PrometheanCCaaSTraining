@@ -487,8 +487,10 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
           onLeave={() => { setMembership(undefined); setMember(undefined); setClassScenarios([]); setClassOpen(false); }} />}
         {trainer && <TrainerView all={allScenarios} initial={trainer} onClose={() => setTrainer(undefined)} />}
         <TourCard tour={tour} />
-        {/* Someone who came with a class link goes straight to the code box instead. */}
-        {!params.get("class") && <Welcome tour={tour} restored={restored} current={run ? run.scenario.title : labDef ? `Lab ${labDef.number}: ${labDef.title}` : lesson.title}
+        {/* The welcome is for learners. Not for someone who came with a class link (they go straight to the
+            code box), nor for trainers: not on the trainer pages, not for a signed-in trainer. It waits until
+            the sign-in check is done, so a trainer doesn't see it flash by. */}
+        {!params.get("class") && !params.get("trainer") && !trainer && account && !account.trainer && <Welcome tour={tour} restored={restored} current={run ? run.scenario.title : labDef ? `Lab ${labDef.number}: ${labDef.title}` : lesson.title}
           member={member ? { className: member.className, name: member.name } : undefined}
           onJoin={() => setJoining("")}
           onClass={() => { const id = workingOn() ?? (labDef ? classId(labDef) : undefined); if (!id || !classScenarios.includes(id)) setPicking(true); }}
