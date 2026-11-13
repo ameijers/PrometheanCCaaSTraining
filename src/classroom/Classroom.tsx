@@ -187,7 +187,15 @@ function SignInPanel({ who, onCreate }: { who: Me; onCreate(): void }) {
       {who.signedIn
         ? who.admin
           ? <MessageBar intent="info"><MessageBarBody>You're signed in as {who.name}, as an admin: the Feedback inbox is at the top. To run classes you also need the trainer role; whoever runs the training can add it in Role management.</MessageBarBody></MessageBar>
-          : <MessageBar intent="warning"><MessageBarBody>You're signed in as {who.name}, but not as a trainer. Ask whoever runs the training for a trainer invitation, open the link in it, then sign in again.</MessageBarBody></MessageBar>
+          : <>
+              <MessageBar intent="warning"><MessageBarBody>You're signed in as <strong>{who.name}</strong>, but this account doesn't have the trainer role.</MessageBarBody></MessageBar>
+              {/* Roles belong to the account that accepted the invitation (Microsoft Learn, Custom authentication in
+                  Azure Static Web Apps, Manage roles): the most common slip is a browser that signs in with another account. */}
+              <ul className="signin-help">
+                <li><strong>Another account than you expected?</strong> Select <strong>Sign out</strong> at the top, then sign in again in a private window (InPrivate or Incognito), so Microsoft asks which account to use instead of taking the one this browser already uses.</li>
+                <li><strong>The right account?</strong> The trainer role comes from an invitation, and it only counts once you open the invitation's link and sign in with this account. An invitation is valid for at most 7 days. Whoever runs the training can check you're in Role management with the role <code>trainer</code>, or send a new invitation.</li>
+              </ul>
+            </>
         : <>
             <p>Sign in to see all your classes in one place: create classes, follow your learners' progress, and manage each class.</p>
             <div className="lesson-actions"><Button appearance="primary" onClick={signIn}>Sign in with a Microsoft account</Button></div>

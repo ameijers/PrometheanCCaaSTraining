@@ -101,7 +101,7 @@ export function Welcome({ tour, member, restored, current, onJoin, onClass, onOw
         <div className="tour-controls">
           <button className="tour-skip" onClick={() => close(() => tour.start())}>First, show me around the screen</button>
         </div>
-        <p className="tour-text welcome-later">You can switch any time with {member ? "Class" : "Join a class"} and Labs and practice at the top. Testing the training? Read the <a href="testers.html" target="_blank" rel="noopener">testers' guide</a>.</p>
+        <p className="tour-text welcome-later">You can switch any time with {member ? "Class" : "Join a class"} and Labs and practice at the top.</p>
       </div>
     </div>
   );
