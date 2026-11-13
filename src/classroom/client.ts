@@ -18,7 +18,17 @@ export interface CheckProgress { title: string; passed: boolean }
 export interface Member { learnerId: string; name: string; joinedOn: string; rejoinCode?: string }
 // Joining or rejoining answers who the learner is in the class, and which of its exercises they finished.
 export interface Joined extends ClassInfo { you: { learnerId: string; name: string; rejoinCode: string; done: string[] } }
-export interface Progress { learnerId: string; name: string; scenarioId: string; title: string; checks: CheckProgress[]; done: boolean; hints: number; updatedOn: string }
+// Labs only: each part's progress (backend/src/classes.ts LabParts).
+export interface LabParts {
+  learn?: { read: number; pages: number; done: boolean };
+  do?: { passed: number; tasks: number; done: boolean };
+  challenge?: { done: number; of: number };
+}
+export interface Progress {
+  learnerId: string; name: string; scenarioId: string; title: string; checks: CheckProgress[]; done: boolean; hints: number; updatedOn: string;
+  parts?: LabParts;
+  current?: { title: string; since: string };
+}
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;

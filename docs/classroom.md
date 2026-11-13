@@ -4,10 +4,14 @@ Phase 8 (manual 10). How a trainer runs a class with the training, and what the 
 
 ## For a trainer
 
-1. Select **Trainer sign-in** in the header and sign in with your Microsoft account. You land on **Your classes**: every class you created, with its code, status, number of exercises and learners. (**Choose an exercise** > **For trainers** gets you there too.)
-2. Select **Create a class**. Name it, give it a **last day** if you like, and tick the exercises it does. Select **Create the class**.
+1. Select **Trainer sign-in** in the header and sign in with your Microsoft account. You land on **Your classes**: every class you created, with its code, status, number of exercises and learners. (**Labs and practice** > **For trainers** gets you there too.)
+2. Select **Create a class**. Name it, give it a **last day** if you like, and tick the labs and exercises it does. Select **Create the class**.
 3. Hand out the **class code** (six letters and digits), or the class link (`?class=CODE`).
-4. **Open** a class in your list to follow it. Learners show up as soon as they join, then their progress as they work. It updates every 10 seconds. Hover over a cell to see each check.
+4. **Open** a class in your list to follow it. Learners show up as soon as they join, then their progress as they work. It updates every 10 seconds:
+   - each learner shows **Active now** or when they were last seen;
+   - a lab's cell has a bar for each part, **Learn** (pages read, then the quiz), **Do** (tasks) and **Challenge** (exercises), and what the learner is on now and for how long; an exercise's cell has one bar for its checks;
+   - the cell's colour is a heat map: light to darker blue the further they are, green with **✓ Done** when finished, and an amber edge with **! May be stuck** when they've been on the same thing for over 10 minutes and are still around;
+   - hover over a cell for all of it in words.
 5. Manage the class on the same page:
    - **Last day**: set, change or remove it. After that day learners can't join or send progress; you still see what they did.
    - **Close the class** stops joining and progress straight away; **Reopen the class** undoes it.

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Button, Checkbox, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Input, MessageBar, MessageBarBody } from "@fluentui/react-components";
 import { Scenario, KIND_TITLES } from "../scenarios/scenario";
 import { classId, LABS } from "../labs/labs";
+import { Activity, Legend, ProgressCell } from "./ProgressCell";
 import { claimClass, classLink, classProgress, ClassSummary, ClassView, createClass, createMyClass, deleteClass, joinClass, Member, rejoinClass, myClasses, Progress, readTrainerLink, removeLearner, trainerConfig, trainerLink, updateClass } from "./client";
 import { Me, me, signIn, signOut } from "./account";
 import { markFinished, Membership, setLearnerId, setMembership } from "./identity";
@@ -288,6 +289,8 @@ function ClassProgress({ code, trainerKey, all, canClaim, onClaimed, onDeleted }
     try { await deleteClass(code, trainerKey); onDeleted(); } catch (e) { setError(message(e)); setBusy(false); }
   };
   const c = data?.class;
+  // The time the page last read the class, for "5 min ago" and "may be stuck".
+  const now = Date.now();
   const status = !c ? "" : c.closed ? "Closed: learners can't join or send progress." : !c.open ? `Ended on ${c.openUntil}: learners can't join or send progress.` : c.openUntil ? `Open until the end of ${c.openUntil}.` : "Open, with no last day.";
   const end = endDraft ?? c?.openUntil ?? "";
   // Everyone who joined, and anyone who sent progress before joining was recorded.
@@ -320,27 +323,28 @@ function ClassProgress({ code, trainerKey, all, canClaim, onClaimed, onDeleted }
         </section>
       )}
       {!learners.length ? <p className="admin-muted">Nobody has joined yet. Learners show here when they join, and their progress as they work. The page updates every 10 seconds.</p> : (
-        <table className="trainer-table">
+        <>
+        <Legend />
+        <div className="tp-wrap">
+        <table className="trainer-table tp-table">
           <thead><tr><th>Learner</th>{data!.class.scenarios.map((s) => <th key={s}>{title(s)}</th>)}</tr></thead>
           <tbody>
             {learners.map(([id, name]) => (
               <tr key={id}>
-                <td>{name}{personal(id) && <span className="admin-muted" title="Their personal code, to carry on in another browser"> · {personal(id)}</span>} <Button size="small" appearance="subtle" disabled={busy} aria-label={`Remove ${name}`} onClick={() => remove(id, name)}>Remove</Button></td>
-                {data!.class.scenarios.map((s) => {
-                  const p = cell(id, s);
-                  const passed = p?.checks.filter((c) => c.passed).length ?? 0;
-                  return (
-                    <td key={s} className={p?.done ? "done" : p ? "busy" : ""} title={p?.checks.map((c) => `${c.passed ? "✓" : "○"} ${c.title}`).join("\n")}>
-                      {p ? <>{p.done ? "✓ Done" : `${passed} of ${p.checks.length}`}{p.hints ? <span className="admin-muted"> · {p.hints} hint{p.hints === 1 ? "" : "s"}</span> : null}</> : "–"}
-                    </td>
-                  );
-                })}
+                <td className="tp-learner">
+                  <strong>{name}</strong>{personal(id) && <span className="admin-muted tp-code" title="Their personal code, to carry on in another browser">Personal code {personal(id)}</span>}
+                  <Activity updates={(data?.progress ?? []).filter((p) => p.learnerId === id).map((p) => p.updatedOn)} now={now} />
+                  <Button size="small" appearance="subtle" disabled={busy} aria-label={`Remove ${name}`} onClick={() => remove(id, name)}>Remove</Button>
+                </td>
+                {data!.class.scenarios.map((s) => <ProgressCell key={s} p={cell(id, s)} now={now} />)}
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
+        </>
       )}
-      <p className="admin-muted">Hover over a cell to see each check. Hints are noted, not counted against anyone.</p>
+      <p className="admin-muted">Hover over a cell for the details. Hints are noted, not counted against anyone. The page updates every 10 seconds.</p>
     </div>
   );
 }

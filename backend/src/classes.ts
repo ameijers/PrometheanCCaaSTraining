@@ -43,9 +43,19 @@ export interface Joined { code: string; name: string; scenarios: string[]; you: 
 export interface Work { data: string; savedOn: string }
 const WORK_MAX = 30_000; // characters: Table Storage keeps up to 64 KiB of text in one column
 const BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
+// Where a learner is in a lab: pages read and the quiz (Learn), tasks (Do), exercises (Challenge).
+export interface LabParts {
+  learn?: { read: number; pages: number; done: boolean };
+  do?: { passed: number; tasks: number; done: boolean };
+  challenge?: { done: number; of: number };
+}
 export interface Progress {
   learnerId: string; name: string; scenarioId: string; title: string;
   checks: CheckProgress[]; done: boolean; hints: number; updatedOn: string;
+  // Labs only: each part's progress.
+  parts?: LabParts;
+  // What the learner is on now, and since when (for "may be stuck").
+  current?: { title: string; since: string };
 }
 
 // No letters that look alike (I and 1, O and 0).
@@ -53,6 +63,25 @@ const CODE_LETTERS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const newCode = () => Array.from({ length: 6 }, () => CODE_LETTERS[randomInt(CODE_LETTERS.length)]).join("");
 const LEARNER_ID = /^[0-9a-f]{32}$/;
 const SCENARIO_ID = /^[\w-]{1,100}$/;
+
+// Counts a learner's browser sends: whole numbers from 0 to 99.
+const count = (value: unknown) => Math.max(0, Math.min(99, Math.floor(Number(value) || 0)));
+function labParts(parts: any): { parts?: LabParts } {
+  if (!parts || typeof parts !== "object") return {};
+  const out: LabParts = {};
+  if (parts.learn) out.learn = { read: count(parts.learn.read), pages: count(parts.learn.pages), done: parts.learn.done === true };
+  if (parts.do) out.do = { passed: count(parts.do.passed), tasks: count(parts.do.tasks), done: parts.do.done === true };
+  if (parts.challenge) out.challenge = { done: count(parts.challenge.done), of: count(parts.challenge.of) };
+  return Object.keys(out).length ? { parts: out } : {};
+}
+// What they're on now; "since" can't be in the future or more than a week back.
+function currentOf(current: any, now: Date): { current?: { title: string; since: string } } {
+  const title = String(current?.title ?? "").replace(/\s+/g, " ").trim().slice(0, 200);
+  if (!title) return {};
+  const since = Date.parse(String(current?.since ?? ""));
+  const ok = Number.isFinite(since) && since <= now.getTime() && since > now.getTime() - 7 * 86_400_000;
+  return { current: { title, since: new Date(ok ? since : now.getTime()).toISOString() } };
+}
 
 const text = (value: unknown, what: string, max: number): string => {
   const s = String(value ?? "").replace(/\s+/g, " ").trim();
@@ -179,9 +208,11 @@ export class Classes {
     const scenarioId = String(body?.scenarioId ?? "");
     if (!SCENARIO_ID.test(scenarioId)) throw new AiError("Not a valid exercise.", 400);
     const checks = Array.isArray(body?.checks) ? body.checks.slice(0, 30).map((x: any) => ({ title: text(x?.title, "A check", 200), passed: x?.passed === true })) : [];
+    const now = new Date();
     const p: Progress = {
       learnerId: body.learnerId, name: text(body?.name, "Your name", 40), scenarioId, title: text(body?.title, "The exercise title", 100),
-      checks, done: body?.done === true, hints: Math.max(0, Math.min(99, Number(body?.hints) || 0)), updatedOn: new Date().toISOString()
+      checks, done: body?.done === true, hints: Math.max(0, Math.min(99, Number(body?.hints) || 0)), updatedOn: now.toISOString(),
+      ...labParts(body?.parts), ...currentOf(body?.current, now)
     };
     await this.store.put(`progress:${c.code}`, `${p.learnerId}:${scenarioId}`, p);
     // Learners who joined before joining was recorded show up once they report.

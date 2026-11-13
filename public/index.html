@@ -272,6 +272,40 @@
     .trainer-status-off { color: #9a3412; }
     .trainer-manage-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
     .trainer-delete { color: #b91c1c; }
+    /* The class table's progress (src/classroom/ProgressCell.tsx): blue for progress, the status green
+       for done and amber for "may be stuck", always with a word or number. */
+    .tp-wrap { overflow-x: auto; }
+    .tp-table td { vertical-align: top; }
+    .tp-learner { min-width: 160px; }
+    .tp-learner > * { display: block; }
+    .tp-code { font-size: 12px; }
+    .tp-learner button { margin-left: -8px; }
+    .tp-cell { min-width: 210px; }
+    .tp-heat-1 { background: #f1f6fd; }
+    .tp-heat-2 { background: #e2edfb; }
+    .tp-heat-3 { background: #cde2fb; }
+    .tp-done { background: #e6f4ea; }
+    .tp-stuck { box-shadow: inset 4px 0 0 #fab219; }
+    .tp-status { display: inline-block; margin-bottom: 4px; font-weight: 600; font-size: 12px; }
+    .tp-status-done { color: #006300; }
+    .tp-status-stuck { padding: 0 6px; border-radius: 4px; background: #fab219; color: #0b0b0b; }
+    .tp-parts { display: flex; flex-direction: column; gap: 3px; }
+    .tp-part { display: grid; grid-template-columns: 64px 1fr 32px; align-items: center; gap: 6px; font-size: 12px; }
+    .tp-label { color: var(--muted); }
+    .tp-track { position: relative; height: 6px; border-radius: 3px; background: #e1e0d9; overflow: hidden; }
+    .tp-fill { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: #2a78d6; }
+    .tp-fill-done { background: #0ca30c; }
+    .tp-value { text-align: right; font-variant-numeric: tabular-nums; }
+    .tp-now { display: block; margin-top: 4px; font-size: 12px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
+    .tp-hints { display: block; font-size: 12px; color: var(--muted); }
+    .tp-activity { display: flex !important; margin: 2px 0; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+    .tp-dot { width: 8px; height: 8px; border-radius: 50%; background: #c3c2b7; }
+    .tp-active { color: #006300; }
+    .tp-active .tp-dot { background: #0ca30c; }
+    .tp-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 12px 0 6px; font-size: 12px; color: var(--muted); }
+    .tp-legend > span { display: inline-flex; align-items: center; gap: 4px; }
+    .tp-swatch { display: inline-block; width: 14px; height: 14px; border: 1px solid var(--line); border-radius: 3px; }
+    .tp-swatch-stuck { box-shadow: inset 4px 0 0 #fab219; }
     .trainer-head-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
     .trainer-sub { margin: 20px 0 6px; font-size: 15px; }
     .trainer-link-field { flex: 1 1 360px; }

@@ -31,7 +31,7 @@ export interface Lab {
 export type LabPart = "learn" | "do" | "challenge";
 
 // Where the learner is in a lab: kept with the session.
-export interface LabState { labId: string; part: LabPart; page: number; quiz: Record<string, number> }
+export interface LabState { labId: string; part: LabPart; page: number; quiz: Record<string, number>; seen?: number }
 
 export const LABS = (labsJson.labs as Lab[]).sort((a, b) => a.number - b.number);
 export const labById = (id: string) => LABS.find((l) => l.id === id);
