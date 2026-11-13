@@ -87,6 +87,26 @@ describe("classes", () => {
     expect((await a.handle(req("GET", `/classes/${code}/work/${learner}/build-2-warranty?key=${trainerKey}`))).status).toBe(400);
   });
 
+  test("a progress record always fits in one Table Storage column: the oldest events go first", async () => {
+    const { fit } = await import("../../backend/src/classes");
+    const at = new Date().toISOString();
+    const long = "x".repeat(160);
+    const p = {
+      learnerId: learner, name: "Sam", scenarioId: "lab-orientation", title: "Lab 1", checks: [], done: false, hints: 0, updatedOn: at,
+      detail: {
+        quiz: Array.from({ length: 12 }, () => ({ question: long + long, answer: long, right: false, tries: 3 })),
+        tasks: Array.from({ length: 20 }, () => ({ title: long, passed: false, hints: 2, answer: long, note: long + long })),
+        events: Array.from({ length: 80 }, (_, i) => ({ at, what: `${i} ${long}`, kind: "read" }))
+      }
+    };
+    expect(JSON.stringify(p).length).toBeGreaterThan(30_000);
+    const kept = fit(p as any);
+    expect(JSON.stringify(kept).length).toBeLessThanOrEqual(30_000);
+    expect(kept.detail?.quiz).toHaveLength(12);
+    // The newest events stay.
+    expect(kept.detail?.events?.at(-1)?.what.startsWith("79 ")).toBe(true);
+  });
+
   test("bad input is refused in plain words", async () => {
     expect((await a.handle(req("POST", "/classes", { name: "", scenarios: ["x"] }))).body).toEqual({ error: "The class name must be 1 to 60 characters." });
     expect((await a.handle(req("POST", "/classes", { name: "A", scenarios: [] }))).status).toBe(400);
@@ -231,8 +251,8 @@ describe("a signed-in trainer", () => {
   const as = (user: typeof ann | undefined, method: string, p: string, body?: unknown) => a.handle(req(method, p, body, { user }));
 
   test("says who is signed in, and whether they're a trainer", async () => {
-    expect((await as(undefined, "GET", "/me")).body).toEqual({ signedIn: false, trainer: false });
-    expect((await as(ann, "GET", "/me")).body).toEqual({ signedIn: true, name: "ann@contoso.example", trainer: true });
+    expect((await as(undefined, "GET", "/me")).body).toEqual({ signedIn: false, trainer: false, admin: false });
+    expect((await as(ann, "GET", "/me")).body).toEqual({ signedIn: true, name: "ann@contoso.example", trainer: true, admin: false });
     expect((await as({ ...ann, roles: ["anonymous", "authenticated"] }, "GET", "/me")).body).toMatchObject({ signedIn: true, trainer: false });
   });
 
@@ -301,4 +321,40 @@ test("a scenario is written one try per request: a failed try comes back with it
   expect(second).toMatchObject({ attempt: 2, scenario: { title: "Calls on a quiet morning", source: "ai" } });
   expect(seen).toEqual([1, 3]); // the second try saw the first draft and what failed in it
   expect(((await a.handle(req("GET", "/ai/scenarios"))).body as any).scenarios.map((s: any) => s.title)).toEqual(["Calls on a quiet morning"]);
+});
+
+describe("feedback", () => {
+  const a = createApi({ settings, store: new MemoryStore(), cacheDir: path.join(os.tmpdir(), "learn-cache-test"), allowed: (o) => o === SITE });
+  const ada = { id: "ada-1", name: "ada@contoso.example", roles: ["anonymous", "authenticated", "admin"] };
+  const tim = { id: "tim-2", name: "tim@contoso.example", roles: ["anonymous", "authenticated", "trainer"] };
+  const as = (user: typeof ada | undefined, method: string, p: string, body?: unknown) => a.handle(req(method, p, body, { user }));
+
+  test("anyone sends feedback; only an admin reads, marks and deletes it", async () => {
+    const sent = await a.handle(req("POST", "/feedback", {
+      type: "content", message: "  Lab 4 says Do not disturb, the menu says Busy - DND.  ", name: "Sam", email: "sam@example.com",
+      context: { Lab: "4: Queues and representatives, Learn", Tab: "Lab", "": "dropped" }, environment: "SGVsbG8="
+    }));
+    expect(sent.status).toBe(200);
+    const { id } = sent.body as { id: string };
+    expect(id).toMatch(/^\d{14}-[a-z2-9]{6}$/);
+
+    expect((await as(undefined, "GET", "/admin/feedback")).status).toBe(401);
+    expect((await as(tim, "GET", "/admin/feedback")).status).toBe(403);
+    const list = ((await as(ada, "GET", "/admin/feedback")).body as any).feedback;
+    expect(list).toEqual([expect.objectContaining({ id, type: "content", message: "Lab 4 says Do not disturb, the menu says Busy - DND.", name: "Sam", email: "sam@example.com", context: { Lab: "4: Queues and representatives, Learn", Tab: "Lab" }, hasEnvironment: true, status: "new" })]);
+    expect(((await as(ada, "GET", `/admin/feedback/${id}/environment`)).body as any).data).toBe("SGVsbG8=");
+
+    expect(((await as(ada, "POST", `/admin/feedback/${id}`, { status: "done", note: "Fixed the wording." })).body as any)).toMatchObject({ status: "done", note: "Fixed the wording." });
+    expect((await as(ada, "POST", `/admin/feedback/${id}`, { status: "lost" })).status).toBe(400);
+    expect((await as(ada, "POST", `/admin/feedback/${id}/delete`)).status).toBe(200);
+    expect(((await as(ada, "GET", "/admin/feedback")).body as any).feedback).toEqual([]);
+  });
+
+  test("bad feedback is refused in plain words", async () => {
+    expect((await a.handle(req("POST", "/feedback", { type: "rant", message: "x" }))).body).toEqual({ error: "Choose what kind of feedback this is." });
+    expect((await a.handle(req("POST", "/feedback", { type: "idea", message: "   " }))).body).toEqual({ error: "Write your feedback first." });
+    expect((await a.handle(req("POST", "/feedback", { type: "idea", message: "Hi", email: "not-an-email" }))).status).toBe(400);
+    expect((await a.handle(req("POST", "/feedback", { type: "idea", message: "Hi", environment: "not base64!" }))).status).toBe(400);
+    expect((await a.handle(req("POST", "/feedback", { type: "idea", message: "Hi" }, { origin: "https://elsewhere.example" }))).status).toBe(403);
+  });
 });

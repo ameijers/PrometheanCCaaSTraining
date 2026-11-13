@@ -55,8 +55,8 @@ test("/api/<path> reaches the handler, and a class lives in Table Storage", asyn
 
 test("who signed in comes from Static Web Apps' header, not from the local stand-in", async () => {
   const principal = Buffer.from(JSON.stringify({ identityProvider: "aad", userId: "u1", userDetails: "ann@contoso.example", userRoles: ["anonymous", "authenticated", "trainer"] })).toString("base64");
-  expect((await call("GET", "https://training.example/api/me", undefined, undefined, { "x-ms-client-principal": principal })).jsonBody).toEqual({ signedIn: true, name: "ann@contoso.example", trainer: true });
-  expect((await call("GET", "https://training.example/api/me", undefined, undefined, { "x-dev-principal": principal })).jsonBody).toEqual({ signedIn: false, trainer: false });
+  expect((await call("GET", "https://training.example/api/me", undefined, undefined, { "x-ms-client-principal": principal })).jsonBody).toEqual({ signedIn: true, name: "ann@contoso.example", trainer: true, admin: false });
+  expect((await call("GET", "https://training.example/api/me", undefined, undefined, { "x-dev-principal": principal })).jsonBody).toEqual({ signedIn: false, trainer: false, admin: false });
 });
 
 test("only the site's own pages may write, and bad JSON is refused", async () => {

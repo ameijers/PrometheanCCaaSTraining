@@ -45,7 +45,7 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     response = await fetch(`${BACKEND}${path}`, { ...init, headers: { "Content-Type": "application/json", "X-Learner": learnerId(), ...accountHeaders() } });
   } catch {
-    throw new Error("The training's backend can't be reached, so classes don't work right now.");
+    throw new Error("The training's backend can't be reached right now. Try again in a moment.");
   }
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -108,3 +108,17 @@ export function readTrainerLink(text: string): { code: string; key: string } | u
     return undefined;
   }
 }
+
+// ---- feedback (backend/src/feedback.ts) ----
+export type FeedbackType = "problem" | "idea" | "content" | "question" | "other";
+export type FeedbackStatus = "new" | "read" | "done";
+export interface FeedbackItem {
+  id: string; type: FeedbackType; message: string; name?: string; email?: string;
+  context?: Record<string, string>; hasEnvironment: boolean; status: FeedbackStatus; note?: string; sentOn: string;
+}
+export const sendFeedback = (f: { type: FeedbackType; message: string; name?: string; email?: string; context?: Record<string, string>; environment?: string }) =>
+  post<{ id: string }>("/feedback", f);
+export const listFeedback = () => call<{ feedback: FeedbackItem[] }>("/admin/feedback");
+export const changeFeedback = (id: string, change: { status?: FeedbackStatus; note?: string }) => post<FeedbackItem>(`/admin/feedback/${encodeURIComponent(id)}`, change);
+export const deleteFeedback = (id: string) => post<{ deleted: boolean }>(`/admin/feedback/${encodeURIComponent(id)}/delete`, {});
+export const feedbackEnvironment = (id: string) => call<{ data: string | null }>(`/admin/feedback/${encodeURIComponent(id)}/environment`);

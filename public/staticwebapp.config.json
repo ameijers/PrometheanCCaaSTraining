@@ -5,6 +5,7 @@
   },
   "routes": [
     { "route": "/api/manage/*", "allowedRoles": ["trainer"] },
+    { "route": "/api/admin/*", "allowedRoles": ["admin"] },
     { "route": "/api/*", "allowedRoles": ["anonymous"] },
     { "route": "/index.html", "headers": { "Cache-Control": "no-cache" } }
   ],

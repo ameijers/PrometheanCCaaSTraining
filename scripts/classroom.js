@@ -74,6 +74,10 @@ async function main() {
     await waitText(trainer, ".trainer-table", "Sam", 15000); // the trainer sees Sam as soon as they join
     await shot(trainer, "trainer-sees-join");
     current = learner;
+    // Right after joining: the personal code, shown clearly.
+    await waitText(learner, ".code-big", "");
+    await shot(learner, "learner-personal-code");
+    await click(learner, "[role=dialog] button", "Carry on");
     await waitText(learner, ".picker-class", "First day on the switchboard");
     await shot(learner, "learner-class-exercises");
     await click(learner, ".picker-class .picker-item span", "First day on the switchboard");

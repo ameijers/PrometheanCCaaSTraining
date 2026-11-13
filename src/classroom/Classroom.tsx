@@ -73,6 +73,32 @@ export function JoinDialog({ initialCode, onJoined, onClose }: { initialCode?: s
 }
 
 // The class the learner is in: their personal code, and leaving.
+// Right after joining: the personal code, big, with a copy button, before anything else opens. It's what
+// brings the learner back to their work in another browser.
+export function PersonalCodeDialog({ member, onDone }: { member: Membership; onDone(): void }) {
+  const [copied, setCopied] = useState(false);
+  const code = member.rejoinCode ?? "";
+  return (
+    <Dialog open onOpenChange={(_, d) => { if (!d.open) onDone(); }}>
+      <DialogSurface>
+        <DialogBody>
+          <DialogTitle>You're in {member.className}</DialogTitle>
+          <DialogContent>
+            <p>Keep your <strong>personal code</strong> somewhere safe. With the class code and this code you carry on in another browser or on another computer, with your work.</p>
+            <p className="code-big" aria-label={`Your personal code ${code.split("").join(" ")}`}>{code}</p>
+            <p className="admin-muted">Class code {member.code} · as {member.name}. You'll also find it under Class at the top.</p>
+            {copied && <MessageBar intent="success"><MessageBarBody>Copied.</MessageBarBody></MessageBar>}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => void navigator.clipboard?.writeText(code).then(() => setCopied(true)).catch(() => undefined)}>Copy</Button>
+            <Button appearance="primary" onClick={onDone}>Carry on</Button>
+          </DialogActions>
+        </DialogBody>
+      </DialogSurface>
+    </Dialog>
+  );
+}
+
 export function ClassDialog({ member, onLeave, onClose }: { member: Membership; onLeave(): void; onClose(): void }) {
   return (
     <Dialog open onOpenChange={(_, d) => { if (!d.open) onClose(); }}>

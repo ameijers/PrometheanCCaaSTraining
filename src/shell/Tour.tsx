@@ -63,7 +63,7 @@ function place(target: DOMRect | undefined, card: { width: number; height: numbe
 // with the labs), and where their work is kept either way. A tour for anyone who wants to see the screen.
 export function Welcome({ tour, member, restored, current, onJoin, onClass, onOwn }: {
   tour: Tour;
-  member?: { className: string; name: string };
+  member?: { className: string; name: string; rejoinCode?: string };
   restored: boolean;
   current: string;
   onJoin(): void;
@@ -84,7 +84,7 @@ export function Welcome({ tour, member, restored, current, onJoin, onClass, onOw
           {member
             ? <button className="welcome-choice" autoFocus onClick={() => close(onClass)}>
                 <strong>Carry on with my class</strong>
-                <span>{member.className}, as {member.name}.</span>
+                <span>{member.className}, as {member.name}.{member.rejoinCode && <> Your personal code: <strong>{member.rejoinCode}</strong></>}</span>
                 <span className="welcome-save">✓ Your work on the class's labs and exercises is saved with the class. Carry on in any browser with your personal code. Your trainer sees your progress and your answers.</span>
               </button>
             : <button className="welcome-choice" autoFocus onClick={() => close(onJoin)}>
