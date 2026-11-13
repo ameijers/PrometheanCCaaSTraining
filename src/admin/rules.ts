@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 import { OPERATOR_MAP, STEP_TYPE_ENRICHMENT } from "@toolbox/visual-routing-tester/src/dataverse";
 import { isParsedGroup, ParsedGroup, ParsedRule, parseDecisionXml, withHitPolicy, WritableAction, WritableGroup, writeRuleXml } from "@toolbox/visual-routing-tester/src/ruleXml";

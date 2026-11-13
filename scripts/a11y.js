@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // The accessibility check of phase 9: runs axe-core (the open-source checker) on each main screen in Edge
 // and lists what it finds, worst first. Serve the build first (npm run serve).

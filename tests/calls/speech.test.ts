@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Reading a call aloud (src/calls/speech.ts), with a stand-in for the browser's speech synthesis.
 import { canSpeak, setSpeechOn, speak, speechOn } from "../../src/calls/speech";

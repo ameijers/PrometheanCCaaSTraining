@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Starts a headless browser for the walkthrough scripts: Edge, or Chrome when Edge won't start (on this
 // machine Edge's headless mode stopped working on 2026-11-04). CCAAS_BROWSER picks a browser explicitly.

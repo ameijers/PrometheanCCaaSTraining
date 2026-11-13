@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Plays a class in a real browser (phase 8): a trainer signs in (on this computer, a stand-in for the
 // Microsoft sign-in), creates a class from Your classes, a learner (in a separate browser profile) joins with

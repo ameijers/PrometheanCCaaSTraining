@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Level 5 onboarding: a business unit and an owner team with members, as the Power Platform admin
 // center pages do it, checked by the scenario goals.

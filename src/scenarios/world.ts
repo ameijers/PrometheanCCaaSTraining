@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 import { QUEUE_TYPES } from "@toolbox/queue-builder/src/queueSchema";
 import { loadRoutingModel } from "@toolbox/visual-routing-tester/src/dataverse";

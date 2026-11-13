@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Plays the two exercise kinds of phase 7 in a real browser: the level 2 customer interview (ask the
 // questions, then build the queue, its team and the rule) and the level 4 build (assignment method and the

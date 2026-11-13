@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Proves the @toolbox alias works: Toolbox code runs from the submodule, unchanged.
 import { buildGraph } from "@toolbox/environment-3d-explorer/src/graph";

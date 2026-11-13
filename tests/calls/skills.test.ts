@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Skill-based routing (src/calls/skills.ts) and outbound profiles: what they do to a call.
 import { addSkillRule, createOutboundProfile, outboundProfiles, setMatchingLogic, setUserSkills } from "../../src/admin/actions";

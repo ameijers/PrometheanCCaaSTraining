@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // The first lesson, solved the way a learner does it: through the admin center's actions and the phone.
 // Every task's check must be off before its step and on after it.

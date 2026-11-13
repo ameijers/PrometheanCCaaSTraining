@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // The backend's request handler (backend/src/api.ts), as the local server and Azure Functions call it:
 // classes with their codes and trainer keys, progress, who may write, and the AI's per-learner limit.

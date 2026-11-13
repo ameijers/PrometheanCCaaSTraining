@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 import type { Goal } from "../scenarios/goals";
 import { Fault, Scenario } from "../scenarios/scenario";

@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Variety (manual 9.4b): each new AI scenario gets one of its level's goal types to include, picked at random,
 // so skills and outbound profiles get their turn too.

@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // The hosted backend (phase 9) without Azure: the Functions entry hands /api/* to the same handler, only
 // the site's own pages may write, and the Table Storage store keeps values the way the backend expects.

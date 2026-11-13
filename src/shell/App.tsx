@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FluentProvider, Menu, MenuDivider, MenuItem, MenuList, MenuPopover, MenuTrigger, Tab, TabList, webLightTheme } from "@fluentui/react-components";

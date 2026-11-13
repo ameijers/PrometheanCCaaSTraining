@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Manual 9.4b and 8.3: every variant of a lesson template is played through by code before a learner can
 // get it. Each line with an IVR, with each menu choice it allows: nothing is done at the start, everything

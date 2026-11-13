@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 import { ColumnDef, exampleCsvFrom } from "@toolbox/shared/src/columns";
 import { COLUMNS as QUEUE_COLUMNS } from "@toolbox/queue-builder/src/template";

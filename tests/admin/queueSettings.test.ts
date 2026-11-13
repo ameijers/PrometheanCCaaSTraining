@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // The admin pages phase 7 adds, as actions: a queue's operation hours and overflow handling, capacity
 // profiles, and a new voice workstream. Each is checked by what it does to a call.

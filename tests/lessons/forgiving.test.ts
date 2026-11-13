@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Manual 9.4a: small slips don't block a learner. A queue named "Repair" is fine; a rule that checks
 // "Repair" while the IVR sends "Repairs" really misroutes, so the check says exactly why, and Edit fixes it.

@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // The AI parts phase 7 adds, with a stand-in for the AI: a "Build to requirements" scenario goes through
 // check 5 like any other, the AI customer only reveals needs that exist, and a hint must be usable.

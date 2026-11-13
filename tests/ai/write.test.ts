@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // The AI writes, code checks (manual 8.3): a scenario that fails goes back with what failed, up to three
 // times, then it's dropped; one that passes is saved. A stand-in for the AI plays its part, so the test

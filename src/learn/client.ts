@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Asks the training's backend (npm run backend) how a concept's Microsoft Learn article stands now.
 // Without the backend the training still works: it shows the saved explanation and says so (manual 7.4).

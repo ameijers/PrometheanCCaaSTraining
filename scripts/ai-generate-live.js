@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Has the hosted training's AI write scenarios, the way the browser's "Write a new one with AI" does: one
 // try per request (each under the 45-second limit), earlier tries sent back with what failed in them, up to

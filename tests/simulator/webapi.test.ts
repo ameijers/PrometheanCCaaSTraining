@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 import { createSimulator, SIMULATED_URL } from "../../src/simulator";
 import { FORMATTED, LOOKUP_TABLE } from "../../src/simulator/webapi";

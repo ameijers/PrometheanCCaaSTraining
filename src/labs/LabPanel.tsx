@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 import { ReactNode } from "react";
 import { doDone, Lab, LabPart, LabState, learnDone } from "./labs";

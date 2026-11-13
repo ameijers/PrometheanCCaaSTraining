@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Manual 2.5 and 4.5: the Toolbox's tools as a test bench for the simulator (learners never see them).
 // Each bulk tool's write code, tested live against Dataverse, runs its own example CSV to the end against

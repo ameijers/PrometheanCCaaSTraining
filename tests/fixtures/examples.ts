@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // The Toolbox's example CSVs, as the training uses them. Two of their phone numbers (+31 20 123 4567 and
 // +31 20 123 4568) aren't in a range reserved for fiction, so they become Ofcom drama numbers. The

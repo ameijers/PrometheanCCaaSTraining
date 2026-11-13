@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // The ready-made scenarios pass every check in manual 8.3, the same ones an AI-written scenario must
 // pass, and the healthy environment they start from has nothing wrong in it.

@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Checks the site's Content Security Policy (public/staticwebapp.config.json) against the real pages,
 // before hosting (phase 9): serves every page with the policy's headers, as Azure Static Web Apps will,

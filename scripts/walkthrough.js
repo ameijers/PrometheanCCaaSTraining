@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Plays the first lesson in a real browser, the way a learner would (clicking, typing), and saves a
 // screenshot of each step. Proves the lesson can be finished in the browser (manual, phase 3).

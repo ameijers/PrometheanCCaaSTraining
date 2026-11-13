@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // The labs: their content holds together (concepts, quiz answers, challenges), and each ready lab's
 // hands-on part can be done the way a learner does it, task by task.

@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 import { Button, Dropdown, Input, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger, Option, OptionGroup, Tooltip } from "@fluentui/react-components";
 import pagesJson from "../../content/admin-pages/pages.json";

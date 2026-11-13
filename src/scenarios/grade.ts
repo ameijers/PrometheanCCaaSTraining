@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 import { loadRaw } from "@toolbox/environment-3d-explorer/src/dataverse";
 import { buildGraph } from "@toolbox/environment-3d-explorer/src/graph";

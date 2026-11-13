@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // The trainer's progress cell: how far a learner is, and when they may be stuck.
 import { ago, cellOf, describe as words, STUCK_AFTER_MS } from "../../src/classroom/ProgressCell";

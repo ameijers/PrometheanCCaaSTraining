@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // A learner's work on a class exercise, packed to go to the class (backend/src/classes.ts): JSON,
 // gzip-compressed by the browser, in Base64. About 10 KB for a whole environment.

@@ -1,21 +1,30 @@
-MIT License
+Promethean CCaaS Training
+Copyright (c) 2026 Alexander Meijers. All rights reserved.
 
-Copyright (c) 2026 Alexander Meijers
+This repository is public so that its source can be read. No license is granted
+to use it.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Without prior written permission from the copyright holder, you may not use,
+copy, modify, merge, publish, distribute, sublicense, sell, host or run this
+software or any part of it, nor build other works on it. This applies to the
+source code, the training content (labs, lessons, scenarios, explanations) and
+the documentation in this repository.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Viewing the source on GitHub, and the copies GitHub makes under its Terms of
+Service (such as viewing and forking on GitHub), are allowed. A fork gives no
+right to use the software.
+
+To ask for permission, contact the copyright holder through
+https://github.com/ameijers.
+
+Parts that are not covered by this notice keep their own license:
+- quotations from Microsoft Learn, under CC BY 4.0, as credited where they
+  appear;
+- the Promethean CCaaS Toolbox in vendor/toolbox, under the license in that
+  repository;
+- third-party packages, under their own licenses.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+IMPLIED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES
+OR OTHER LIABILITY ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+ITS USE.

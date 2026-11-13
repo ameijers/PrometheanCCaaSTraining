@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // The full rule editor: And/Or groups, operators by field type, a percentage split, the rule hit policy and
 // work classification rulesets with outputs. Each rule is saved through the simulator and then a call is

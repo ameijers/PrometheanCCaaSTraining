@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // The tables and columns the simulator knows. Every column here is one the Toolbox reads or writes
 // (see docs/webapi-surface.md). A query for a column that isn't listed fails the way Dataverse does

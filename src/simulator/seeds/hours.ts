@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 import { ruleXml } from "@toolbox/voicemail-builder/src/overflow";
 import { Row, Rows } from "../store";

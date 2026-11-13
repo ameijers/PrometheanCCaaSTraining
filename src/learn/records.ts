@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 import { KINDS, NodeKind } from "@toolbox/environment-3d-explorer/src/model";
 import { Store } from "../simulator/store";

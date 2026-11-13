@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Alexander Meijers
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-All-Rights-Reserved
 
 // Plays a call from ring to a representative in a real browser (phase 6): the learner signs in as a
 // representative in the workspace (Agent tab), calls their queue on the phone, accepts the call, sees it on
