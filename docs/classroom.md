@@ -7,7 +7,14 @@ Phase 8 (manual 10). How a trainer runs a class with the training, and what the 
 1. Select **Trainer sign-in** in the header and sign in with your Microsoft account. You land on **Your classes**: every class you created, with its code, status, number of exercises and learners. (**Labs and practice** > **For trainers** gets you there too.)
 2. Select **Create a class**. Name it, give it a **last day** if you like, and tick the labs and exercises it does. Select **Create the class**.
 3. Hand out the **class code** (six letters and digits), or the class link (`?class=CODE`).
-4. **Open** a class in your list to follow it. Learners show up as soon as they join, then their progress as they work. It updates every 10 seconds:
+4. **Open** a class in your list to follow it. At the top, **the class at a glance**:
+   - four numbers: learners, active now, finished everything, may be stuck;
+   - **How far the class got**: per lab, how many started, finished Learn, finished Do and did a challenge (per exercise: started and done);
+   - **Where they are now**: the steps learners are on, with their names, those who may be stuck in amber first;
+   - **Hardest quiz questions**: the share of learners who didn't get a question right the first time.
+   Point at a bar for the names. Below that, each learner; the class's settings are at the bottom.
+
+   Learners show up as soon as they join, then their progress as they work. It updates every 10 seconds:
    - each learner shows **Active now** or when they were last seen;
    - a lab's cell has a bar for each part, **Learn** (pages read, then the quiz), **Do** (tasks) and **Challenge** (exercises), and what the learner is on now and for how long; an exercise's cell has one bar for its checks;
    - the cell's colour is a heat map: light to darker blue the further they are, green with **✓ Done** when finished, and an amber edge with **! May be stuck** when they've been on the same thing for over 10 minutes and are still around;
