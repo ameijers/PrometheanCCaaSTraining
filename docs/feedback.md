@@ -25,7 +25,7 @@ Someone with the role **admin** sees **Feedback inbox** at the top:
 - **Delete**;
 - **Open their environment** for feedback with an environment attached. It loads it read-only, like a trainer looking at a learner's work, and **Back to the feedback** returns to the inbox.
 
-To make someone an admin, invite them in the Azure portal: the static web app, **Role management**, **Invite**. Authorization provider **Microsoft Entra ID**, their email, the site's address, role `admin`. This is the same as for trainers (docs/classroom.md); someone can have both roles. On this computer, **Trainer sign-in** gives both roles, so the inbox can be tried locally.
+To make someone an admin, invite them in the Azure portal: the static web app, **Role management**, **Invite**. Authorization provider **Microsoft Entra ID**, their email, the site's address, role `admin`. This is the same as for trainers (docs/classroom.md). Someone can have both roles: the Role box takes "a comma-separated list of role names", so `trainer,admin`. For someone who already has a role, select them in **Role management**, edit the **Role** box (`trainer,admin`) and select **Update** (Microsoft Learn, Custom authentication in Azure Static Web Apps, Manage roles). On this computer, **Trainer sign-in** gives both roles, so the inbox can be tried locally.
 
 ## How it's kept
 

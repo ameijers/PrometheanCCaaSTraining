@@ -46,7 +46,7 @@ Azure Static Web Apps signs people in with a Microsoft account (Entra ID) and gi
 2. Authorization provider: **Microsoft Entra ID**. Invitee details: their email address. Domain: the site's address. Role: `trainer`. Set how many hours the invitation stays valid (at most 168, seven days). Select **Generate**.
 3. Send them the invite link. They open it and sign in with that account; from then on they're a trainer.
 
-The same way, with the role `admin`, makes someone an admin: they read the training's feedback (docs/feedback.md). Someone can have both roles.
+The same way, with the role `admin`, makes someone an admin: they read the training's feedback (docs/feedback.md). Someone can have both roles: enter `trainer,admin` in the Role box (it takes a comma-separated list), or for an existing user select them in **Role management**, edit **Role** and select **Update**.
 
 To stop someone being a trainer: Role Management, tick their row, **Delete**. It can take a few minutes everywhere. Their classes stay, but nobody can manage them through the list any more (their trainer links, if they kept them, still work). Invite yourself first.
 
