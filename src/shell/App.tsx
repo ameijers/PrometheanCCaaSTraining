@@ -26,7 +26,8 @@ import { Store } from "../simulator/store";
 import { LessonTemplate, makeLesson, newSeed } from "../lessons/template";
 import templateJson from "../../content/lessons/new-menu-choice.json";
 import { ExercisePicker, READY_MADE } from "../scenarios/ExercisePicker";
-import { ClassDialog, JoinDialog, TrainerOpen, TrainerView } from "../classroom/Classroom";
+import { ClassDialog, JoinDialog, PersonalCodeDialog, TrainerOpen, TrainerView } from "../classroom/Classroom";
+import { FeedbackDialog, FeedbackInbox } from "./Feedback";
 import { Me, me, signIn } from "../classroom/account";
 import { loadWork, reportProgress, saveWork } from "../classroom/client";
 import { finished, markFinished, Membership, membership, setMembership } from "../classroom/identity";
@@ -43,6 +44,13 @@ import { TrainingContext } from "./context";
 import { ExportDialog } from "../export/ExportDialog";
 
 export const NAVIGATE_EVENT = "ccaas-navigate";
+
+// "Edge 131", "Chrome 131", "Firefox 133", "Safari 18": enough to reproduce a problem.
+function browserName(ua: string): string {
+  const m = /Edg\/(\d+)/.exec(ua) ?? /Firefox\/(\d+)/.exec(ua) ?? /Chrome\/(\d+)/.exec(ua) ?? /Version\/(\d+).*Safari/.exec(ua);
+  const name = /Edg\//.test(ua) ? "Edge" : /Firefox\//.test(ua) ? "Firefox" : /Chrome\//.test(ua) ? "Chrome" : /Safari\//.test(ua) ? "Safari" : "Another browser";
+  return m ? `${name} ${m[1]}` : name;
+}
 
 const template = templateJson as LessonTemplate;
 type Workspace = Task["tab"] | "lab";
@@ -104,6 +112,10 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
     }).catch(() => undefined);
   }, [member?.code]);
   const [classOpen, setClassOpen] = useState(false);
+  // A learner who just joined sees their personal code first.
+  const [newMember, setNewMember] = useState<Membership | undefined>();
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackInbox, setFeedbackInbox] = useState(false);
   // The learner's work on a class exercise or a class lab's hands-on part goes to the class a few seconds
   // after it changes, so another browser carries on from it (src/classroom/work.ts).
   const memberRef = useRef(member);
@@ -333,11 +345,31 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
     setTab(next);
   };
 
+  // What the learner is doing, for feedback: shown in the form before it's sent.
+  const feedbackContext = (): Record<string, string> => {
+    const c: Record<string, string> = {};
+    if (run) c.Exercise = run.scenario.title;
+    else if (labDef && lab) {
+      c.Lab = `${labDef.number}: ${labDef.title}`;
+      const pages = labDef.learn ?? [];
+      c.Part = lab.part === "learn" ? (lab.page >= pages.length ? "Learn, the quiz" : `Learn, page ${lab.page + 1}: ${pages[lab.page].title}`)
+        : lab.part === "do" ? (current ? `Do, task: ${current.title}` : "Do, all tasks done") : "Challenge";
+    } else {
+      c.Lesson = lesson.title;
+      if (current) c.Task = current.title;
+    }
+    c.Tab = ({ lab: "Lab", admin: "Admin center", diagram: "Diagram", phone: "Phone", agent: "Agent" } as Record<string, string>)[tab] ?? tab;
+    if (member) c.Class = member.code;
+    c.Browser = browserName(navigator.userAgent);
+    c.Screen = `${window.innerWidth} × ${window.innerHeight}`;
+    return c;
+  };
+
   // ---- labs ----
   // A trainer looks at a learner's saved work: it's loaded here, nothing is saved or sent while it's on
   // screen, and Back puts the trainer's own session back and reopens the class.
-  const [viewing, setViewing] = useState<{ who: string; what: string; before: Session; back: TrainerOpen }>();
-  const viewWork = async (who: string, what: string, data: string, back: TrainerOpen) => {
+  const [viewing, setViewing] = useState<{ who: string; what: string; before: Session; back(): void; backLabel: string; lead: string }>();
+  const viewWork = async (who: string, what: string, data: string, back: () => void, backLabel = "Back to the class", lead = `${who}'s work on ${what}, as they left it`) => {
     const saved = await unpack<Session>(data);
     const before = session();
     viewingRef.current = true;
@@ -352,7 +384,8 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
     setDone({});
     setDiagramKey((k) => k + 1);
     setTrainer(undefined);
-    setViewing({ who, what, before, back });
+    setFeedbackInbox(false);
+    setViewing({ who, what, before, back, backLabel, lead });
     setTab(saved.scenario ? "admin" : "lab");
     setMessage("");
   };
@@ -369,7 +402,7 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
     setDiagramKey((k) => k + 1);
     viewingRef.current = false;
     setViewing(undefined);
-    setTrainer(v.back);
+    v.back();
   };
 
   const openLab = (id: string) => {
@@ -568,6 +601,8 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
             </Menu>
             <input ref={upload} type="file" accept="application/json,.json" hidden onChange={(e) => void onUpload(e.target.files?.[0])} />
             <button onClick={() => tour.start()}>Tour</button>
+            <button onClick={() => setFeedbackOpen(true)} title="Tell us what works, what doesn't, and what you'd like">Feedback</button>
+            {account?.admin && <button className="training-trainer" title="Feedback from everyone using the training" onClick={() => setFeedbackInbox(true)}>Feedback inbox</button>}
             {account?.signedIn
               ? <button className="training-trainer" title="Your classes" onClick={() => setTrainer("home")}>{account.trainer ? "Trainer" : "Signed in"} · {account.name}</button>
               : <button className="training-trainer" title="For trainers: sign in to manage your classes" onClick={signIn}>Trainer sign-in</button>}
@@ -631,18 +666,21 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
           classInfo={member ? { name: member.className, scenarios: classScenarios } : undefined} finishedIds={finishedIds} onTrainer={() => { setPicking(false); setTrainer("home"); }} />
         {joining !== undefined && <JoinDialog initialCode={joining} onClose={() => setJoining(undefined)}
           onJoined={(m, list, rejoined) => {
-            setMember(m); setClassScenarios(list); setFinishedIds(finished()); setJoining(undefined); setPicking(true);
-            setMessage(rejoined
-              ? `Welcome back to ${m.className}, ${m.name}. Open a class exercise to carry on where you left off.`
-              : `You joined ${m.className}. Your personal code is ${m.rejoinCode}: with it you carry on in another browser (it's under Class in the header). Your exercises are at the top of Choose an exercise.`);
+            setMember(m); setClassScenarios(list); setFinishedIds(finished()); setJoining(undefined);
+            if (rejoined) { setPicking(true); setMessage(`Welcome back to ${m.className}, ${m.name}. Open a class lab or exercise to carry on where you left off.`); }
+            else { setNewMember(m); setMessage(`You joined ${m.className}. Your class's labs and exercises are at the top of Labs and practice.`); }
           }} />}
+        {newMember && <PersonalCodeDialog member={newMember} onDone={() => { setNewMember(undefined); setPicking(true); }} />}
+        {feedbackOpen && <FeedbackDialog context={feedbackContext()} environment={canPack() ? () => pack(session()) : undefined} onClose={() => setFeedbackOpen(false)} />}
+        {feedbackInbox && <FeedbackInbox onClose={() => setFeedbackInbox(false)}
+          onOpenEnvironment={(item, data) => void viewWork("", "", data, () => setFeedbackInbox(true), "Back to the feedback", `the environment ${item.name ?? "someone"} sent with their feedback`)} />}
         {classOpen && member && <ClassDialog member={member} onClose={() => setClassOpen(false)}
           onLeave={() => { setMembership(undefined); setMember(undefined); setClassScenarios([]); setClassOpen(false); }} />}
-        {trainer && <TrainerView all={allScenarios} initial={trainer} onClose={() => setTrainer(undefined)} onViewWork={(who, what, data, back) => void viewWork(who, what, data, back)} />}
+        {trainer && <TrainerView all={allScenarios} initial={trainer} onClose={() => setTrainer(undefined)} onViewWork={(who, what, data, back) => void viewWork(who, what, data, () => setTrainer(back))} />}
         {viewing && (
           <div className="viewing-bar" role="status">
-            <span><strong>Looking at {viewing.who}'s work</strong> on {viewing.what}, as they left it. Read-only: nothing you change here is saved.</span>
-            <button onClick={stopViewing}>Back to the class</button>
+            <span><strong>Looking at {viewing.lead}.</strong> Read-only: nothing you change here is saved.</span>
+            <button onClick={stopViewing}>{viewing.backLabel}</button>
           </div>
         )}
         <TourCard tour={tour} />
@@ -650,7 +688,7 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
             code box), nor for trainers: not on the trainer pages, not for a signed-in trainer. It waits until
             the sign-in check is done, so a trainer doesn't see it flash by. */}
         {!params.get("class") && !params.get("trainer") && !trainer && account && !account.trainer && <Welcome tour={tour} restored={restored} current={run ? run.scenario.title : labDef ? `Lab ${labDef.number}: ${labDef.title}` : lesson.title}
-          member={member ? { className: member.className, name: member.name } : undefined}
+          member={member ? { className: member.className, name: member.name, rejoinCode: member.rejoinCode } : undefined}
           onJoin={() => setJoining("")}
           onClass={() => { const id = workingOn() ?? (labDef ? classId(labDef) : undefined); if (!id || !classScenarios.includes(id)) setPicking(true); }}
           onOwn={(carryOn) => { if (!carryOn) setPicking(true); }} />}

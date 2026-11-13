@@ -42,6 +42,20 @@ export interface Joined { code: string; name: string; scenarios: string[]; you: 
 // A learner's saved work on one exercise: gzip-compressed JSON, in Base64, as the browser sent it.
 export interface Work { data: string; savedOn: string }
 const WORK_MAX = 30_000; // characters: Table Storage keeps up to 64 KiB of text in one column
+const PROGRESS_MAX = 30_000; // the same for a progress record, which is kept as one JSON text
+
+// A progress record that fits in one Table Storage column: the oldest timeline events go first, then the
+// task notes and answers, and as a last resort the detail.
+export function fit(p: Progress): Progress {
+  const size = (x: Progress) => JSON.stringify(x).length;
+  if (size(p) <= PROGRESS_MAX || !p.detail) return p;
+  const d: Detail = { ...p.detail };
+  let out: Progress = { ...p, detail: d };
+  while (d.events?.length && size(out) > PROGRESS_MAX) d.events = d.events.slice(Math.max(1, Math.ceil(d.events.length / 4)));
+  if (size(out) > PROGRESS_MAX && d.tasks) d.tasks = d.tasks.map(({ note: _note, answer: _answer, ...t }) => t);
+  if (size(out) > PROGRESS_MAX) out = { ...p, detail: undefined };
+  return out;
+}
 const BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
 // Where a learner is in a lab: pages read and the quiz (Learn), tasks (Do), exercises (Challenge).
 export interface LabParts {
@@ -259,7 +273,7 @@ export class Classes {
       checks, done: body?.done === true, hints: Math.max(0, Math.min(99, Number(body?.hints) || 0)), updatedOn: now.toISOString(),
       ...labParts(body?.parts), ...currentOf(body?.current, now), ...detailOf(body?.detail, now)
     };
-    await this.store.put(`progress:${c.code}`, `${p.learnerId}:${scenarioId}`, p);
+    await this.store.put(`progress:${c.code}`, `${p.learnerId}:${scenarioId}`, fit(p));
     // Learners who joined before joining was recorded show up once they report.
     await this.remember(c.code, p.learnerId, p.name);
   }

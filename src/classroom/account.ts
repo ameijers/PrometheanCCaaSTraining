@@ -6,9 +6,9 @@ import { BACKEND } from "../learn/client";
 // Trainer sign-in (docs/classroom.md). On the hosted site, Azure Static Web Apps signs people in with a
 // Microsoft account (/.auth/login/aad) and tells the backend who they are; the "trainer" role comes from an
 // invitation in the Azure portal. On this computer there's no Static Web Apps, so signing in asks for a name
-// and sends a made-up principal to the local backend (backend/src/server.ts), with the trainer role.
+// and sends a made-up principal to the local backend (backend/src/server.ts), with the trainer and admin roles, so both can be tried here.
 
-export interface Me { signedIn: boolean; name?: string; trainer: boolean }
+export interface Me { signedIn: boolean; name?: string; trainer: boolean; admin?: boolean }
 
 const HOSTED = BACKEND === "/api";
 const DEV_KEY = "ccaas-training.dev-principal";
@@ -51,7 +51,7 @@ export function signIn(): void {
   }
   const name = window.prompt("Sign in on this computer (there's no Microsoft sign-in here). Your name:", "Local trainer")?.trim();
   if (!name) return;
-  const principal = { identityProvider: "local", userId: devUserId(name), userDetails: name, userRoles: ["anonymous", "authenticated", "trainer"] };
+  const principal = { identityProvider: "local", userId: devUserId(name), userDetails: name, userRoles: ["anonymous", "authenticated", "trainer", "admin"] };
   try { localStorage.setItem(DEV_KEY, toBase64(JSON.stringify(principal))); } catch { /* without storage, no local sign-in */ }
   window.location.href = home();
 }

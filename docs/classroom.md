@@ -46,6 +46,8 @@ Azure Static Web Apps signs people in with a Microsoft account (Entra ID) and gi
 2. Authorization provider: **Microsoft Entra ID**. Invitee details: their email address. Domain: the site's address. Role: `trainer`. Set how many hours the invitation stays valid (at most 168, seven days). Select **Generate**.
 3. Send them the invite link. They open it and sign in with that account; from then on they're a trainer.
 
+The same way, with the role `admin`, makes someone an admin: they read the training's feedback (docs/feedback.md). Someone can have both roles.
+
 To stop someone being a trainer: Role Management, tick their row, **Delete**. It can take a few minutes everywhere. Their classes stay, but nobody can manage them through the list any more (their trainer links, if they kept them, still work). Invite yourself first.
 
 Anyone with a Microsoft account can sign in, but without the trainer role they only see "You're signed in, but not as a trainer". Learners never sign in.
@@ -65,7 +67,7 @@ Signed-in trainers may create classes (30 a day each). Without signing in: anyon
 
 Someone who opens a class link goes straight to the code box. Browser scripts don't get the welcome; `?welcome=1` shows it anyway, `?welcome=0` leaves it out.
 
-**Join a class** in the header, or the class link. Enter the code and a name. You get a **personal code** (six letters and digits): it's under **Class** in the header, and your trainer sees it next to your name. The class's labs and exercises come first in **Labs and practice**. Progress is sent as you work. Finished exercises get a tick, in or out of a class.
+**Join a class** in the header, or the class link. Enter the code and a name. Right after joining, a dialog shows your **personal code** (six letters and digits), large, with **Copy**: keep it. It's also on the welcome and under **Class** in the header, and your trainer sees it next to your name. The class's labs and exercises come first in **Labs and practice**. Progress is sent as you work. Finished exercises get a tick, in or out of a class.
 
 **Another browser or computer:** Join a class, tick **I joined this class before, in another browser**, and enter the class code and your personal code. You carry on as the same learner: your ticks come back, and opening a class exercise, or a class lab's hands-on part, carries on where you left off, from whichever browser you used last. **Start again** undoes it. Lost the personal code? Your trainer can see it.
 

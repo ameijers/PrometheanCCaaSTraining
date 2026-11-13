@@ -10,6 +10,7 @@ import { answerAsCustomer, Attempt, MAX_ATTEMPTS, writeCaller, writeHint, writeS
 import { ArticleCache } from "./cache";
 import { Classes, isLearnerId, sameSecret, Who } from "./classes";
 import { KvStore } from "./kv";
+import { Feedback } from "./feedback";
 import { Concept, ConceptStatus, statusOf } from "./learn";
 import { Settings } from "./settings";
 import { Scenario } from "../../src/scenarios/scenario";
@@ -21,6 +22,10 @@ import conceptsJson from "../../content/concepts.json";
 //   GET  /learn/concept/<id>          how a concept's Learn article stands: its date, and whether the quote is still in it
 //   GET  /learn/review                the same for every concept, for a person to review (manual 7.4)
 //   GET  /ai/status                   whether the AI is on, and how much of today's limits is used
+//   POST /feedback                     { type, message, name?, email?, context?, environment? }: anyone's feedback
+//   GET  /admin/feedback               all feedback, newest first (role admin)
+//   GET  /admin/feedback/<id>/environment   the environment sent with it (role admin)
+//   POST /admin/feedback/<id>          { status?, note? }; POST /admin/feedback/<id>/delete (role admin)
 //   GET  /ai/scenarios                the AI-written scenarios that passed every check
 //   POST /ai/scenario                 { kind, level, previous? }: one try: the AI writes a scenario, code checks it (manual 8.3).
 //                                     It answers the scenario, or the problems and the draft; the browser sends
@@ -65,6 +70,7 @@ export interface ApiRequest {
 
 export interface User { id: string; name: string; roles: string[] }
 export const TRAINER_ROLE = "trainer";
+export const ADMIN_ROLE = "admin";
 
 // Reads Static Web Apps' client principal: Base64 JSON with userId, userDetails and userRoles.
 export function readPrincipal(header: string | null | undefined): User | undefined {
@@ -102,6 +108,12 @@ export function createApi(o: ApiOptions) {
   const limits = new UsageLimits(o.store, o.settings.dailyLimit, o.settings.learnerLimit);
   const chosen = o.provider ? { provider: o.provider, off: undefined } : chooseProvider(o.settings);
   const classes = new Classes(o.store);
+  const feedback = new Feedback(o.store);
+  const admin = (r: ApiRequest): User => {
+    if (!r.user) throw new AiError("Sign in first.", 401);
+    if (!r.user.roles.includes(ADMIN_ROLE)) throw new AiError("You're signed in, but not as an admin. Ask whoever runs the training for an admin invitation.", 403);
+    return r.user;
+  };
 
   const status = async (concept: Concept): Promise<ConceptStatus> => {
     const { article, fetchedAt, source } = await cache.get(concept.learn.url);
@@ -167,7 +179,10 @@ export function createApi(o: ApiOptions) {
       }
       if (p === "/ai/scenarios") return ok({ scenarios: await scenarios() });
       if (p === "/trainer") return ok({ passcodeRequired: !!o.settings.trainerPasscode });
-      if (p === "/me") return ok(r.user ? { signedIn: true, name: r.user.name, trainer: r.user.roles.includes(TRAINER_ROLE) } : { signedIn: false, trainer: false });
+      if (p === "/me") return ok(r.user ? { signedIn: true, name: r.user.name, trainer: r.user.roles.includes(TRAINER_ROLE), admin: r.user.roles.includes(ADMIN_ROLE) } : { signedIn: false, trainer: false, admin: false });
+      if (p === "/admin/feedback") { admin(r); return ok({ feedback: await feedback.list() }); }
+      const fbEnvironment = p.match(/^\/admin\/feedback\/([\w-]+)\/environment$/);
+      if (fbEnvironment) { admin(r); return ok(await feedback.environment(fbEnvironment[1])); }
       if (p === "/manage/classes") return ok({ classes: await classes.ownedBy(trainer(r).id) });
       const theirs = p.match(/^\/manage\/classes\/(\w+)\/work\/(\w+)\/([\w-]+)$/);
       if (theirs) return ok(await classes.learnerWork(theirs[1], { owner: trainer(r).id }, theirs[2], theirs[3]));
@@ -230,6 +245,11 @@ export function createApi(o: ApiOptions) {
         await counted();
         return ok(created);
       }
+      if (p === "/feedback") return ok(await feedback.submit(r.learner, await r.body(50_000)));
+      const fbDelete = p.match(/^\/admin\/feedback\/([\w-]+)\/delete$/);
+      if (fbDelete) { admin(r); await feedback.remove(fbDelete[1]); return ok({ deleted: true }); }
+      const fbChange = p.match(/^\/admin\/feedback\/([\w-]+)$/);
+      if (fbChange) { admin(r); return ok(await feedback.update(fbChange[1], await r.body())); }
       if (p === "/manage/claim") {
         const me = trainer(r);
         const { code, key } = await r.body();

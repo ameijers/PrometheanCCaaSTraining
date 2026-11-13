@@ -391,6 +391,27 @@
     .lv-asked, .lv-checks { margin: 0; padding-left: 18px; font-size: 13px; }
     .lv-checks { list-style: none; padding-left: 0; }
     @media (max-width: 760px) { .lv-grid { grid-template-columns: 1fr; } }
+    /* Feedback (src/shell/Feedback.tsx) and the personal code */
+    .fb-dialog { max-width: 640px; }
+    .fb-hint { color: var(--muted); font-size: 12px; }
+    .fb-two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; margin: 8px 0; }
+    .fb-context { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 4px 0 8px 28px; padding: 8px 10px; border-radius: 6px; background: #f5f7fa; font-size: 12px; }
+    .fb-context > div { display: contents; }
+    .fb-context dt { color: var(--muted); }
+    .fb-context dd { margin: 0; overflow-wrap: anywhere; }
+    .fb-filters { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 12px; }
+    .fb-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+    .fb-item { padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+    .fb-new { box-shadow: inset 4px 0 0 var(--accent); }
+    .fb-done { opacity: .75; }
+    .fb-item-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 12px; }
+    .fb-type { font-weight: 700; font-size: 13px; }
+    .fb-status { margin-left: auto; padding: 1px 8px; border-radius: 10px; background: #edebe9; font-weight: 600; }
+    .fb-status-new { background: #e2edfb; color: #1c5cab; }
+    .fb-status-done { background: #e6f4ea; color: #006300; }
+    .fb-message { margin: 8px 0; white-space: pre-wrap; }
+    .code-big { margin: 12px 0; font-size: 34px; font-weight: 700; letter-spacing: .25em; text-align: center; padding: 10px; border-radius: 10px; background: var(--brand); color: #fff; font-variant-numeric: tabular-nums; }
+    @media (max-width: 560px) { .fb-two { grid-template-columns: 1fr; } .fb-context { margin-left: 0; } }
     /* A trainer looking at a learner's work */
     .viewing-bar { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 960; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; width: min(760px, calc(100% - 32px)); box-sizing: border-box; padding: 10px 16px; border-radius: 10px; background: #fab219; color: #0b0b0b; box-shadow: 0 8px 28px rgba(0, 0, 0, .25); font-size: 14px; }
     .viewing-bar span { flex: 1; min-width: 200px; }
