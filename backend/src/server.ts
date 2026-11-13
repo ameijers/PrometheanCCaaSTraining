@@ -10,7 +10,7 @@ import { ROOT, settings } from "./settings";
 
 // The backend on this machine: npm run backend (port 7071). The routes are in api.ts. It only listens on
 // this computer, and only the training's own pages, served from this computer, may use it.
-// There's no Static Web Apps sign-in here: the page's "Trainer sign-in" sends a made-up principal in the
+// There's no Static Web Apps sign-in here: the page's "Sign in" sends a made-up principal in the
 // X-Dev-Principal header instead (src/classroom/account.ts). Only this local server reads that header.
 
 const LOCAL = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;

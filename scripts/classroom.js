@@ -44,7 +44,7 @@ async function main() {
     // The trainer creates a class with two exercises.
     const trainer = current = await open(browser.defaultBrowserContext());
     await trainer.goto(`http://localhost:${port}/?seed=1`, { waitUntil: "networkidle0" });
-    await click(trainer, ".training-env button", "Trainer sign-in"); // the name prompt is accepted as it is
+    await click(trainer, ".training-env button", "Sign in"); // the name prompt is accepted as it is
     await trainer.waitForNavigation({ waitUntil: "networkidle0" });
     await waitText(trainer, ".lesson-title", "Your classes");
     await shot(trainer, "trainer-your-classes");
@@ -162,7 +162,7 @@ async function main() {
     await shot(trainer, "trainer-class-deleted");
     await click(trainer, ".trainer-head button", "Sign out");
     await trainer.waitForNavigation({ waitUntil: "networkidle0" });
-    await waitText(trainer, ".training-env button", "Trainer sign-in");
+    await waitText(trainer, ".training-env button", "Sign in");
     console.log(`class ${code} deleted`);
   } catch (e) {
     if (current) await current.screenshot({ path: path.join(out, "failure.png") });

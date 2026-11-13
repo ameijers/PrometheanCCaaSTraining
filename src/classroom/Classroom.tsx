@@ -165,7 +165,9 @@ function SignInPanel({ who, onCreate }: { who: Me; onCreate(): void }) {
   return (
     <div className="trainer-body">
       {who.signedIn
-        ? <MessageBar intent="warning"><MessageBarBody>You're signed in as {who.name}, but not as a trainer. Ask whoever runs the training for a trainer invitation, open the link in it, then sign in again.</MessageBarBody></MessageBar>
+        ? who.admin
+          ? <MessageBar intent="info"><MessageBarBody>You're signed in as {who.name}, as an admin: the Feedback inbox is at the top. To run classes you also need the trainer role; whoever runs the training can add it in Role management.</MessageBarBody></MessageBar>
+          : <MessageBar intent="warning"><MessageBarBody>You're signed in as {who.name}, but not as a trainer. Ask whoever runs the training for a trainer invitation, open the link in it, then sign in again.</MessageBarBody></MessageBar>
         : <>
             <p>Sign in to see all your classes in one place: create classes, follow your learners' progress, and manage each class.</p>
             <div className="lesson-actions"><Button appearance="primary" onClick={signIn}>Sign in with a Microsoft account</Button></div>

@@ -604,8 +604,8 @@ export function App({ sim, restored, savedLesson, savedScenario, savedClock, see
             <button onClick={() => setFeedbackOpen(true)} title="Tell us what works, what doesn't, and what you'd like">Feedback</button>
             {account?.admin && <button className="training-trainer" title="Feedback from everyone using the training" onClick={() => setFeedbackInbox(true)}>Feedback inbox</button>}
             {account?.signedIn
-              ? <button className="training-trainer" title="Your classes" onClick={() => setTrainer("home")}>{account.trainer ? "Trainer" : "Signed in"} · {account.name}</button>
-              : <button className="training-trainer" title="For trainers: sign in to manage your classes" onClick={signIn}>Trainer sign-in</button>}
+              ? <button className="training-trainer" title={account.trainer ? "Your classes" : "Signed in: sign out here"} onClick={() => setTrainer("home")}>{account.trainer ? "Trainer" : account.admin ? "Admin" : "Signed in"} · {account.name}</button>
+              : <button className="training-trainer" title="For trainers and admins: sign in with your Microsoft account" onClick={signIn}>Sign in</button>}
           </div>
         </header>
         {exporting && <ExportDialog store={sim.store} start={new Store(run ? scenarioRows(run.scenario) : trainingSeed())} onClose={() => setExporting(false)} />}
