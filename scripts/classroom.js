@@ -37,6 +37,13 @@ async function main() {
     }
     throw new Error(`nothing clickable: ${selector} "${text}"`);
   };
+  // The join dialog asks first: first time in this class, or joined before.
+  const choose = async (page, text) => {
+    last = `choose "${text}"`;
+    await page.waitForSelector(".join-choice");
+    await page.evaluate((t) => [...document.querySelectorAll(".join-choice")].find((b) => b.textContent.includes(t)).click(), text);
+    await page.waitForSelector("[role=dialog] input");
+  };
   const waitText = (page, selector, text, timeout = 15000) => { last = `${selector} "${text}"`; return page.waitForFunction((s, t) => [...document.querySelectorAll(s)].some((e) => e.textContent.includes(t)), { timeout }, selector, text); };
   let current;
 
@@ -65,7 +72,7 @@ async function main() {
     const learnerContext = await browser.createBrowserContext();
     const learner = current = await open(learnerContext);
     await learner.goto(`http://localhost:${port}/?class=${code}`, { waitUntil: "networkidle0" });
-    await learner.waitForSelector("[role=dialog] input");
+    await choose(learner, "No, this is my first time");
     const inputs = await learner.$$("[role=dialog] input:not([type=checkbox])");
     await inputs[1].type("Sam");
     await shot(learner, "learner-join");
@@ -100,8 +107,13 @@ async function main() {
     console.log(`personal code ${personal}`);
     const laptop = current = await open(await browser.createBrowserContext());
     await laptop.goto(`http://localhost:${port}/?class=${code}`, { waitUntil: "networkidle0" });
-    await laptop.waitForSelector("[role=dialog] input");
-    await laptop.evaluate(() => [...document.querySelectorAll("[role=dialog] label")].find((l) => l.textContent.includes("I joined this class before")).click());
+    // First as a new learner by mistake: the class already has a Sam, so the dialog offers the personal code.
+    await choose(laptop, "No, this is my first time");
+    await (await laptop.$$("[role=dialog] input"))[1].type("Sam");
+    await click(laptop, "[role=dialog] button", "Join");
+    await waitText(laptop, "[role=dialog]", "already in this class");
+    await shot(laptop, "learner-same-name");
+    await click(laptop, "[role=dialog] button", "That's me: use my personal code");
     await laptop.waitForFunction(() => [...document.querySelectorAll("[role=dialog] label")].some((l) => l.textContent.includes("Your personal code")));
     await (await laptop.$$("[role=dialog] input:not([type=checkbox])"))[1].type(personal);
     await shot(laptop, "learner-rejoin");
@@ -126,7 +138,7 @@ async function main() {
     await shot(trainer, "trainer-class-closed");
     const late = current = await open(await browser.createBrowserContext());
     await late.goto(`http://localhost:${port}/?class=${code}`, { waitUntil: "networkidle0" });
-    await late.waitForSelector("[role=dialog] input");
+    await choose(late, "No, this is my first time");
     await (await late.$$("[role=dialog] input:not([type=checkbox])"))[1].type("Kim");
     await click(late, "[role=dialog] button", "Join");
     await waitText(late, "[role=dialog]", "is closed");

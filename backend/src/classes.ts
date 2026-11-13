@@ -190,7 +190,17 @@ export class Classes {
     if (!isLearnerId(body?.learnerId)) throw new AiError("Not a valid learner.", 400);
     this.mustBeOpen(c);
     if (c.removed?.includes(body.learnerId)) throw new AiError("Your trainer removed you from this class.", 403);
-    return this.joined(c, await this.remember(c.code, body.learnerId, text(body?.name, "Your name", 40)));
+    const name = text(body?.name, "Your name", 40);
+    // A new learner with the name of someone already in the class is most likely that person in another
+    // browser: they carry on with their personal code instead of starting over as a second learner.
+    if (!(await this.store.get<Member>(`members:${c.code}`, body.learnerId))) {
+      const same = (n: string) => n.replace(/\s+/g, " ").trim().toLowerCase();
+      const members = await this.store.list<Member>(`members:${c.code}`);
+      if (members.some((r) => !c.removed?.includes(r.value.learnerId) && same(r.value.name) === same(name))) {
+        throw new AiError(`Someone called ${name} is already in this class. If that's you, carry on with your personal code. If not, add the first letter of your last name.`, 409);
+      }
+    }
+    return this.joined(c, await this.remember(c.code, body.learnerId, name));
   }
 
   // The same learner in another browser, with their personal code: the browser takes over their learner id.
