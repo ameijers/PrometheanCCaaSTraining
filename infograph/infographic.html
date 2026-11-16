@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Promethean CCaaS Training infographic</title>
+<style>
+  :root {
+    --bg: #111c31; --bg2: #1b2a41; --panel: #1f3150; --panel2: #263b5f; --line: #33496f;
+    --ink: #ffffff; --soft: #c3cfe0; --muted: #8fa1bd; --gold: #f2c14e; --gold2: #f7d27a; --blue: #5598e7; --green: #4cc38a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1350px; }
+  body {
+    font-family: "Segoe UI", "Segoe UI Variable", system-ui, sans-serif; color: var(--ink);
+    background:
+      radial-gradient(900px 520px at 100% 0%, rgba(85,152,231,.22), transparent 60%),
+      radial-gradient(700px 500px at 0% 100%, rgba(242,193,78,.12), transparent 60%),
+      linear-gradient(180deg, var(--bg2), var(--bg));
+    overflow: hidden;
+  }
+  .page { position: relative; width: 1080px; height: 1350px; padding: 42px 56px 30px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* Header */
+  .eyebrow { display: inline-flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+  .eyebrow i { width: 34px; height: 3px; background: var(--gold); border-radius: 2px; }
+  h1 { margin-top: 12px; font-size: 56px; line-height: 1.04; font-weight: 800; letter-spacing: -.015em; }
+  h1 em { font-style: normal; color: var(--gold); }
+  .sub { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .sub span { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px; background: rgba(255,255,255,.07); border: 1px solid var(--line); font-size: 17px; font-weight: 600; color: var(--soft); }
+  .sub span b { color: var(--green); font-size: 18px; }
+
+  /* Panels */
+  .panel { background: linear-gradient(180deg, rgba(38,59,95,.92), rgba(31,49,80,.92)); border: 1px solid var(--line); border-radius: 22px; padding: 20px 26px; }
+  .ptitle { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+  .ptitle h2 { font-size: 24px; font-weight: 700; }
+  .ptitle small { font-size: 15px; color: var(--muted); }
+
+  /* The path of a call */
+  .flow { margin-top: 14px; display: grid; grid-template-columns: repeat(6, 1fr); position: relative; }
+  .flow::before { content: ""; position: absolute; left: 7%; right: 7%; top: 37px; height: 3px; background: linear-gradient(90deg, var(--gold), var(--blue)); border-radius: 2px; }
+  .step { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0 4px; }
+  .dot { width: 76px; height: 76px; border-radius: 50%; display: grid; place-items: center; background: var(--bg2); border: 3px solid var(--gold); box-shadow: 0 0 0 6px rgba(242,193,78,.10); }
+  .step:nth-child(n+4) .dot { border-color: var(--blue); box-shadow: 0 0 0 6px rgba(85,152,231,.12); }
+  .dot svg { width: 34px; height: 34px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .step b { margin-top: 12px; font-size: 17px; line-height: 1.2; }
+  .step span { margin-top: 4px; font-size: 13.5px; line-height: 1.3; color: var(--muted); }
+
+  /* Labs */
+  .labs { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .labs .ptitle { flex-direction: column; gap: 2px; }
+  .lablist { margin-top: 14px; display: grid; grid-template-columns: 1fr; gap: 7px; counter-reset: lab; list-style: none; }
+  .lablist li { display: flex; align-items: center; gap: 10px; font-size: 15.5px; color: var(--soft); line-height: 1.2; }
+  .lablist li::before { counter-increment: lab; content: counter(lab); flex: none; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font-weight: 700; font-size: 14px; color: var(--bg); background: var(--gold); }
+  .lablist li:nth-child(n+5)::before { background: var(--gold2); }
+  .lablist li:nth-child(n+9)::before { background: var(--blue); color: #fff; }
+  .lablist li.last { font-weight: 700; color: #fff; }
+  .ldc { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+  .ldc > div { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 14px; background: rgba(17,28,49,.55); border: 1px solid var(--line); }
+  .ldc > div > span:first-child { flex: none; width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; }
+  .ldc svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .ldc .arrow { align-self: center; color: var(--muted); font-size: 16px; margin: -6px 0; padding: 0; border: 0; background: none; }
+  .ldc .l > span:first-child { background: rgba(85,152,231,.22); color: #9cc4f3; }
+  .ldc .d > span:first-child { background: rgba(242,193,78,.22); color: var(--gold); }
+  .ldc .c > span:first-child { background: rgba(76,195,138,.22); color: var(--green); }
+  .ldc b { display: block; font-size: 17px; }
+  .ldc small { display: block; font-size: 13.5px; color: var(--muted); line-height: 1.3; }
+  .practice { margin-top: 10px; font-size: 13.5px; color: var(--muted); line-height: 1.35; }
+  .practice b { color: var(--soft); }
+
+  /* Features */
+  .feats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .feat { display: flex; gap: 12px; align-items: flex-start; padding: 12px 16px; border-radius: 16px; background: rgba(255,255,255,.05); border: 1px solid var(--line); }
+  .feat svg { flex: none; width: 30px; height: 30px; stroke: var(--gold); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; margin-top: 2px; }
+  .feat b { display: block; font-size: 16.5px; line-height: 1.2; }
+  .feat span { display: block; margin-top: 3px; font-size: 13.5px; line-height: 1.32; color: var(--muted); }
+
+  /* Who it's for */
+  .right { display: flex; flex-direction: column; gap: 12px; }
+  .labs > .panel { display: flex; flex-direction: column; }
+  .labs > .panel .lablist { flex: 1; align-content: space-between; }
+  .who { display: grid; grid-template-columns: 1fr; gap: 12px; flex: 1; }
+  .who > div { display: flex; flex-direction: column; justify-content: center; }
+  .who > div { padding: 12px 20px; border-radius: 18px; }
+  .who .learn { background: linear-gradient(135deg, rgba(242,193,78,.20), rgba(242,193,78,.06)); border: 1px solid rgba(242,193,78,.45); }
+  .who .train { background: linear-gradient(135deg, rgba(85,152,231,.24), rgba(85,152,231,.06)); border: 1px solid rgba(85,152,231,.5); }
+  .who h3 { font-size: 19px; display: flex; align-items: center; gap: 8px; }
+  .who ul { margin-top: 6px; list-style: none; display: grid; gap: 5px; }
+  .who li { font-size: 15px; color: var(--soft); line-height: 1.3; padding-left: 20px; position: relative; }
+  .who li::before { content: "✓"; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+
+  footer { margin-top: auto; display: flex; justify-content: space-between; align-items: center; gap: 16px; font-size: 13px; color: var(--muted); }
+  footer strong { color: var(--gold); font-size: 15px; letter-spacing: .02em; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="eyebrow"><i></i>Promethean CCaaS Training</div>
+    <h1>Learn Dynamics 365<br>Contact Center <em>by doing it.</em></h1>
+    <div class="sub">
+      <span><b>✓</b> No Dynamics 365 environment</span>
+      <span><b>✓</b> No real phone numbers</span>
+      <span><b>✓</b> Nothing to install</span>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="ptitle"><h2>Follow a call from the first ring to a representative</h2><small>simulated in your browser</small></div>
+    <div class="flow">
+      <div class="step">
+        <div class="dot"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></div>
+        <b>Phone number</b><span>Voice channel</span>
+      </div>
+      <div class="step">
+        <div class="dot"><svg viewBox="0 0 24 24"><path d="M4 6h10M4 12h16M4 18h7"/><circle cx="17" cy="6" r="2"/><circle cx="14" cy="18" r="2"/></svg></div>
+        <b>Workstream</b><span>Unified routing</span>
+      </div>
+      <div class="step">
+        <div class="dot"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="1.4"/><circle cx="12" cy="6" r="1.4"/><circle cx="18" cy="6" r="1.4"/><circle cx="6" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18" cy="12" r="1.4"/><circle cx="12" cy="18" r="1.4"/></svg></div>
+        <b>IVR menu</b><span>Context variables</span>
+      </div>
+      <div class="step">
+        <div class="dot"><svg viewBox="0 0 24 24"><path d="M6 3v6a4 4 0 0 0 4 4h8M6 21v-8"/><path d="M15 10l3 3-3 3"/><circle cx="6" cy="3" r="0.5"/></svg></div>
+        <b>Routing rules</b><span>Classification &amp; skills</span>
+      </div>
+      <div class="step">
+        <div class="dot"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="4" rx="1.5"/><rect x="4" y="10" width="16" height="4" rx="1.5"/><rect x="4" y="16" width="16" height="4" rx="1.5"/></svg></div>
+        <b>Queue</b><span>Hours &amp; overflow</span>
+      </div>
+      <div class="step">
+        <div class="dot"><svg viewBox="0 0 24 24"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/><path d="M19 20a3 3 0 0 1-3 2h-3"/></svg></div>
+        <b>Representative</b><span>Assignment &amp; capacity</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="labs">
+    <div class="panel">
+      <div class="ptitle"><h2>11 labs, in order</h2><small>from first call to a full contact center</small></div>
+      <ol class="lablist">
+        <li>How a call finds its way</li>
+        <li>Phone numbers and the voice channel</li>
+        <li>Workstreams</li>
+        <li>Queues and representatives</li>
+        <li>Assignment and capacity</li>
+        <li>The IVR and context variables</li>
+        <li>Route-to-queue rules</li>
+        <li>Work classification and skills</li>
+        <li>Operating hours and overflow</li>
+        <li>The workspace</li>
+        <li class="last">Putting it together</li>
+      </ol>
+    </div>
+    <div class="right">
+    <div class="panel">
+      <div class="ptitle"><h2>Every lab</h2></div>
+      <div class="ldc">
+        <div class="l"><span><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/></svg></span><div><b>Learn</b><small>Short pages from Microsoft Learn, then a quiz</small></div></div>
+        <div class="d"><span><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg></span><div><b>Do</b><small>Set it up step by step; checks tick off as you go</small></div></div>
+        <div class="c"><span><svg viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg></span><div><b>Challenge</b><small>The same skill, now without the steps</small></div></div>
+      </div>
+      <p class="practice"><b>Plus practice:</b> fix a broken contact center, predict where a call goes, build to requirements, interview a customer.</p>
+    </div>
+    <div class="who">
+    <div class="learn">
+      <h3>For learners</h3>
+      <ul>
+        <li>Join a class with a code: no account, no email</li>
+        <li>Carry on in any browser with your personal code</li>
+      </ul>
+    </div>
+    <div class="train">
+      <h3>For trainers</h3>
+      <ul>
+        <li>Create a class, pick the labs, share one code</li>
+        <li>Follow progress, answers and where people get stuck</li>
+      </ul>
+    </div>
+    </div>
+    </div>
+  </section>
+
+  <section class="feats">
+    <div class="feat"><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><div><b>Simulated admin center</b><span>Microsoft's menu and field names, in a safe sandbox</span></div></div>
+    <div class="feat"><svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18h2"/></svg><div><b>Real-feeling calls</b><span>Dial in, pick IVR options, see where the call lands</span></div></div>
+    <div class="feat"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4M7 9h6M7 12h10"/></svg><div><b>Agent &amp; supervisor workspace</b><span>Take calls, transfer, consult; monitor the floor</span></div></div>
+    <div class="feat"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="5" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M7.3 11 16.7 6M7.3 13l9.4 5"/></svg><div><b>Environment Diagram</b><span>See how everything you built connects</span></div></div>
+    <div class="feat"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M9 7h6"/></svg><div><b>Grounded in Microsoft Learn</b><span>Every explanation quoted and linked to the source</span></div></div>
+    <div class="feat"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg><div><b>AI-written scenarios</b><span>Fresh exercises, checked by the training first</span></div></div>
+  </section>
+
+  <footer>
+    <span>Independent training simulation, not a Microsoft product. Built on the Promethean CCaaS Toolbox.</span>
+    <strong>Try it: link in the post →</strong>
+  </footer>
+</div>
+</body>
+</html>
