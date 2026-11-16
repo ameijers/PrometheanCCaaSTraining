@@ -1,5 +1,7 @@
 # Promethean CCaaS Training
 
+<p align="center"><img src="infograph/promethean-ccaas-training-linkedin.png" alt="Promethean CCaaS Training at a glance: follow a call from the first ring to a representative, 11 labs with Learn, Do and Challenge, and classes for learners and trainers" width="600"></p>
+
 A training app that teaches Dynamics 365 Contact Center without a Dynamics 365 environment or real phone numbers. It runs a simulated environment in the browser, with simulated phone numbers and calls, the Environment Diagram, simulated admin pages, explanations from Microsoft Learn, and AI-written scenarios.
 
 It's built on the [Promethean CCaaS Toolbox](https://github.com/ameijers/PrometheanCCaaSToolbox), as a head start: the Toolbox's code runs underneath (its graph, health checks, routing evaluator and Environment Diagram). The training teaches Contact Center, not the Toolbox, so learners don't use the Toolbox's tools.
