@@ -5,10 +5,6 @@ An infographic of the training for LinkedIn posts, at LinkedIn's portrait size (
 - `promethean-ccaas-training-linkedin.png`: the image to post, 2160 × 2700 pixels.
 - `infographic.html`: its source, a page of 1080 × 1350.
 - `render.js`: turns the page into the image.
-- `blogpost.md`: a short blog post about the training, with the infographic in it.
-- `blogpost.docx`: the same blog post as a Word document.
-- `linkedin-post.md`: the LinkedIn post that goes with the infographic, pointing to the blog post.
-
 To change it, edit `infographic.html`, then from the project folder:
 
 ```
